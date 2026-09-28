@@ -26,14 +26,10 @@
 
   const FIXED_BOOT_PHRASES = [
     '99% of players stop playing before winning. Keep gambling!',
-    'Never bet close to Giulia, or you will make her cry!',
-    'And today too, unfortunately, Lior loses a point...',
     'TotoWrap is love, TotoWrap is life.',
     'La ludopatia è un problema solo se perdi!',
     'You miss 100% of the bets you don’t place.',
     'Your strategy is so confusing that it fooled even you.',
-    '<span class="boot-phrase-right">"Let me fly!"\n- Conor Kennedy</span>',
-    '<span class="boot-phrase-right">"Let us play in pesce!"\n- Giulia Emiliani</span>',
     '<span class="boot-phrase-right">"Questa <u>non</u> è una dittatura!"</span>',
     'I love the smell of TotoWrap in the morning',
     'Facciamo un referendum?',

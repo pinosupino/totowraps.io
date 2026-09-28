@@ -68,10 +68,10 @@ const CUSTOM_UI_TEXT = {
     'This assassin forgot to bet today',
 
   playerCountSingular:
-    'ASSASSIN PLAYING',
+    'PLAYER PLAYING',
 
   playerCountPlural:
-    'ASSASSINS PLAYING',
+    'PLAYERS PLAYING',
 
   beforeFirstTerritory: time =>
     `Ouch!<br>Everyone will lose if we wrap before ${time}`,
@@ -93,7 +93,7 @@ const CUSTOM_UI_TEXT = {
     'Have a good weekend and get some rest, even though you spent the whole workweek betting, as usual!',
 
   mondayBanner:
-    "A full week of betting is waiting for you, but let's pretend to work so Lawrence doesn't get mad!",
+    "A full week of betting is waiting for you, but let's pretend to work so nobody gets mad!",
 
   noWinnerBanner:
     'That was a real slaughter!',
@@ -3877,8 +3877,8 @@ async function renderShareResultBlob() {
   const ctx = canvas.getContext('2d');
   ctx.scale(exportScale, exportScale);
   const bg = ctx.createLinearGradient(0, 0, imageSize, imageSize);
-  bg.addColorStop(0, '#3d4e6f');
-  bg.addColorStop(1, '#1f2f4d');
+  bg.addColorStop(0, '#F4EFB4');
+  bg.addColorStop(1, '#E8E2AA');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, imageSize, imageSize);
 

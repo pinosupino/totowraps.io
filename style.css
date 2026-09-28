@@ -1089,3 +1089,6 @@ html.android-glass-fallback :is(.result-share-panel,.admin-dialog-panel) {
 .player-name-icon,
 .board-player-icon,
 .today-live-name-emoji { display: none !important; }
+
+/* Qualsiasi icona assassin accanto ai nomi */
+img[src*="assassinalpha"] { display: none !important; }
