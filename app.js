@@ -3,12 +3,12 @@ import { getFirestore, doc, getDocFromServer, onSnapshot, runTransaction } from 
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB5-_U9ZANNFOxiwUNSL6cOOxMCmUlOpaE",
-  authDomain: "totoswrap.firebaseapp.com",
-  projectId: "totoswrap",
-  storageBucket: "totoswrap.firebasestorage.app",
-  messagingSenderId: "797897578423",
-  appId: "1:797897578423:web:0b72837955caf0d4f87a32"
+  apiKey: "AIzaSyAQaBZqR3pgplwryS1qQwSUT29dPZ3crMM",
+  authDomain: "totowrap-749d3.firebaseapp.com",
+  projectId: "totowrap-749d3",
+  storageBucket: "totowrap-749d3.firebasestorage.app",
+  messagingSenderId: "920889634224",
+  appId: "1:920889634224:web:d2952fe6680bba9c477a75"
 };
 
 const fbApp = initializeApp(firebaseConfig);
