@@ -3115,10 +3115,10 @@ function confetti() {
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
 
   const colors = [
-    themeVar('--yellow', '#f0b428'),
-    themeVar('--green', '#8fdf6a'),
+    themeVar('--yellow', '#800020'),
+    themeVar('--green', '#2E7D32'),
     themeVar('--red', '#d65656'),
-    themeVar('--neutral', '#b8c9a8')
+    themeVar('--neutral', '#8D5A63')
   ];
   const isMobile = window.matchMedia?.('(max-width: 700px)').matches;
   const count = isMobile ? 108 : 192;
@@ -3862,12 +3862,12 @@ async function renderShareResultBlob() {
   const info = _shareResultInfo || (S.today?.wrapTime ? getShareResultInfo(S.today) : null);
   if (!info) throw new Error('No completed result');
   if (document.fonts?.ready) await document.fonts.ready.catch(() => {});
-  const yellow = themeVar('--accent', '#f0b428');
+  const yellow = themeVar('--accent', '#800020');
   const red = themeVar('--red', '#d65656');
   const greenRgb = themeVar('--green-rgb', '143,223,106');
   const redRgb = themeVar('--red-rgb', '214,86,86');
   const yellowRgb = themeVar('--yellow-rgb', '240,180,40');
-  const neutral = themeVar('--neutral', '#b8c9a8');
+  const neutral = themeVar('--neutral', '#8D5A63');
   const neutralRgb = themeVar('--neutral-rgb', '184,201,168');
   const canvas = document.createElement('canvas');
   const imageSize = 1080;
@@ -3911,7 +3911,7 @@ async function renderShareResultBlob() {
   ctx.font = "bold 27px 'Alte Haas Grotesk', sans-serif";
   ctx.fillText(`${info.dayLabel} - Estimated Wrap ${info.estWrap}`, 1000, 116);
 
-  ctx.strokeStyle = 'rgba(61,84,51,.72)';
+  ctx.strokeStyle = 'rgba(190,180,120,.72)';
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(80, 168);
@@ -3940,7 +3940,7 @@ async function renderShareResultBlob() {
   times.forEach((item, idx) => {
     const x = 80 + idx * 468;
     canvasRoundRect(ctx, x, 578 + shareMainY, 452, 172, 18);
-    ctx.fillStyle = 'rgba(38,55,89,.58)';
+    ctx.fillStyle = 'rgba(255,253,208,.58)';
     ctx.fill();
     ctx.strokeStyle = `rgba(${neutralRgb},.14)`;
     ctx.lineWidth = 2;
@@ -3954,7 +3954,7 @@ async function renderShareResultBlob() {
     ctx.fillText(item.value, x + 226, 696 + shareMainY);
   });
 
-  ctx.strokeStyle = 'rgba(61,84,51,.72)';
+  ctx.strokeStyle = 'rgba(190,180,120,.72)';
   ctx.beginPath();
   ctx.moveTo(80, 888);
   ctx.lineTo(1000, 888);
@@ -4589,7 +4589,7 @@ function renderBoardPie(pl) {
       pathD = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
     }
 
-    sliceSVG += `<path d="${pathD}" fill="${color}" stroke="#263759" stroke-width="1.5"/>`;
+    sliceSVG += `<path d="${pathD}" fill="${color}" stroke="#FFFDD0" stroke-width="1.5"/>`;
 
     // Keep every name visible. Narrow labels follow the slice center line from the outer edge inward.
     const mid = angle + sweep / 2;

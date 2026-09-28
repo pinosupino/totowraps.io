@@ -135,7 +135,7 @@ body.desktop-preview-active #app > .desktop-live-bar,
   .desktop-project-progress-front {
     padding: 12px 12px 13px;
     border: 1px solid rgba(var(--yellow-rgb), .14);
-    background: linear-gradient(135deg, rgba(46, 60, 87, .46), rgba(46, 60, 87, .28));
+    background: linear-gradient(135deg, rgba(245,240,186, .46), rgba(245,240,186, .28));
     -webkit-backdrop-filter: blur(12px) saturate(125%);
     backdrop-filter: blur(12px) saturate(125%);
   }
@@ -227,11 +227,11 @@ body.desktop-preview-active #app > .desktop-live-bar,
   }
 
   .desktop-project-leader .desktop-project-rank-1 {
-    color: #f6c24a;
+    color: #800020;
   }
 
   .desktop-project-leader .desktop-project-rank-2 {
-    color: #dce6f1;
+    color: #5A1A2A;
   }
 
   .desktop-project-leader .desktop-project-rank-3 {
@@ -274,7 +274,7 @@ body.desktop-preview-active #app > .desktop-live-bar,
     align-items: center;
     padding: 0 28px;
     border-bottom: 1px solid var(--border);
-    background: rgba(38, 55, 89, .94);
+    background: rgba(255,253,208, .94);
     -webkit-backdrop-filter: blur(15px);
     backdrop-filter: blur(15px);
   }

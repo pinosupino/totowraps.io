@@ -3,8 +3,8 @@
   "short_name": "TotoWrap Admin",
   "start_url": "./admin/",
   "display": "standalone",
-  "background_color": "#263759",
-  "theme_color": "#263759",
+  "background_color": "#FFFDD0",
+  "theme_color": "#FFFDD0",
   "icons": [
     {
       "src": "imgs/icon-192.png",

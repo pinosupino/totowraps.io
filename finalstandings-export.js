@@ -183,9 +183,9 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    const yellow = '#f0b428';
-    const neutral = '#b8c9a8';
-    const navy = '#263759';
+    const yellow = '#800020';
+    const neutral = '#8D5A63';
+    const navy = '#FFFDD0';
     const left = 300;
     const contentWidth = 2400;
     const podium = groupPodium(entries);
@@ -211,13 +211,13 @@
     const podiumGap = 38;
     podium.forEach(entry => {
       const rank = Number(entry.rank);
-      let fill = metalGradient(ctx, left, contentWidth, [[0, '#d9e0e5'], [.48, '#aeb8c2'], [1, '#c5ccd3']]);
-      if (rank === 1) fill = metalGradient(ctx, left, contentWidth, [[0, '#f6c85f'], [.48, '#d6ad45'], [1, '#f0b428']]);
+      let fill = metalGradient(ctx, left, contentWidth, [[0, '#d9e0e5'], [.48, '#aeb8c2'], [1, '#9A6A72']]);
+      if (rank === 1) fill = metalGradient(ctx, left, contentWidth, [[0, '#f6c85f'], [.48, '#800020'], [1, '#800020']]);
       if (rank === 3) fill = metalGradient(ctx, left, contentWidth, [[0, '#d9a06e'], [.48, '#b87955'], [1, '#c88860']]);
       roundRect(ctx, left, y, contentWidth, podiumHeight, 34);
       ctx.fillStyle = fill;
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,.35)';
+      ctx.strokeStyle = 'rgba(128,0,32,.35)';
       ctx.lineWidth = 5;
       ctx.stroke();
 
@@ -245,7 +245,7 @@
       const x = left + columnIdx * (columnWidth + columnGap);
       column.forEach((entry, rowIdx) => {
         const rowY = scoringTop + rowIdx * rowHeight;
-        ctx.strokeStyle = 'rgba(184,201,168,.28)';
+        ctx.strokeStyle = 'rgba(141,90,99,.28)';
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(x, rowY + rowHeight);

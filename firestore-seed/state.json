@@ -1,0 +1,29 @@
+{
+  "playerRoster": [
+    {
+      "name": "Edoardo",
+      "face": "Edoardo"
+    },
+    {
+      "name": "Alberto",
+      "face": "Alberto"
+    },
+    {
+      "name": "Greta",
+      "face": "Greta"
+    },
+    {
+      "name": "Chiara",
+      "face": "Chiara"
+    }
+  ],
+  "scores": {
+    "Edoardo": 0,
+    "Alberto": 0,
+    "Greta": 0,
+    "Chiara": 0
+  },
+  "days": [],
+  "today": null,
+  "_version": 1
+}
