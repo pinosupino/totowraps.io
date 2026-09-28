@@ -934,7 +934,7 @@ input::placeholder, textarea::placeholder { color: var(--dim); }
 .result-share-close { position:relative; flex:0 0 auto; width:27px; height:27px; margin-top:calc((.58rem - 27px) / 2); display:inline-grid; place-items:center; border:1px solid rgba(var(--neutral-rgb), .16); border-radius:999px; background:rgba(255,253,208,.62); color:transparent; font-family:'Alte Haas Grotesk', sans-serif; font-size:0; line-height:1; cursor:pointer; z-index:2; overflow:hidden; }
 .result-share-close::before { content:"×"; position:absolute; left:50%; top:50%; transform:translate(-50%, -60%); color:var(--dim); font-family:'Alte Haas Grotesk', sans-serif; font-size:1.15rem; line-height:1; }
 .result-share-preview { display:flex; justify-content:center; margin-bottom:12px; }
-.result-share-card { position:relative; display:flex; flex-direction:column; justify-content:space-between; width:min(100%,400px); aspect-ratio:1; overflow:hidden; border:1px solid rgba(var(--yellow-rgb), .22); border-radius:8px; padding:22px; background:radial-gradient(circle at 50% 45%, rgba(var(--yellow-rgb), .08), transparent 31%), linear-gradient(145deg, rgba(61,78,111,.94), rgba(31,47,77,.98)); box-shadow:inset 0 1px 0 rgba(128,0,32,.1); }
+.result-share-card { position:relative; display:flex; flex-direction:column; justify-content:space-between; width:min(100%,400px); aspect-ratio:1; overflow:hidden; border:1px solid rgba(var(--yellow-rgb), .22); border-radius:8px; padding:22px; background:radial-gradient(circle at 50% 45%, rgba(var(--yellow-rgb), .08), transparent 31%), linear-gradient(145deg, rgba(244,239,180,.94), rgba(232,226,170,.98)); box-shadow:inset 0 1px 0 rgba(128,0,32,.1); }
 .result-share-card::before { content:""; position:absolute; inset:76px; opacity:.18; background:url('imgs/tunacan.png') center/contain no-repeat; pointer-events:none; }
 .result-share-top, .result-share-main, .result-share-bottom { position:relative; z-index:1; }
 .result-share-top { display:flex; align-items:center; justify-content:space-between; gap:10px; padding-bottom:12px; border-bottom:1px solid rgba(190,180,120,.62); }
@@ -1049,7 +1049,7 @@ html.android-glass-fallback :is(
   -webkit-backdrop-filter:none;
   backdrop-filter:none;
   border-color:rgba(var(--yellow-rgb),.22);
-  box-shadow:inset 0 1px 0 rgba(128,0,32,.12),inset 0 -1px 0 rgba(0,0,0,.14),0 8px 24px rgba(15,25,45,.18);
+  box-shadow:inset 0 1px 0 rgba(128,0,32,.12),inset 0 -1px 0 rgba(0,0,0,.14),0 8px 24px rgba(60,0,15,.18);
 }
 html.android-glass-fallback .winner-banner {
   background:linear-gradient(135deg,rgba(var(--green-rgb),.15),rgba(var(--green-rgb),.05)),linear-gradient(135deg,rgba(226,220,162,.94),rgba(255,253,208,.96)),#FFFDD0;
@@ -1084,3 +1084,8 @@ html.android-glass-fallback :is(.result-share-panel,.admin-dialog-panel) {
   .hist-unit-label-full { display: none; }
   .hist-unit-label-mobile { display: inline; }
 }
+
+/* Icone assassin accanto ai nomi: nascoste */
+.player-name-icon,
+.board-player-icon,
+.today-live-name-emoji { display: none !important; }
