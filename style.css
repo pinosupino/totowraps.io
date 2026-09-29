@@ -73,7 +73,10 @@ html, body { background: var(--bg); height: 100%; overflow: hidden; }
   --dim:     var(--neutral);
   --accent:  var(--yellow);
   --accent2: var(--yellow);
-  --radius:  10px;
+  --radius:  18px;
+  --radius-sm: 12px;
+  --shadow-soft: 0 18px 40px -18px rgba(var(--yellow-rgb), 0.28);
+  --shadow-lift: 0 10px 26px -12px rgba(var(--yellow-rgb), 0.22);
   --bg-glass: rgba(245,240,186, 0.45);
   --border-glass: rgba(var(--yellow-rgb), 0.15);
 }
@@ -367,7 +370,7 @@ body::before {
 }
 .preview-card { background: transparent; border: 0; border-radius: 0; padding: 0; margin-bottom: 12px; max-height: 360px; overflow-y: auto; -webkit-overflow-scrolling: touch; -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.36) 3px, #000 8px, #000 calc(100% - 10px), rgba(0,0,0,.36) calc(100% - 4px), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.36) 3px, #000 8px, #000 calc(100% - 10px), rgba(0,0,0,.36) calc(100% - 4px), transparent 100%); }
 .compact-preview-card { max-height: min(62vh, 520px); }
-.card { background: linear-gradient(135deg, rgba(232,226,170, 0.84), rgba(255,253,208, 0.88)), rgba(255,253,208, 0.88); border: 1px solid rgba(var(--yellow-rgb), 0.22); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 14px; box-shadow: inset 0 1px 0 rgba(128,0,32, 0.10), inset 0 -1px 0 rgba(0, 0, 0, 0.12); transform: translateZ(0); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.card { background: linear-gradient(135deg, rgba(232,226,170, 0.84), rgba(255,253,208, 0.88)), rgba(255,253,208, 0.88); border: 1px solid rgba(var(--yellow-rgb), 0.22); border-radius: var(--radius); box-shadow: var(--shadow-soft); transition: transform .18s ease, box-shadow .18s ease; padding: 16px 18px; margin-bottom: 14px; box-shadow: inset 0 1px 0 rgba(128,0,32, 0.10), inset 0 -1px 0 rgba(0, 0, 0, 0.12); transform: translateZ(0); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   .card { background: linear-gradient(135deg, rgba(245,240,186, 0.54), rgba(245,240,186, 0.36)); -webkit-backdrop-filter: blur(14px) saturate(135%); backdrop-filter: blur(14px) saturate(135%); border-color: var(--border-glass); box-shadow: inset 0 1px 0 rgba(128,0,32, 0.08); }
 }
@@ -753,7 +756,7 @@ input::placeholder, textarea::placeholder { color: var(--dim); }
 .board-player-stats { background:linear-gradient(135deg, rgba(232,226,170,.84), rgba(255,253,208,.88)), rgba(255,253,208,.88); border:1px solid rgba(var(--yellow-rgb), .22); border-radius:8px; padding:12px; margin:0 0 8px; box-shadow:inset 0 1px 0 rgba(128,0,32,.10), inset 0 -1px 0 rgba(0,0,0,.12); transform:translateZ(0); backface-visibility:hidden; -webkit-backface-visibility:hidden; }
 .board-player-gap { color:var(--dim); font-family:'Alte Haas Grotesk', sans-serif; font-size:.68rem; margin-bottom:11px; }
 .board-stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; }
-.board-stat { display:grid; align-content:center; justify-items:center; min-height:58px; padding:11px 6px 8px; border:1px solid rgba(var(--neutral-rgb), .12); border-radius:7px; background:rgba(255,253,208,.46); text-align:center; }
+.board-stat { box-shadow: var(--shadow-lift); display:grid; align-content:center; justify-items:center; min-height:58px; padding:11px 6px 8px; border:1px solid rgba(var(--neutral-rgb), .12); border-radius:7px; background:rgba(255,253,208,.46); text-align:center; }
 .board-stat strong { display:block; color:var(--text); font-size:.94rem; line-height:1.08; }
 .board-stat span { display:block; min-height:2.4em; color:var(--dim); font-size:.5rem; line-height:1.2; text-transform:uppercase; margin-top:7px; }
 .board-stat-link { width:100%; font:inherit; cursor:pointer; transition:border-color .15s, background .15s, transform .08s; }
@@ -1092,3 +1095,12 @@ html.android-glass-fallback :is(.result-share-panel,.admin-dialog-panel) {
 
 /* Qualsiasi icona assassin accanto ai nomi */
 img[src*="assassinalpha"] { display: none !important; }
+
+/* --- Profondita' e coerenza visiva --- */
+.btn, .board-toggle, .board-stat, .board-player-stats {
+  border-radius: var(--radius-sm);
+}
+@media (hover: hover) and (pointer: fine) {
+  .card:hover { box-shadow: 0 22px 48px -16px rgba(var(--yellow-rgb), 0.34); }
+  .btn:not(:disabled):hover { transform: translateY(-1px); }
+}
