@@ -180,7 +180,7 @@ body::before {
 
 .hdr { position: relative; z-index: 200; background: var(--bg);  backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-bottom: none; box-shadow: 0 8px 18px -14px rgba(var(--yellow-rgb), 0.35); padding: 10px 18px 8px; display: flex; justify-content: space-between; align-items: center; height: 50px}
 .hdr-right { font-family: 'Goldbill XS', sans-serif; text-align: right; display: flex; align-items: center; gap: 4px; flex: 1; justify-content: flex-end; min-width:0; }
-.hdr-day { font-family: 'Goldbill XS', sans-serif; font-size: 0.90rem; color: var(--dim); letter-spacing: .02em; flex: 1; }
+.hdr-day { font-family: 'Goldbill XS', sans-serif; font-size: 0.65rem; color: var(--dim); letter-spacing: .02em; flex: 1; }
 .hdr-day-recap-trigger { display:inline; padding:0; border:0; background:none; color:inherit; font:inherit; letter-spacing:inherit; text-align:left; cursor:pointer; }
 
 /* 3D LOGO STYLES */
@@ -308,7 +308,7 @@ body::before {
   25.1%, 100% { opacity: 0; }
 }
 
-.hdr-wrap { font-family: 'Goldbill XS', sans-serif; font-size: 0.90rem; color: var(--dim); letter-spacing: .02em; white-space: nowrap; }
+.hdr-wrap { font-family: 'Goldbill XS', sans-serif; font-size: 0.65rem; color: var(--dim); letter-spacing: .02em; white-space: nowrap; }
 .hdr-wrap-time { transition: color .3s; }
 .hdr-wrap-time.live { color: var(--green); }
 .hdr-wrap-time.off { color: var(--red); }
@@ -1131,7 +1131,7 @@ img[src*="assassinalpha"] { display: none !important; }
   display: inline-flex;
   align-items: baseline;
   gap: 4px;
-  font-size: 1.18rem;
+  font-size: 0.65rem;
   font-weight: bold;
   letter-spacing: .04em;
   color: var(--yellow);
