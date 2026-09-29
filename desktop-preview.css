@@ -136,7 +136,7 @@ body.desktop-preview-active #app > .desktop-live-bar,
   .desktop-project-progress-front {
     padding: 12px 12px 13px;
     border: 1px solid rgba(var(--yellow-rgb), .14);
-    background: linear-gradient(135deg, rgba(245,240,186, .46), rgba(245,240,186, .28));
+    background: linear-gradient(135deg, rgba(242,241,240, .46), rgba(242,241,240, .28));
     -webkit-backdrop-filter: blur(12px) saturate(125%);
     backdrop-filter: blur(12px) saturate(125%);
   }
@@ -176,7 +176,7 @@ body.desktop-preview-active #app > .desktop-live-bar,
     font-size: .54rem;
     letter-spacing: .14em;
     line-height: 1;
-    text-transform: uppercase;
+    
   }
 
   .desktop-project-progress-top strong {
@@ -192,7 +192,7 @@ body.desktop-preview-active #app > .desktop-live-bar,
     overflow: hidden;
     border: 1px solid rgba(var(--yellow-rgb), .22);
     border-radius: 999px;
-    background: rgba(232,226,170, .38);
+    background: rgba(230,229,228, .38);
   }
 
   .desktop-project-progress-track > span {
@@ -216,14 +216,14 @@ body.desktop-preview-active #app > .desktop-live-bar,
     align-items: center;
     gap: 7px;
     color: var(--dim);
-    font-family: 'Goldbill XS', sans-serif;
+    font-family: 'Source Serif 4', serif;
     line-height: 1;
   }
 
   .desktop-project-leader span {
     color: var(--accent);
     font-size: .72rem;
-    font-weight: bold;
+    font-weight: 700;
     text-align: center;
   }
 
@@ -243,7 +243,7 @@ body.desktop-preview-active #app > .desktop-live-bar,
     min-width: 0;
     color: var(--dim);
     font-size: .76rem;
-    font-weight: bold;
+    font-weight: 700;
     line-height: 1.08;
     text-align: left;
   }
@@ -251,7 +251,7 @@ body.desktop-preview-active #app > .desktop-live-bar,
   .desktop-project-leader b {
     color: var(--accent);
     font-size: .7rem;
-    font-weight: bold;
+    font-weight: 700;
     white-space: nowrap;
   }
 
@@ -259,10 +259,10 @@ body.desktop-preview-active #app > .desktop-live-bar,
     display: block;
     color: var(--dim);
     font-size: .72rem;
-    font-weight: bold;
+    font-weight: 700;
     letter-spacing: .08em;
     text-align: center;
-    text-transform: uppercase;
+    
   }
 
   body.desktop-preview-active #app > .desktop-live-bar {
@@ -275,7 +275,7 @@ body.desktop-preview-active #app > .desktop-live-bar,
     align-items: center;
     padding: 0 28px;
     border-bottom: 1px solid var(--border);
-    background: rgba(255,253,208, .94);
+    background: rgba(255,254,253, .94);
     -webkit-backdrop-filter: blur(15px);
     backdrop-filter: blur(15px);
   }
@@ -291,7 +291,7 @@ body.desktop-preview-active #app > .desktop-live-bar,
     color: var(--dim);
     font-size: .72rem;
     letter-spacing: .15em;
-    text-transform: uppercase;
+    
   }
 
   .desktop-day strong,
@@ -299,9 +299,9 @@ body.desktop-preview-active #app > .desktop-live-bar,
   .desktop-est-wrap span,
   .desktop-est-wrap strong {
     color: var(--yellow);
-    font-family: 'Goldbill XS', sans-serif;
+    font-family: 'Source Serif 4', serif;
     font-size: 1.5rem;
-    font-weight: bold;
+    font-weight: 700;
     line-height: 1;
     letter-spacing: .03em;
     -webkit-text-stroke: .45px var(--yellow);
@@ -437,4 +437,4 @@ body.desktop-preview-active #app > .desktop-live-bar,
   }
 }
 
-* { font-family: 'Jost', sans-serif !important; }
+* { font-family: 'Source Serif 4', serif !important; }

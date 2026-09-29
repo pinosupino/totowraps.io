@@ -3115,7 +3115,7 @@ function confetti() {
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
 
   const colors = [
-    themeVar('--yellow', '#800020'),
+    themeVar('--yellow', '#1a1a1a'),
     themeVar('--green', '#2E7D32'),
     themeVar('--red', '#d65656'),
     themeVar('--neutral', '#8D5A63')
@@ -3862,7 +3862,7 @@ async function renderShareResultBlob() {
   const info = _shareResultInfo || (S.today?.wrapTime ? getShareResultInfo(S.today) : null);
   if (!info) throw new Error('No completed result');
   if (document.fonts?.ready) await document.fonts.ready.catch(() => {});
-  const yellow = themeVar('--accent', '#800020');
+  const yellow = themeVar('--accent', '#1a1a1a');
   const red = themeVar('--red', '#d65656');
   const greenRgb = themeVar('--green-rgb', '143,223,106');
   const redRgb = themeVar('--red-rgb', '214,86,86');
@@ -4589,7 +4589,7 @@ function renderBoardPie(pl) {
       pathD = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
     }
 
-    sliceSVG += `<path d="${pathD}" fill="${color}" stroke="#FFFDD0" stroke-width="1.5"/>`;
+    sliceSVG += `<path d="${pathD}" fill="${color}" stroke="#fffefd" stroke-width="1.5"/>`;
 
     // Keep every name visible. Narrow labels follow the slice center line from the outer edge inward.
     const mid = angle + sweep / 2;

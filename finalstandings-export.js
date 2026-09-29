@@ -183,9 +183,9 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    const yellow = '#800020';
+    const yellow = '#1a1a1a';
     const neutral = '#8D5A63';
-    const navy = '#FFFDD0';
+    const navy = '#fffefd';
     const left = 300;
     const contentWidth = 2400;
     const podium = groupPodium(entries);
@@ -212,7 +212,7 @@
     podium.forEach(entry => {
       const rank = Number(entry.rank);
       let fill = metalGradient(ctx, left, contentWidth, [[0, '#d9e0e5'], [.48, '#aeb8c2'], [1, '#9A6A72']]);
-      if (rank === 1) fill = metalGradient(ctx, left, contentWidth, [[0, '#f6c85f'], [.48, '#800020'], [1, '#800020']]);
+      if (rank === 1) fill = metalGradient(ctx, left, contentWidth, [[0, '#f6c85f'], [.48, '#1a1a1a'], [1, '#1a1a1a']]);
       if (rank === 3) fill = metalGradient(ctx, left, contentWidth, [[0, '#d9a06e'], [.48, '#b87955'], [1, '#c88860']]);
       roundRect(ctx, left, y, contentWidth, podiumHeight, 34);
       ctx.fillStyle = fill;
