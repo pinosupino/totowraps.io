@@ -76,8 +76,8 @@ body, input, textarea, select, button, option { text-transform: uppercase; }
   --yellow-rgb: 128, 0, 32;
   --neutral: #8D5A63;
   --neutral-rgb: 141, 90, 99;
-  --red:     #c14d4d;
-  --red-rgb: 193, 77, 77;
+  --red: #ee0038;
+  --red-rgb: 238, 0, 56;
   --green:   #2E7D32;
   --green-rgb: 46, 125, 50;
   --text:    var(--yellow);
