@@ -12,7 +12,7 @@
   -webkit-backdrop-filter:blur(14px) saturate(135%);
   backdrop-filter:blur(14px) saturate(135%);
   color:var(--accent);
-  font-family:'Alte Haas Grotesk',sans-serif;
+  font-family:'Goldbill XS',sans-serif;
   font-size:.72rem;
   font-weight:bold;
   letter-spacing:.12em;
@@ -26,7 +26,7 @@
   overflow:hidden;
   background:var(--bg);
   color:var(--text);
-  font-family:'Alte Haas Grotesk',sans-serif;
+  font-family:'Goldbill XS',sans-serif;
   opacity:0;
   transition:opacity .45s ease;
 }
