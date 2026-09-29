@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap");
 body.desktop-preview-active #app > .desktop-live-bar,
 .desktop-project-progress {
   display: none;
@@ -435,3 +436,5 @@ body.desktop-preview-active #app > .desktop-live-bar,
     max-width: 1040px;
   }
 }
+
+* { font-family: 'Jost', sans-serif !important; }

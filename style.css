@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap");
 html { font-size: 107%; }
 html, body { background: var(--bg); height: 100%; overflow: hidden; }
 body, input, textarea, select, button, option { text-transform: uppercase; }
@@ -1140,3 +1141,5 @@ img[src*="assassinalpha"] { display: none !important; }
 }
 .hdr-wrap-time.live { color: var(--green); -webkit-text-stroke: .4px var(--green); text-stroke: .4px var(--green); }
 .hdr-wrap-time.off  { color: var(--red);   -webkit-text-stroke: .4px var(--red);   text-stroke: .4px var(--red); }
+
+* { font-family: 'Jost', sans-serif !important; }
