@@ -1113,3 +1113,25 @@ img[src*="assassinalpha"] { display: none !important; }
   .card:hover { box-shadow: 0 22px 48px -16px rgba(var(--yellow-rgb), 0.34); }
   .btn:not(:disabled):hover { transform: translateY(-1px); }
 }
+
+/* --- Effetto "adesivo" con contorno spesso su Day xx/xx e Wrap --- */
+.hdr-day-badge,
+.hdr-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-weight: bold;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--bg);
+  -webkit-text-stroke: 1.4px var(--yellow);
+  text-stroke: 1.4px var(--yellow);
+  paint-order: stroke fill;
+  text-shadow:
+    -1px -1px 0 var(--yellow),
+     1px -1px 0 var(--yellow),
+    -1px  1px 0 var(--yellow),
+     1px  1px 0 var(--yellow);
+}
+.hdr-wrap-time.live { color: var(--green); }
+.hdr-wrap-time.off  { color: var(--red); }

@@ -297,12 +297,25 @@ body.desktop-preview-active #app > .desktop-live-bar,
   .desktop-day-trigger,
   .desktop-est-wrap span,
   .desktop-est-wrap strong {
-    color: var(--dim);
+    color: var(--bg);
     font-family: 'Alte Haas Grotesk', sans-serif;
     font-size: 1.22rem;
     font-weight: bold;
     line-height: 1;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    -webkit-text-stroke: 1.6px var(--yellow);
+    text-stroke: 1.6px var(--yellow);
+    paint-order: stroke fill;
+    text-shadow:
+      -1.2px -1.2px 0 var(--yellow),
+       1.2px -1.2px 0 var(--yellow),
+      -1.2px  1.2px 0 var(--yellow),
+       1.2px  1.2px 0 var(--yellow);
   }
+
+  .desktop-est-wrap strong.live { color: var(--green); }
+  .desktop-est-wrap strong.off  { color: var(--red); }
 
   .desktop-day-trigger {
     width: fit-content;

@@ -3519,7 +3519,7 @@ function renderPlayerMain() {
   const estWrap = S.today?.estWrap || '--:--';
   return `
 <div class="hdr">
-  <div class="hdr-day">${dayNum ? displayDayProgressHeader(dayNum) : `Day —/${DISPLAY_TOTAL_DAYS}`}</div>
+  <div class="hdr-day"><span class="hdr-day-badge">${dayNum ? displayDayProgressHeader(dayNum) : `Day —/${DISPLAY_TOTAL_DAYS}`}</span></div>
   ${get3DLogoHTML()}
   <div class="hdr-right">
     <div class="hdr-wrap">Wrap <span class="hdr-wrap-time ${wrapStatusClass}">${esc(estWrap)}</span></div>
@@ -4281,7 +4281,7 @@ function renderMain() {
   const dayHeader = totalDays ? displayDayProgressHeader(totalDays) : `Day —/${DISPLAY_TOTAL_DAYS}`;
   return `
 <div class="hdr">
-  <div class="hdr-day"><button class="hdr-day-recap-trigger" type="button" data-final-recap-trigger>${dayHeader}</button></div>
+  <div class="hdr-day"><button class="hdr-day-recap-trigger" type="button" data-final-recap-trigger><span class="hdr-day-badge">${dayHeader}</span></button></div>
   ${get3DLogoHTML()}
   <div class="hdr-right">
     <div class="hdr-wrap">Wrap <span class="hdr-wrap-time ${wrapStatusClass}">${esc(estWrap)}</span></div>
@@ -8399,7 +8399,7 @@ async function showPreview() {
 
   app.innerHTML = `
 <div class="hdr">
-  <div class="hdr-day">${displayDayProgressHeader(totalDays)} Preview</div>
+  <div class="hdr-day"><span class="hdr-day-badge">${displayDayProgressHeader(totalDays)}</span> Preview</div>
   ${get3DLogoHTML()}
   <div class="hdr-right">
     <div class="hdr-wrap">Wrap <span class="hdr-wrap-time live">${esc(savedWrap)}</span></div>
