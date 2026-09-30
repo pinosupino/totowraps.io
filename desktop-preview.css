@@ -284,6 +284,7 @@ body.desktop-preview-active #app > .desktop-live-bar,
   .desktop-clock {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: 2px;
   }
 
@@ -300,13 +301,14 @@ body.desktop-preview-active #app > .desktop-live-bar,
   .desktop-est-wrap strong {
     display: inline-flex;
     align-items: center;
+    width: fit-content;
     padding: 6px 16px;
     border-radius: var(--radius-pill);
-    background: var(--secondary);
+    background: rgba(var(--secondary-rgb), .82);
     color: var(--bg);
-    font-family: 'Jost', sans-serif;
+    font-family: 'Goldbill XS', serif;
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1;
     letter-spacing: .04em;
     text-transform: uppercase;
