@@ -65,7 +65,7 @@ const CUSTOM_UI_TEXT = {
   noWinner: "Nobody wins, everybody's happy!",
 
   forgotBet:
-    'This assassin forgot to bet today',
+    'This player forgot to bet today',
 
   playerCountSingular:
     'PLAYER PLAYING',

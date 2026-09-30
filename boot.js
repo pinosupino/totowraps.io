@@ -29,13 +29,15 @@
     'TotoWrap is love, TotoWrap is life.',
     'La ludopatia è un problema solo se perdi!',
     'You miss 100% of the bets you don’t place.',
-    'Your strategy is so confusing that it fooled even you.',
     '<span class="boot-phrase-right">"Questa <u>non</u> è una dittatura!"</span>',
     'I love the smell of TotoWrap in the morning',
     'Facciamo un referendum?',
     'Viva la Edocrazia!',
-    'Vita sprecata che sei...',
-    'Mancano 2 setup'
+    'Che vita sprecata...',
+    'Mancano 2 setup',
+    'La Federazione ti vuole bene',
+    'La Federazione ti dà il benvenuto',
+    'La Federazione è magnanima'
   ];
 
   const PLAYER_BOOT_PHRASES = [
