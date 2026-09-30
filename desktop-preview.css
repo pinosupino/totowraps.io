@@ -306,7 +306,7 @@ body.desktop-preview-active #app > .desktop-live-bar,
     border-radius: var(--radius-pill);
     background: rgba(var(--secondary-rgb), .82);
     color: var(--bg);
-    font-family: 'Goldbill XS', serif;
+    font-family: 'Source Serif 4', serif;
     font-size: 1rem;
     font-weight: 700;
     line-height: 1;
