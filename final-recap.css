@@ -1348,3 +1348,8 @@ html.android-glass-fallback .final-recap :is(
 }
 
 * { font-family: 'Source Serif 4', serif !important; }
+
+
+* {
+    font-family: "Source Serif 4", Georgia, serif !important;
+}

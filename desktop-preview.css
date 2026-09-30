@@ -443,3 +443,8 @@ body.desktop-preview-active #app > .desktop-live-bar,
 }
 
 * { font-family: 'Goldbill XS', serif !important; }
+
+
+* {
+    font-family: "Source Serif 4", Georgia, serif !important;
+}

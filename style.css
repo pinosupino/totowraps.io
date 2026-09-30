@@ -1147,3 +1147,8 @@ img[src*="assassinalpha"] { display: none !important; }
 .hdr-wrap-time.off  { color: #ffb3b3; }
 
 * { font-family: 'Goldbill XS', serif !important; }
+
+
+* {
+    font-family: "Source Serif 4", Georgia, serif !important;
+}
