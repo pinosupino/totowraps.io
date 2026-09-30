@@ -1,12 +1,11 @@
 # TotoSWrap
 
-TotoSWrap è una web application per la gestione di pronostici sportivi, ispirata al progetto TotoWrap ma sviluppata come progetto indipendente.
+TotoWraps è una web application per la gestione di pronostici sportivi, ispirata al progetto TotoWrap ma sviluppata come progetto indipendente.
 
 ## Obiettivo
 
 L'obiettivo del progetto è mantenere tutte le funzionalità di TotoWrap introducendo:
 
-- nuovo branding (TotoSWrap)
 - nuovo database Firebase
 - nuova grafica
 - nuove regole di gioco
