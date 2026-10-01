@@ -304,8 +304,8 @@ body.desktop-preview-active #app > .desktop-live-bar,
     width: fit-content;
     padding: 6px 16px;
     border-radius: var(--radius-pill);
-    background: rgba(var(--secondary-rgb), .82);
-    color: var(--bg);
+    background: var(--secondary-container);
+    color: var(--on-secondary-container);
     font-family: 'Source Serif 4', serif;
     font-size: 1rem;
     font-weight: 700;
@@ -314,8 +314,8 @@ body.desktop-preview-active #app > .desktop-live-bar,
     text-transform: uppercase;
   }
 
-  .desktop-est-wrap strong.live { color: #9be79f; }
-  .desktop-est-wrap strong.off  { color: #ffb3b3; }
+  .desktop-est-wrap strong.live { color: #1C6B3A; }
+  .desktop-est-wrap strong.off  { color: #A4293D; }
 
   .desktop-day-trigger {
     width: fit-content;
@@ -442,9 +442,3 @@ body.desktop-preview-active #app > .desktop-live-bar,
   }
 }
 
-* { font-family: 'Goldbill XS', serif !important; }
-
-
-* {
-    font-family: "Source Serif 4", Georgia, serif !important;
-}
