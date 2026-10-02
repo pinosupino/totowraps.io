@@ -298,3 +298,12 @@ html.dark-mode .theme-toggle-desktop {
   height: 42px !important;
   margin: 0 !important;
 }
+
+/* Dark-mode polish 2026-10-02 */
+html.dark-mode .hdr-wrap-time.live { color: #7DCEA0 !important; }
+html.dark-mode .big-clock,
+html.dark-mode .js-clock,
+html.dark-mode .accent.js-clock {
+  text-shadow: none !important;
+  filter: none !important;
+}

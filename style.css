@@ -1293,3 +1293,40 @@ html.dark-mode .hdr-wrap-time.live {
 html.dark-mode .hdr-wrap-time.off {
   color: #A4293D !important;
 }
+
+/* UI polish 2026-10-02 */
+:root { --wrap-green-readable: #62B982; }
+.hdr-wrap-time.live,
+.accent.hdr-wrap-time.live { color: var(--wrap-green-readable) !important; }
+
+/* Keep Cancel Unit clear of the card below it. */
+#cancel-unit-btn { margin-bottom: 12px; }
+#cancel-unit-btn.parent, .center:has(> #cancel-unit-btn) { margin-bottom: 12px; }
+
+/* Live-unit labels stay flat/clean in idle and selected states. */
+.live-unit-option-name,
+.live-unit-option-wrap,
+.live-unit-option.on .live-unit-option-name,
+.live-unit-option.on .live-unit-option-wrap {
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 transparent;
+  box-shadow: none !important;
+  background-image: none !important;
+  text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Settings points: remove browser-native spinner so it cannot collide with the value. */
+.settings-points-input {
+  text-align: center;
+  padding-left: 8px;
+  padding-right: 8px;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.settings-points-input::-webkit-inner-spin-button,
+.settings-points-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
