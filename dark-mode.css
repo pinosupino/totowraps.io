@@ -282,3 +282,19 @@ html.dark-mode .theme-toggle-desktop {
   left: 18px;
   bottom: 18px;
 }
+
+/* Theme toggle: one permanent position in every mode and viewport. */
+.theme-toggle,
+.theme-toggle-desktop,
+html.dark-mode .theme-toggle,
+html.dark-mode .theme-toggle-desktop {
+  position: fixed !important;
+  z-index: 12000 !important;
+  top: auto !important;
+  right: auto !important;
+  left: 18px !important;
+  bottom: 18px !important;
+  width: 42px !important;
+  height: 42px !important;
+  margin: 0 !important;
+}

@@ -82,7 +82,7 @@ const CUSTOM_UI_TEXT = {
   finalTerritory: (names, time) => `
       <div>
         C'mon ${names}, it's not over until it's over!<br>
-        Just keep running little assassin, you have ${time} left!
+        Just keep running, you have ${time} left!
       </div>
     `,
 
@@ -106,15 +106,6 @@ const CUSTOM_UI_ASSETS = {
   logoPrimary: 'imgs/totowrap.png',
   logoSecondary: 'imgs/totoswrap.png',
 
-  playerFallback: 'imgs/assassin.png',
-
-  shareWatermark: 'imgs/assassin.png',
-
-  accuracyWinMarker: 'imgs/assassin.png',
-
-  playerNameIcon: 'imgs/assassinalpha.png',
-  playerGuessIcon: 'imgs/assassinalphaGUESS.png',
-  playerOutIcon: 'imgs/assassinalphaOUT.png',
 };
 
 const _logoStartedAt = performance.now();
@@ -1044,7 +1035,7 @@ function formatNames(names) {
 
 function faceIconSrc(name) {
   const fileBase = String(name || '').replace(/[.\s]/g, '');
-  return fileBase ? `faceicons/${encodeURIComponent(fileBase)}.png` : CUSTOM_UI_ASSETS.playerFallback;
+  return fileBase ? `faceicons/${encodeURIComponent(fileBase)}.png` : '';
 }
 
 function getLatestWinningHistoryEntry() {
@@ -1178,8 +1169,8 @@ function renderPreviousWinnerTag(day) {
   const validNames = names.filter(Boolean);
   if (!validNames.length) return '';
 
-  const plainLabel = `LAST ${validNames.length > 1 ? 'WINNERS' : 'WINNER'}: ${formatNames(validNames)} 🦈`;
-  const htmlLabel = `LAST ${validNames.length > 1 ? 'WINNERS' : 'WINNER'}: ${formatSafeNames(validNames)} <img class="player-name-icon" src="${esc(CUSTOM_UI_ASSETS.playerNameIcon)}" alt="">`;
+  const plainLabel = `LAST ${validNames.length > 1 ? 'WINNERS' : 'WINNER'}: ${formatNames(validNames)}`;
+  const htmlLabel = `LAST ${validNames.length > 1 ? 'WINNERS' : 'WINNER'}: ${formatSafeNames(validNames)}`;
   const marqueeItems = Array.from({ length: 4 }, (_, idx) =>
     `<span class="prev-winner-item"${idx ? ' aria-hidden="true"' : ''}>${htmlLabel}</span>`
   ).join('');
@@ -3076,24 +3067,20 @@ function refreshStatusBadges() {
       if (el instanceof HTMLButtonElement) el.disabled = true;
       if (nameTextEl && nameEmojiEl) {
         nameTextEl.textContent = g.name;
-        nameEmojiEl.innerHTML = `<img class="player-name-icon" src="${esc(CUSTOM_UI_ASSETS.playerOutIcon)}" alt="">`;
+        nameEmojiEl.innerHTML = '';
       } else {
-        nameEl.innerHTML = `${esc(g.name)}<img class="player-name-icon" src="${esc(CUSTOM_UI_ASSETS.playerOutIcon)}" alt="">`;
+        nameEl.textContent = g.name;
       }
     }
     else{
       playerRow?.classList.remove('territory-ended');
       el.className = el instanceof HTMLButtonElement && IS_ADMIN ? 'badge b-in current-bet-edit-action' : 'badge b-in';
       el.textContent='IN';
-      const playerStateIcon = g.time
-        ? CUSTOM_UI_ASSETS.playerNameIcon
-        : CUSTOM_UI_ASSETS.playerGuessIcon;
-
       if (nameTextEl && nameEmojiEl) {
         nameTextEl.textContent = g.name;
-        nameEmojiEl.innerHTML = `<img class="player-name-icon" src="${esc(playerStateIcon)}" alt="">`;
+        nameEmojiEl.innerHTML = '';
       } else {
-        nameEl.innerHTML = `${esc(g.name)}<img class="player-name-icon" src="${esc(playerStateIcon)}" alt="">`;
+        nameEl.textContent = g.name;
       }
     }
   });
@@ -3507,7 +3494,7 @@ function renderDesktopProjectProgress() {
         </span>
       </span>
       <span class="desktop-project-progress-face desktop-project-progress-back">
-        <img src="${esc(faceIconSrc(winnerName))}" alt="" onerror="this.onerror=null;this.src='${esc(CUSTOM_UI_ASSETS.playerFallback)}'">
+        <img src="${esc(faceIconSrc(winnerName))}" alt="" onerror="this.remove()">
       </span>
     </span>
   </button>`;
@@ -3674,7 +3661,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
           return `
           <div class="row">
             <div class="row-name" data-today-accuracy-player="${esc(g.name)}">
-	              <span>${esc(g.name)}<img class="player-name-icon" src="${esc(g.time ? CUSTOM_UI_ASSETS.playerOutIcon : CUSTOM_UI_ASSETS.playerGuessIcon)}" alt=""></span>
+	              <span>${esc(g.name)}</span>
               ${g.time ? st.pill : ''}
             </div>
             ${g.time ? `
@@ -3708,19 +3695,12 @@ function renderCompletedToday(t, canStartNextDay=false) {
       const isWinner = todayWinnerNames.includes(g.name);
       const penalty = penaltiesByPlayer.get(nameKey(g.name));
       const penaltyStatus = todayPenaltyStatus(penalty);
-      const resultPlayerIcon = isWinner
-        ? CUSTOM_UI_ASSETS.playerNameIcon
-        : (
-            g.time
-              ? CUSTOM_UI_ASSETS.playerOutIcon
-              : CUSTOM_UI_ASSETS.playerGuessIcon
-          );
       const prob = g.time ? getWinProbability(g.name, t.guesses, t) : null;
 
       return `
       <div class="row${isWinner ? ' golden-winner-row' : ''}">
         <div class="row-name" data-today-accuracy-player="${esc(g.name)}">
-	          <span><span${isWinner ? ' class="today-result-winner-name"' : ''}>${esc(g.name)}</span><img class="player-name-icon" src="${esc(resultPlayerIcon)}" alt=""></span>
+	          <span><span${isWinner ? ' class="today-result-winner-name"' : ''}>${esc(g.name)}</span></span>
           ${g.time ? st.pill : ''}
         </div>
         
@@ -3881,15 +3861,6 @@ async function renderShareResultBlob() {
   bg.addColorStop(1, '#E8E2AA');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, imageSize, imageSize);
-
-  const canImg = await loadShareImage(CUSTOM_UI_ASSETS.shareWatermark);
-  if (canImg) {
-    ctx.save();
-    ctx.globalAlpha = .14;
-    const size = 620;
-    ctx.drawImage(canImg, (imageSize - size) / 2, 214, size, size);
-    ctx.restore();
-  }
 
   ctx.strokeStyle = `rgba(${yellowRgb},.22)`;
   ctx.lineWidth = 3;
@@ -4058,7 +4029,7 @@ function renderActiveTodayRows(t, sg, out, slices) {
     <div class="row${boundaryInfo ? ' row-with-boundary' : ''}${isOut ? ' territory-ended' : ''}">
       <div class="row-name row-name-stack${activeNames.has(g.name) ? ' territory-active' : ''}" data-today-accuracy-player="${esc(g.name)}">
         <div class="row-name-main">
-          <span id="name-span-${playerId}"><span class="today-live-name-text">${esc(g.name)}</span><span class="today-live-name-emoji"><img class="player-name-icon" src="${esc(isOut ? CUSTOM_UI_ASSETS.playerOutIcon : (!g.time ? CUSTOM_UI_ASSETS.playerGuessIcon : CUSTOM_UI_ASSETS.playerNameIcon))}" alt=""></span></span>
+          <span id="name-span-${playerId}"><span class="today-live-name-text">${esc(g.name)}</span><span class="today-live-name-emoji"></span></span>
           ${g.time ? st.pill : ''}
         </div>
         ${boundaryInfo ? `<div class="row-boundary">${boundaryInfo}</div>` : ''}
@@ -4760,9 +4731,7 @@ function renderBoardCloseness(pl) {
   }).join('');
   const markerHtml = points.map(point => {
     const pos = pointPosition(point);
-    const marker = point.won
-      ? `<img class="closeness-win-marker" src="${esc(CUSTOM_UI_ASSETS.accuracyWinMarker)}" alt="" aria-hidden="true">`
-      : `<span class="closeness-dot" style="background:${colorOf(point.name)};"></span>`;
+    const marker = `<span class="closeness-dot" style="background:${colorOf(point.name)};"></span>`;
     return `<a class="closeness-marker" href="#history-${encodeURIComponent(point.date)}" data-closeness-date="${esc(point.date)}" data-closeness-unit="${esc(point.unit)}" style="left:${pos.left.toFixed(2)}%; top:${pos.top.toFixed(2)}%;" title="${esc(point.name)} - ${esc(formatBoardExactCompactGap(point.gap))} off on ${esc(displayDayLabel(point.day + 1))}" aria-label="Open ${esc(displayDayLabel(point.day + 1))} in history">
       ${marker}
     </a>`;
@@ -4917,7 +4886,7 @@ function renderBoard(view=_boardView) {
   return `<div class="board-player${isOpen ? ' open' : ''}">
     <div class="board-row">
       <div class="board-rank${medalRankClass}">${rank}</div>
-      <button class="board-player-name" type="button" data-board-player="${esc(openKey)}"><span>${esc(p.name)}</span><img class="board-player-icon" src="${esc(CUSTOM_UI_ASSETS.playerNameIcon)}" alt=""></button>
+      <button class="board-player-name" type="button" data-board-player="${esc(openKey)}"><span>${esc(p.name)}</span></button>
       <div class="board-player-wins">${wins} ${countWord(wins, 'game', 'games')} won</div>
       <div class="board-player-points accent"><strong>${score}</strong><span class="mono dim">${countWord(score, 'pt', 'pts')}</span></div>
     </div>

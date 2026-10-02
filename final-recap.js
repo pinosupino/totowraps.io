@@ -642,7 +642,7 @@
       : '<div class="final-recap-empty">Nobody landed an exact bet.</div>';
     return [
       screen('TotoSWrap final recap',openingTitle,openingCopy,'','final-recap-opening-screen'),
-      screen('The project in numbers',projectDayTitle,'',`<div class="final-recap-stat-grid">${stat(players,word(players,'Assassin played','Assassins played'))}${stat(data.totalBets,word(data.totalBets,'Bet placed','Bets placed'))}${stat(data.totalForgot,word(data.totalForgot,'Forgotten bet','Forgotten bets'))}</div>`),
+      screen('The project in numbers',projectDayTitle,'',`<div class="final-recap-stat-grid">${stat(players,word(players,'Player','Players'))}${stat(data.totalBets,word(data.totalBets,'Bet placed','Bets placed'))}${stat(data.totalForgot,word(data.totalForgot,'Forgotten bet','Forgotten bets'))}</div>`),
       screen('Perfect timing',`<span class="final-recap-number">${data.exactDays}</span> exact ${word(data.exactDays,'bet','bets')}`,'',exactCards,'final-recap-exact-screen'),
       screen('Nobody won',`<span class="final-recap-number">${data.noWinnerEntries.length}</span> no-winner ${word(data.noWinnerEntries.length,'day','days')}`,'Expected wrap compared with the official wrap.',noWinnerRows(data.noWinnerEntries)),
       screen('Accuracy award',accuracyTitle('Most accurate'),accuracyCopy,`<div class="final-recap-stat-grid">${stat(compactTime(data.mostAccurate?.avgGap),'Average distance')}${stat(data.mostAccurate?.bets || 0,word(data.mostAccurate?.bets || 0,'Bet measured','Bets measured'))}${stat(data.mostAccurate?.wins || 0,word(data.mostAccurate?.wins || 0,'Win','Wins'))}</div>${runnerUpRows(data.mostAccurateRanking,player => compactTime(player.avgGap))}`,'final-recap-accuracy-screen',accuracyName(data.mostAccurate,'is-green')),
@@ -674,7 +674,7 @@
         ${reactionCard('Loser','media/giulia-loss.MP4','red')}
       </div>`),
       screen('The race for first','Leaderboard lead changes',`${data.leadChanges.length} ${word(data.leadChanges.length,'change','changes')} at the top of the standings.`,leadChangeRows(data.leadChanges),'final-recap-lead-screen'),
-      screen('Final standings','The podium','Third place. Second place. And the winning assassin.',podiumHtml),
+      screen('Final standings','The podium','Third place. Second place. And the winner.',podiumHtml),
       screen('','Thank you!','',`${thankYouStandings(data)}<button class="final-recap-replay" type="button" data-recap-replay>Rewatch recap again</button>`,'final-recap-shirt-screen')
     ];
   }

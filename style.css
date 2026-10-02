@@ -1097,13 +1097,11 @@ html.android-glass-fallback :is(.result-share-panel,.admin-dialog-panel) {
   .hist-unit-label-mobile { display: inline; }
 }
 
-/* Icone assassin accanto ai nomi: nascoste */
+/* Player name icon placeholders */
 .player-name-icon,
 .board-player-icon,
 .today-live-name-emoji { display: none !important; }
 
-/* Qualsiasi icona assassin accanto ai nomi */
-img[src*="assassinalpha"] { display: none !important; }
 
 /* --- Profondita' e coerenza visiva --- */
 .btn {
