@@ -179,3 +179,106 @@ html.dark-mode .compact-preview-card { color: var(--text); }
 .prev-winner-item { color: #43885A; }
 html.dark-mode .prev-winner-item,
 html.dark-mode .prev-winner-tag { color: #A8E6B5; }
+
+
+/* Cross-device dark theme: keep the same neutral, iOS-like charcoal palette on Android, iPhone and desktop. */
+html.dark-mode {
+  color-scheme: dark;
+  --bg: #1c1c1e;
+  --bg3: #2c2c2e;
+  --bg4: #3a3a3c;
+  --border: #48484a;
+  --text: #f5f5f7;
+  --dim: #b8b8bd;
+  --neutral: #b8b8bd;
+  --neutral-rgb: 184, 184, 189;
+  --yellow: #f5f5f7;
+  --yellow-rgb: 245, 245, 247;
+  --accent: #f5f5f7;
+  --accent2: #f5f5f7;
+  --bg-glass: rgba(44, 44, 46, .96);
+  --border-glass: rgba(255,255,255,.12);
+  --secondary: #d1b5c4;
+  --secondary-rgb: 209, 181, 196;
+  --secondary-container: #493640;
+  --secondary-container-rgb: 73, 54, 64;
+  --on-secondary-container: #f4e5ec;
+  --surface-container: #2c2c2e;
+}
+
+html.dark-mode body,
+html.dark-mode #app,
+html.dark-mode #app > .hdr,
+html.dark-mode #app > .nav,
+html.dark-mode #app > .desktop-live-bar,
+html.dark-mode .desktop-live-bar,
+html.dark-mode .tab-viewport,
+html.dark-mode .tab-strip,
+html.dark-mode .sec,
+html.dark-mode .standalone-scroll {
+  background-color: var(--bg) !important;
+  color: var(--text);
+}
+html.dark-mode .desktop-live-bar {
+  background: rgba(28,28,30,.96) !important;
+  border-color: var(--border) !important;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html.dark-mode .hdr,
+html.dark-mode .nav,
+html.dark-mode .tab-viewport,
+html.dark-mode .tab-strip,
+html.dark-mode .sec,
+html.dark-mode .standalone-scroll {
+  border-color: var(--border);
+}
+
+/* Android has a no-blur fallback in the light theme; override those opaque light gradients in dark mode. */
+html.dark-mode.android-glass-fallback .card,
+html.dark-mode.android-glass-fallback .bet-close-card.is-open,
+html.dark-mode.android-glass-fallback .bet-close-card.is-closed,
+html.dark-mode.android-glass-fallback .board-player-stats,
+html.dark-mode.android-glass-fallback .weekday-message-banner,
+html.dark-mode.android-glass-fallback .winner-banner,
+html.dark-mode.android-glass-fallback .winner-banner.no-winner-banner,
+html.dark-mode.android-glass-fallback .result-share-panel,
+html.dark-mode.android-glass-fallback .admin-dialog-panel {
+  background: var(--bg3) !important;
+  background-image: none !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html.dark-mode .winner-banner {
+  background: linear-gradient(135deg, rgba(168,230,181,.10), rgba(44,44,46,.98)) !important;
+}
+html.dark-mode .winner-banner.no-winner-banner,
+html.dark-mode .bet-close-card.is-closed {
+  background: linear-gradient(135deg, rgba(255,69,88,.09), var(--bg3)) !important;
+}
+html.dark-mode .board-stat,
+html.dark-mode .bet-close-card,
+html.dark-mode .preview-card,
+html.dark-mode .compact-preview-card,
+html.dark-mode .live-unit-option-wrap,
+html.dark-mode .inp-wrap,
+html.dark-mode .result-share-time,
+html.dark-mode .admin-dialog-input-wrap,
+html.dark-mode .result-share-close,
+html.dark-mode .admin-dialog-close,
+html.dark-mode .accuracy-zoom-reset,
+html.dark-mode .crazy-day-toggle,
+html.dark-mode .crazy-penalty-input-wrap {
+  background: var(--bg4) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+html.dark-mode .theme-toggle-desktop {
+  top: auto;
+  right: auto;
+  left: 18px;
+  bottom: 18px;
+}
