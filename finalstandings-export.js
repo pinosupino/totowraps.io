@@ -34,12 +34,12 @@
     if (!lines.length) return;
     let fontSize = maxFontSize;
     while (fontSize > minFontSize) {
-      ctx.font = `bold ${fontSize}px 'Goldbill XS', sans-serif`;
+      ctx.font = `bold ${fontSize}px 'Google Sans Flex', sans-serif`;
       const widest = Math.max(...lines.map(line => ctx.measureText(line).width));
       if (widest <= maxWidth) break;
       fontSize -= 2;
     }
-    ctx.font = `bold ${fontSize}px 'Goldbill XS', sans-serif`;
+    ctx.font = `bold ${fontSize}px 'Google Sans Flex', sans-serif`;
     const step = fontSize + lineGap;
     const top = y - ((lines.length - 1) * step) / 2;
     lines.forEach((line, index) => ctx.fillText(line, x, top + index * step));
@@ -176,7 +176,7 @@
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Could not create image');
     ctx.textBaseline = 'middle';
-    ctx.font = "bold 52px 'Goldbill XS', sans-serif";
+    ctx.font = "bold 52px 'Google Sans Flex', sans-serif";
 
     if (options.background) {
       ctx.fillStyle = options.background;
@@ -201,7 +201,7 @@
       } else {
         ctx.fillStyle = yellow;
         ctx.textAlign = 'center';
-        ctx.font = "bold 150px 'Goldbill XS', sans-serif";
+        ctx.font = "bold 150px 'Google Sans Flex', sans-serif";
         ctx.fillText('TotoSWrap', canvas.width / 2, 300);
       }
     }
@@ -222,14 +222,14 @@
       ctx.stroke();
 
       ctx.fillStyle = navy;
-      ctx.font = "bold 112px 'Goldbill XS', sans-serif";
+      ctx.font = "bold 112px 'Google Sans Flex', sans-serif";
       ctx.textAlign = 'center';
       ctx.fillText(entry.rank, left + 140, y + podiumHeight / 2);
       ctx.textAlign = 'left';
       fitNames(ctx, entry.players.map(player => player.name), left + 280, y + podiumHeight / 2, 1080, 96, 48, 8);
-      ctx.font = "bold 42px 'Goldbill XS', sans-serif";
+      ctx.font = "bold 42px 'Google Sans Flex', sans-serif";
       ctx.fillText(`${entry.wins} ${countWord(entry.wins, 'GAME', 'GAMES')} WON`, left + 1540, y + podiumHeight / 2);
-      ctx.font = "bold 82px 'Goldbill XS', sans-serif";
+      ctx.font = "bold 82px 'Google Sans Flex', sans-serif";
       ctx.fillText(`${entry.score} ${countWord(entry.score, 'PT', 'PTS')}`, left + 2050, y + podiumHeight / 2);
       y += podiumHeight + podiumGap;
     });
@@ -253,14 +253,14 @@
         ctx.stroke();
         ctx.fillStyle = neutral;
         ctx.textAlign = 'center';
-        ctx.font = "bold 48px 'Goldbill XS', sans-serif";
+        ctx.font = "bold 48px 'Google Sans Flex', sans-serif";
         ctx.fillText(entry.rank, x + 55, rowY + rowHeight / 2);
         ctx.textAlign = 'left';
         fitNames(ctx, [entry.name], x + 120, rowY + rowHeight / 2, 480, 52, 28, 4);
-        ctx.font = "bold 27px 'Goldbill XS', sans-serif";
+        ctx.font = "bold 27px 'Google Sans Flex', sans-serif";
         ctx.fillText(`${entry.wins} ${countWord(entry.wins, 'GAME', 'GAMES')} WON`, x + 660, rowY + rowHeight / 2);
         ctx.fillStyle = yellow;
-        ctx.font = "bold 47px 'Goldbill XS', sans-serif";
+        ctx.font = "bold 47px 'Google Sans Flex', sans-serif";
         ctx.fillText(`${entry.score} ${countWord(entry.score, 'PT', 'PTS')}`, x + 980, rowY + rowHeight / 2);
       });
     });
@@ -269,7 +269,7 @@
     if (zeroNames.length) {
       ctx.fillStyle = neutral;
       ctx.globalAlpha = .68;
-      ctx.font = "bold 42px 'Goldbill XS', sans-serif";
+      ctx.font = "bold 42px 'Google Sans Flex', sans-serif";
       ctx.textAlign = 'center';
       balancedNameLines(ctx, zeroNames, contentWidth - 80).forEach(line => {
         ctx.fillText(line, canvas.width / 2, y);
@@ -282,7 +282,7 @@
       y += 75;
       ctx.fillStyle = yellow;
       ctx.textAlign = 'center';
-      ctx.font = "bold 38px 'Goldbill XS', sans-serif";
+      ctx.font = "bold 38px 'Google Sans Flex', sans-serif";
       ctx.fillText('LA LUDOPATIA È UN PROBLEMA SOLO SE PERDI', canvas.width / 2, y);
     }
 

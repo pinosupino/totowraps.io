@@ -3842,7 +3842,7 @@ function canvasRoundRect(ctx, x, y, width, height, radius) {
 function drawShareText(ctx, text, x, y, maxWidth, maxSize, minSize=28) {
   let size = maxSize;
   while (size > minSize) {
-    ctx.font = `bold ${size}px 'Goldbill XS', sans-serif`;
+    ctx.font = `bold ${size}px 'Google Sans Flex', sans-serif`;
     if (ctx.measureText(text).width <= maxWidth) break;
     size -= 2;
   }
@@ -3903,12 +3903,12 @@ async function renderShareResultBlob() {
   } else {
     ctx.fillStyle = yellow;
     ctx.textAlign = 'left';
-    ctx.font = "bold 50px 'Goldbill XS', sans-serif";
+    ctx.font = "bold 50px 'Google Sans Flex', sans-serif";
     ctx.fillText('TotoWrap', 80, 116);
   }
   ctx.fillStyle = neutral;
   ctx.textAlign = 'right';
-  ctx.font = "bold 27px 'Goldbill XS', sans-serif";
+  ctx.font = "bold 27px 'Google Sans Flex', sans-serif";
   ctx.fillText(`${info.dayLabel} - Estimated Wrap ${info.estWrap}`, 1000, 116);
 
   ctx.strokeStyle = 'rgba(190,180,120,.72)';
@@ -3928,7 +3928,7 @@ async function renderShareResultBlob() {
 
   ctx.textAlign = 'center';
   ctx.fillStyle = neutral;
-  ctx.font = "bold 25px 'Goldbill XS', sans-serif";
+  ctx.font = "bold 25px 'Google Sans Flex', sans-serif";
   ctx.fillText(info.kicker.toUpperCase(), 540, 335 + shareMainY);
   ctx.fillStyle = info.noWinner ? red : yellow;
   drawShareText(ctx, info.name, 540, 415 + shareMainY, 800, info.name.length > 20 ? 72 : 98, 48);
@@ -3947,10 +3947,10 @@ async function renderShareResultBlob() {
     ctx.stroke();
     ctx.textAlign = 'center';
     ctx.fillStyle = neutral;
-    ctx.font = "bold 22px 'Goldbill XS', sans-serif";
+    ctx.font = "bold 22px 'Google Sans Flex', sans-serif";
     ctx.fillText(item.label, x + 226, 632 + shareMainY);
     ctx.fillStyle = yellow;
-    ctx.font = "bold 54px 'Goldbill XS', sans-serif";
+    ctx.font = "bold 54px 'Google Sans Flex', sans-serif";
     ctx.fillText(item.value, x + 226, 696 + shareMainY);
   });
 
@@ -3962,11 +3962,11 @@ async function renderShareResultBlob() {
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
   ctx.fillStyle = yellow;
-  ctx.font = "bold 54px 'Goldbill XS', sans-serif";
+  ctx.font = "bold 54px 'Google Sans Flex', sans-serif";
   ctx.fillText(info.pointsText, 80, 974);
   ctx.textAlign = 'right';
   ctx.fillStyle = neutral;
-  ctx.font = "bold 27px 'Goldbill XS', sans-serif";
+  ctx.font = "bold 27px 'Google Sans Flex', sans-serif";
   ctx.fillText(info.detail.toUpperCase(), 1000, 974);
 
   const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
@@ -4606,7 +4606,7 @@ function renderBoardPie(pl) {
     const transform = rotateLabel ? ` transform="rotate(${rotation} ${lx.toFixed(1)} ${ly.toFixed(1)})"` : '';
     const anchor = rotateLabel ? 'start' : 'middle';
     const labelColor = contrastTextForHex(color);
-    labelSVG += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}"${transform} text-anchor="${anchor}" dominant-baseline="middle" font-family="'Goldbill XS',sans-serif" font-size="${fs}" font-style="italic" fill="${labelColor}" style="pointer-events:none;">${esc(p.name)}</text>`;
+    labelSVG += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}"${transform} text-anchor="${anchor}" dominant-baseline="middle" font-family="'Google Sans Flex',sans-serif" font-size="${fs}" font-style="italic" fill="${labelColor}" style="pointer-events:none;">${esc(p.name)}</text>`;
 
     angle = end;
   });
