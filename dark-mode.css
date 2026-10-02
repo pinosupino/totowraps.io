@@ -338,3 +338,30 @@ html.dark-mode .today-scroll-list .row.golden-winner-row {
   box-shadow: none !important;
 }
 html.dark-mode .today-scroll-list .row.golden-winner-row::before { display:none !important; }
+
+
+/* 2026-10-02: Desktop navigation matches readable mobile dark navigation. */
+@media (min-width:900px) {
+  html.dark-mode body.desktop-preview-active #app > .nav .nav-btn {
+    background:var(--bg3) !important;
+    color:var(--text) !important;
+    border-color:var(--border) !important;
+    text-shadow:none !important;
+    filter:none !important;
+  }
+  html.dark-mode body.desktop-preview-active #app > .nav .nav-btn.on {
+    background:var(--accent) !important;
+    color:#202124 !important;
+    border-color:var(--accent) !important;
+  }
+}
+html.dark-mode .preview-card.compact-preview-card .compact-preview-row {
+  background:var(--bg3) !important;
+  border-color:var(--border) !important;
+  box-shadow:none !important;
+}
+html.dark-mode .preview-card.compact-preview-card .compact-preview-row.is-duplicate {
+  background:rgba(var(--red-rgb),.10) !important;
+  border-color:rgba(var(--red-rgb),.55) !important;
+  box-shadow:inset 3px 0 0 rgba(var(--red-rgb),.72) !important;
+}

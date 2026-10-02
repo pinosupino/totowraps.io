@@ -8386,7 +8386,7 @@ async function showPreview() {
       ${sorted.map(g => {
         const isDup = duplicates.includes(nameKey(g.name));
         return `
-        <div class="row preview-row compact-preview-row" style="${isDup ? 'border-left: 3px solid var(--red); padding-left: 8px;' : ''}">
+        <div class="row preview-row compact-preview-row${isDup ? ' is-duplicate' : ''}">
           <div class="row-name">
             ${esc(g.name)} ${isDup ? '<span class="red" style="font-size:0.5rem; font-weight:bold;">(DUPLICATE)</span>' : ''}
           </div>

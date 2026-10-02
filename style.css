@@ -753,9 +753,9 @@ input::placeholder, textarea::placeholder { color: var(--dim); }
   background:none;
   -webkit-text-fill-color:currentColor;
 }
-.board-rank-1 { color:#800020; }
-.board-rank-2 { color:#9A6A72; }
-.board-rank-3 { color:#b87955; }
+.board-rank-1 { color:#D6B85A; }
+.board-rank-2 { color:#BFC3C9; }
+.board-rank-3 { color:#C58D68; }
 .board-player-name { min-width:0; display:inline-flex; align-items:center; gap:5px; overflow:visible; border:0; background:none; padding:0; color:var(--dim); font-family:'Google Sans Flex', serif; font-size:1.18rem; font-weight: 650; line-height:1; text-align:left; white-space:nowrap; cursor:pointer; }
 .board-player-icon { width:18px; height:18px; flex:0 0 18px; object-fit:contain; }
 .board-player-wins { width:64px; justify-self:start; color:var(--dim); font-family:'Google Sans Flex', serif; font-size:.62rem; line-height:1; white-space:nowrap; text-align:left; }
@@ -1339,3 +1339,22 @@ html.dark-mode .hdr-wrap-time.off {
 }
 .today-scroll-list .row.golden-winner-row::before { display: none !important; }
 
+
+
+/* 2026-10-02: Admin Preview Guesses — uniform contained rows/highlights. */
+.preview-card.compact-preview-card .compact-preview-row {
+  box-sizing:border-box;
+  width:100%;
+  margin:0 0 6px;
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--bg3);
+  overflow:hidden;
+}
+.preview-card.compact-preview-card .compact-preview-row:nth-child(even) { background:var(--bg3); }
+.preview-card.compact-preview-card .compact-preview-row.is-duplicate {
+  border-color:rgba(var(--red-rgb),.52);
+  background:rgba(var(--red-rgb),.07);
+  box-shadow:inset 3px 0 0 rgba(var(--red-rgb),.72);
+}
