@@ -307,3 +307,34 @@ html.dark-mode .accent.js-clock {
   text-shadow: none !important;
   filter: none !important;
 }
+
+/* Flat dark-mode labels and winner presentation. */
+html.dark-mode .winner-banner .winner-sub,
+html.dark-mode .winner-banner .winner-name,
+html.dark-mode .winner-banner .winner-pts {
+  text-shadow: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+html.dark-mode .live-unit-option,
+html.dark-mode .live-unit-option-name,
+html.dark-mode .live-unit-option-wrap,
+html.dark-mode .live-unit-option.on .live-unit-option-name,
+html.dark-mode .live-unit-option.on .live-unit-option-wrap {
+  text-shadow: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  box-shadow: none !important;
+}
+html.dark-mode .live-unit-option:not(.on) .live-unit-option-wrap {
+  background: transparent !important;
+  color: var(--dim) !important;
+  opacity: 1 !important;
+}
+html.dark-mode .today-scroll-list .row.golden-winner-row {
+  border-color: rgba(168,230,181,.30) !important;
+  background: rgba(168,230,181,.075) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+html.dark-mode .today-scroll-list .row.golden-winner-row::before { display:none !important; }

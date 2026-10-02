@@ -1330,3 +1330,12 @@ html.dark-mode .hdr-wrap-time.off {
   -webkit-appearance: none;
   margin: 0;
 }
+
+/* Results geometry polish: winner uses the exact same row box as every result. */
+.today-scroll-list .row.golden-winner-row {
+  overflow: hidden;
+  border: 1px solid rgba(var(--green-rgb), .34);
+  background: rgba(var(--green-rgb), .075);
+}
+.today-scroll-list .row.golden-winner-row::before { display: none !important; }
+
