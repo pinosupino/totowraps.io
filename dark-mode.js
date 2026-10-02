@@ -18,9 +18,26 @@
   applyTheme(dark);
 
   function ensureToggle() {
+    const desktop = document.body?.classList.contains('desktop-preview-active');
+    const existing = document.querySelector('[data-theme-toggle]');
+    if (desktop) {
+      if (existing && existing.classList.contains('theme-toggle-desktop')) return;
+      existing?.remove();
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.themeToggle = '';
+      button.className = 'theme-toggle theme-toggle-desktop';
+      button.textContent = dark ? '☀' : '☾';
+      button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+      button.setAttribute('title', dark ? 'Light mode' : 'Dark mode');
+      button.setAttribute('aria-pressed', String(dark));
+      document.body.appendChild(button);
+      return;
+    }
     const header = document.querySelector('#app .hdr');
     const right = header?.querySelector('.hdr-right');
-    if (!right || right.querySelector('[data-theme-toggle]')) return;
+    if (!right || (existing && right.contains(existing))) return;
+    existing?.remove();
     const button = document.createElement('button');
     button.type = 'button';
     button.dataset.themeToggle = '';

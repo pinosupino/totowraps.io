@@ -116,3 +116,66 @@ html.dark-mode .theme-toggle {
 }
 .theme-toggle:active { transform: scale(.92); }
 .theme-toggle:focus-visible { outline: 2px solid var(--secondary); outline-offset: 2px; }
+
+/* Follow-up: cover hard-coded light surfaces across player, admin and desktop layouts. */
+html.dark-mode .theme-toggle-desktop {
+  position: fixed;
+  z-index: 12000;
+  top: 16px;
+  right: 18px;
+  width: 42px;
+  height: 42px;
+  margin: 0;
+  box-shadow: 0 3px 14px rgba(0,0,0,.28);
+}
+html.dark-mode .theme-toggle-desktop { background:#3a3b40; color:#f5d77a; border-color:#515259; }
+.theme-toggle-desktop { position:fixed; z-index:12000; top:16px; right:18px; width:42px; height:42px; margin:0; box-shadow:0 3px 14px rgba(0,0,0,.12); }
+
+html.dark-mode .bet-close-card.is-open,
+html.dark-mode .bet-close-card.is-closed,
+html.dark-mode .crazy-penalty-input-wrap,
+html.dark-mode .weekday-message-banner,
+html.dark-mode .crazy-day-indicator,
+html.dark-mode .board-player-stats,
+html.dark-mode .board-stat,
+html.dark-mode .board-stat-link:hover,
+html.dark-mode .accuracy-zoom-reset,
+html.dark-mode .result-share-panel,
+html.dark-mode .result-share-close,
+html.dark-mode .result-share-time,
+html.dark-mode .admin-dialog-panel,
+html.dark-mode .admin-dialog-input-wrap,
+html.dark-mode .result-share-winner,
+html.dark-mode .final-recap-card,
+html.dark-mode .final-recap-panel,
+html.dark-mode .final-recap-podium-card,
+html.dark-mode .final-recap-podium-place,
+html.dark-mode .history-card,
+html.dark-mode .settings-card,
+html.dark-mode .board-row,
+html.dark-mode .board-player:nth-child(even) .board-row {
+  background: var(--bg3) !important;
+  background-image: none !important;
+  color: var(--text);
+  border-color: var(--border);
+}
+html.dark-mode .result-share-modal,
+html.dark-mode .admin-dialog-modal { background: rgba(10,11,13,.78); }
+html.dark-mode .result-share-card {
+  background: radial-gradient(circle at 50% 45%, rgba(232,234,237,.05), transparent 31%), #292a2e;
+  color: var(--text);
+}
+html.dark-mode .prev-winner-item { color: #A8E6B5; }
+html.dark-mode .prev-winner-tag { color: #A8E6B5; }
+html.dark-mode .weekday-message-banner,
+html.dark-mode .crazy-day-indicator { background: var(--bg3) !important; }
+html.dark-mode .admin-dialog-action,
+html.dark-mode .result-share-close { background: var(--bg4); color: var(--text); }
+html.dark-mode .live-unit-option-wrap,
+html.dark-mode .inp-wrap,
+html.dark-mode .preview-card,
+html.dark-mode .compact-preview-card { color: var(--text); }
+/* Winner of the previous day: green accent with readable contrast in both themes. */
+.prev-winner-item { color: #43885A; }
+html.dark-mode .prev-winner-item,
+html.dark-mode .prev-winner-tag { color: #A8E6B5; }
