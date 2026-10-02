@@ -1358,3 +1358,56 @@ html.dark-mode .hdr-wrap-time.off {
   background:rgba(var(--red-rgb),.07);
   box-shadow:inset 3px 0 0 rgba(var(--red-rgb),.72);
 }
+
+/* 2026-10-02: Preview Guesses geometry reset — one box model for every state. */
+.preview-card.compact-preview-card {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+.preview-card.compact-preview-card .compact-preview-row,
+.preview-card.compact-preview-card .compact-preview-row.is-duplicate {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  margin: 0 0 8px !important;
+  padding: 8px 10px !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-radius: var(--radius-sm) !important;
+  overflow: hidden !important;
+  background-clip: padding-box !important;
+  transform: none !important;
+}
+.preview-card.compact-preview-card .compact-preview-row::before,
+.preview-card.compact-preview-card .compact-preview-row::after {
+  content: none !important;
+  display: none !important;
+}
+.preview-card.compact-preview-card .compact-preview-row {
+  background: var(--bg3) !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+}
+.preview-card.compact-preview-card .compact-preview-row.is-duplicate {
+  background: rgba(var(--red-rgb), .08) !important;
+  border-color: rgba(var(--red-rgb), .48) !important;
+  box-shadow: none !important;
+}
+.preview-card.compact-preview-card .compact-preview-row .bet-time-input,
+.preview-card.compact-preview-card .compact-preview-row .bet-date-input,
+.preview-card.compact-preview-card .compact-preview-row .b-missing {
+  box-sizing: border-box;
+  min-height: 32px;
+  height: 32px;
+  margin: 0 !important;
+  border-radius: 7px !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* Desktop Wrap uses the exact same live/off colors as mobile. */
+.desktop-est-wrap strong.live { color: var(--wrap-green-readable) !important; }
+.desktop-est-wrap strong.off { color: #A4293D !important; }

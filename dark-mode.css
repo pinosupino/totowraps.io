@@ -365,3 +365,20 @@ html.dark-mode .preview-card.compact-preview-card .compact-preview-row.is-duplic
   border-color:rgba(var(--red-rgb),.55) !important;
   box-shadow:inset 3px 0 0 rgba(var(--red-rgb),.72) !important;
 }
+
+/* Preview Guesses: dark mode keeps the exact same geometry as light mode. */
+html.dark-mode .preview-card.compact-preview-card {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+html.dark-mode .preview-card.compact-preview-card .compact-preview-row {
+  background: var(--bg3) !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
+}
+html.dark-mode .preview-card.compact-preview-card .compact-preview-row.is-duplicate {
+  background: rgba(var(--red-rgb), .10) !important;
+  border-color: rgba(var(--red-rgb), .50) !important;
+  box-shadow: none !important;
+}
