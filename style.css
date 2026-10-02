@@ -1271,3 +1271,25 @@ html:not(.dark-mode) .bet-close-card.is-open::before {
   .hist-details .row-time { width: 45px; min-width: 45px; font-size: .82rem; }
   .hist-details .badge:not(.b-prob) { min-width: 32px; padding-left: 7px; padding-right: 7px; }
 }
+
+/* History winner highlight: keep the highlight exactly inside the row/card shape. */
+.hist-details .row.golden-winner-row {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+.hist-details .row.golden-winner-row::before {
+  inset: 0;
+  border-radius: inherit;
+  box-sizing: border-box;
+}
+
+/* Keep the mobile wrap status colors identical to desktop in both themes. */
+.hdr-wrap-time.live,
+html.dark-mode .hdr-wrap-time.live {
+  color: #1C6B3A !important;
+}
+.hdr-wrap-time.off,
+html.dark-mode .hdr-wrap-time.off {
+  color: #A4293D !important;
+}
