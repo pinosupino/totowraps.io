@@ -1197,3 +1197,77 @@ html:not(.dark-mode) .bet-close-card.is-open::before {
     transform: none;
   }
 }
+
+/* History expanded rows: stable, non-overlapping layout */
+.hist-details .row {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 52px;
+  height: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  margin: 0 0 6px;
+  overflow: hidden;
+}
+.hist-details .row:last-child { margin-bottom: 0; }
+.hist-details .row-name,
+.hist-details .row-name-stack {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+  height: auto;
+  min-height: 34px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 3px;
+  overflow: hidden;
+}
+.hist-details .row-name-main {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: block;
+  line-height: 1.15;
+  overflow: hidden;
+}
+.hist-details .row-name-main > span {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hist-details .row-boundary {
+  width: 100%;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hist-details .b-prob,
+.hist-details .row-time,
+.hist-details .badge:not(.b-prob) {
+  flex: 0 0 auto;
+  align-self: center;
+  transform: none;
+}
+.hist-details .b-prob { width: 44px; min-width: 44px; }
+.hist-details .row-time { width: 50px; min-width: 50px; }
+.hist-details .badge:not(.b-prob) { min-width: 36px; }
+.hist-details .b-history-forgot,
+.hist-details .b-missing {
+  max-width: 112px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 480px) {
+  .hist-details { padding-left: 10px; padding-right: 10px; }
+  .hist-details .row { gap: 7px; padding-left: 8px; padding-right: 8px; }
+  .hist-details .b-prob { width: 38px; min-width: 38px; font-size: .56rem; }
+  .hist-details .row-time { width: 45px; min-width: 45px; font-size: .82rem; }
+  .hist-details .badge:not(.b-prob) { min-width: 32px; padding-left: 7px; padding-right: 7px; }
+}
