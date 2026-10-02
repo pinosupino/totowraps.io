@@ -1137,3 +1137,65 @@ img[src*="assassinalpha"] { display: none !important; }
 .hdr-wrap-time.live { color: #1C6B3A; }
 .hdr-wrap-time.off  { color: #A4293D; }
 
+
+/* Light theme: flat, matte surfaces matching the dark theme's visual language. */
+html:not(.dark-mode) .card,
+html:not(.dark-mode) .bet-close-card.is-open,
+html:not(.dark-mode) .bet-close-card.is-closed,
+html:not(.dark-mode) .board-player-stats,
+html:not(.dark-mode) .board-stat,
+html:not(.dark-mode) .weekday-message-banner,
+html:not(.dark-mode) .crazy-day-indicator,
+html:not(.dark-mode) .winner-banner,
+html:not(.dark-mode) .winner-banner.no-winner-banner,
+html:not(.dark-mode) .result-share-panel,
+html:not(.dark-mode) .admin-dialog-panel,
+html:not(.dark-mode) .final-recap-card,
+html:not(.dark-mode) .final-recap-podium-card,
+html:not(.dark-mode) .settings-card,
+html:not(.dark-mode) .history-card {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+  background-image: none !important;
+}
+html:not(.dark-mode) .card {
+  background: var(--surface-container) !important;
+  border-color: rgba(var(--neutral-rgb), .22);
+}
+html:not(.dark-mode) .bet-close-card.is-open,
+html:not(.dark-mode) .board-player-stats,
+html:not(.dark-mode) .result-share-panel,
+html:not(.dark-mode) .admin-dialog-panel,
+html:not(.dark-mode) .final-recap-card,
+html:not(.dark-mode) .final-recap-podium-card,
+html:not(.dark-mode) .settings-card,
+html:not(.dark-mode) .history-card {
+  background: var(--surface-container) !important;
+}
+html:not(.dark-mode) .bet-close-card.is-closed,
+html:not(.dark-mode) .winner-banner.no-winner-banner {
+  background: rgba(var(--red-rgb), .07) !important;
+}
+html:not(.dark-mode) .winner-banner {
+  background: rgba(var(--green-rgb), .08) !important;
+  box-shadow: none !important;
+}
+html:not(.dark-mode) .board-stat {
+  background: rgba(255,254,253,.55) !important;
+}
+html:not(.dark-mode) .weekday-message-banner {
+  background: var(--surface-container) !important;
+}
+html:not(.dark-mode) .crazy-day-indicator {
+  background: rgba(var(--yellow-rgb), .09) !important;
+}
+html:not(.dark-mode) .bet-close-card.is-open::before {
+  display: none !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  html:not(.dark-mode) .card:hover {
+    box-shadow: none !important;
+    transform: none;
+  }
+}
