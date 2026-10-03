@@ -382,3 +382,21 @@ html.dark-mode .preview-card.compact-preview-card .compact-preview-row.is-duplic
   border-color: rgba(var(--red-rgb), .50) !important;
   box-shadow: none !important;
 }
+
+/* 2026-10-03: keep the TotoWrap background watermark visible in dark mode,
+   matching the light-mode layering. Content scrollers stay transparent so
+   body::before can show through; cards keep their own dark surfaces. */
+html.dark-mode .tab-viewport,
+html.dark-mode .tab-strip,
+html.dark-mode .sec,
+html.dark-mode .standalone-scroll {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+html.dark-mode body::before {
+  display: block !important;
+  opacity: .18 !important;
+  filter: brightness(95%) !important;
+  -webkit-filter: brightness(95%) !important;
+  mix-blend-mode: normal !important;
+}
