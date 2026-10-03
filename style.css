@@ -1411,3 +1411,19 @@ html.dark-mode .hdr-wrap-time.off {
 /* Desktop Wrap uses the exact same live/off colors as mobile. */
 .desktop-est-wrap strong.live { color: var(--wrap-green-readable) !important; }
 .desktop-est-wrap strong.off { color: #A4293D !important; }
+
+/* Pie chart sizing — compact, consistent across themes */
+.board-fixed-card .board-pie-graphic {
+  height: 220px;
+  align-items: center;
+  justify-content: center;
+}
+.board-fixed-card .board-pie-svg {
+  width: 210px;
+  height: 210px;
+  max-width: 100%;
+}
+@media (min-width: 700px) {
+  .board-fixed-card .board-pie-graphic { height: 270px; }
+  .board-fixed-card .board-pie-svg { width: 260px; height: 260px; }
+}

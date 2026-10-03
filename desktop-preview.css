@@ -442,3 +442,21 @@ body.desktop-preview-active #app > .desktop-live-bar,
   }
 }
 
+
+/* Pie chart sizing — desktop override */
+body.desktop-preview-active #app .board-fixed-card .board-pie-graphic {
+  height: 280px;
+}
+body.desktop-preview-active #app .board-fixed-card .board-pie-svg {
+  width: 260px;
+  height: 260px;
+  max-width: 100%;
+}
+body.desktop-preview-active #app .board-fixed-card .board-pie-wrap {
+  grid-template-columns: minmax(280px, 340px) minmax(280px, 1fr);
+  column-gap: 24px;
+}
+body.desktop-preview-active #app .board-pie-wrap .board-legend {
+  height: 280px;
+  max-height: 280px;
+}
