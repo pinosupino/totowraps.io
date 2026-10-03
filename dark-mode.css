@@ -400,3 +400,31 @@ html.dark-mode body::before {
   -webkit-filter: brightness(95%) !important;
   mix-blend-mode: normal !important;
 }
+
+/* 2026-10-03: watermark must sit behind the app in dark mode exactly as in light mode. */
+html.dark-mode #app {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+html.dark-mode body::before {
+  z-index: 0 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: .18 !important;
+  filter: brightness(95%) !important;
+  -webkit-filter: brightness(95%) !important;
+  mix-blend-mode: normal !important;
+}
+html.dark-mode #app { z-index: 2 !important; }
+
+/* Boards: preserve the subtle row-card separation visible in light mode. */
+html.dark-mode .board-row {
+  background: rgba(255,255,255,.035) !important;
+  border: 1px solid rgba(255,255,255,.045) !important;
+  box-shadow: none !important;
+}
+html.dark-mode .board-player:nth-child(even) .board-row {
+  background: rgba(255,255,255,.065) !important;
+  border-color: rgba(255,255,255,.055) !important;
+}
