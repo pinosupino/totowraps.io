@@ -1608,7 +1608,8 @@ function hasRosterDuplicateName(name, ignoreIdx=-1) {
   return S.playerRoster.some((player, idx) => idx !== ignoreIdx && nameKey(player.name) === key);
 }
 
-async function saveS() {
+async function saveS(options = {}) {
+  const forceResetConflict = options.forceResetConflict === true;
   _lastSaveWasConflict = false;
 
   if (stateHasDuplicateNames()) {
@@ -1682,11 +1683,15 @@ async function saveS() {
       const remoteState = snap.exists() ? normalizeState(snap.data()) : null;
       const remoteVersion = remoteState ? Number(remoteState._version) || 0 : 0;
 
-      if (remoteVersion !== localVersion) {
+      if (remoteVersion !== localVersion && !forceResetConflict) {
         const conflict = new Error('State changed on another device');
         conflict.code = 'state-conflict';
         conflict.remoteState = remoteState || normalizeState({});
         throw conflict;
+      }
+
+      if (forceResetConflict) {
+        nextState._version = remoteVersion + 1;
       }
 
       transaction.set(STATE_REF, nextState);
@@ -9227,7 +9232,7 @@ function bindMain() {
         liveGames: {},
         activeUnit: 'main'
       };
-      const saved = await saveS();
+      const saved = await saveS({ forceResetConflict: true });
       if (!saved) { restoreAfterFailedSave(prevS); return; }
       render();
     }
