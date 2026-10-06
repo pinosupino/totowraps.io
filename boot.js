@@ -32,7 +32,6 @@
     '<span class="boot-phrase-right">"Questa <u>non</u> è una dittatura!"</span>',
     'I love the smell of TotoWrap in the morning',
     'Facciamo un referendum?',
-    'Viva la Edocrazia!',
     'Che vita sprecata...',
     'Mancano 2 setup',
     'La Federazione ti vuole bene',
