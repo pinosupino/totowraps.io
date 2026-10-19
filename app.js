@@ -4284,12 +4284,30 @@ function renderTrafficStats() {
     <p class="mono dim traffic-footnote">*Visitors are approximate unique browsers per day, not identified people. Admin visits are excluded. Data starts when tracking is activated. Requires Firestore trafficDaily rules.</p></div>`;
 }
 async function loadTrafficStats() {
-  if (!IS_ADMIN || !currentUser || LOCAL_TEST_MODE) return;
+  if (!IS_ADMIN || LOCAL_TEST_MODE) return;
   trafficLoading=true; trafficError='';
+  if (_tab==='stats') { const el=document.getElementById('tab-stats'); if(el) el.innerHTML=renderTrafficStats(); }
   try {
-    const snap=await getDocs(query(collection(db,TRAFFIC_COLLECTION),orderBy('__name__','desc'),limit(30)));
-    trafficRows=snap.docs.map(d=>({date:d.id,...d.data()}));
-  } catch(e) { trafficError='Unable to read traffic statistics. Check Firestore rules.'; console.warn(e); }
+    // Wait for Firebase Authentication to be ready before reading admin-only data.
+    await auth.authStateReady();
+    const user=auth.currentUser;
+    if (!user) throw new Error('Firebase login missing. Sign out and sign in again.');
+    await user.getIdToken(true);
+    // Fetch individual daily documents rather than listing the entire collection.
+    // This is compatible with Firestore rules that restrict collection queries.
+    const days=Array.from({length:30},(_,i)=>{
+      const d=new Date();
+      d.setDate(d.getDate()-i);
+      return d.toLocaleDateString('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'});
+    });
+    const snapshots=await Promise.all(days.map(day=>getDocFromServer(doc(db,TRAFFIC_COLLECTION,day))));
+    trafficRows=snapshots.filter(snap=>snap.exists()).map(snap=>({date:snap.id,...snap.data()}));
+  } catch(e) {
+    console.warn('TotoWrap traffic statistics read failed:',e);
+    const code=e?.code || 'unknown-error';
+    const email=auth.currentUser?.email || 'not signed in';
+    trafficError=`Unable to read traffic statistics (${code}). Firebase account: ${email}. ${code==='permission-denied'?'Check that this email is authorized in Firestore Rules.':(e?.message||'Please retry.')}`;
+  }
   trafficLoading=false;
   if (_tab==='stats') { const el=document.getElementById('tab-stats'); if(el) el.innerHTML=renderTrafficStats(); bindTrafficRefresh(); }
 }
