@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-import { getFirestore, doc, getDocFromServer, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { getFirestore, doc, getDocFromServer, onSnapshot, runTransaction, setDoc, getDocs, collection, query, orderBy, limit, increment } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -386,7 +386,7 @@ document.addEventListener('resume', () => {
 scheduleVisibleInactivityRefresh();
 
 function getMainTabs() {
-  if (IS_ADMIN && currentUser) return ['today', 'board', 'history', 'settings'];
+  if (IS_ADMIN && currentUser) return ['today', 'board', 'history', 'stats', 'settings'];
   return ['today', 'board', 'history'];
 }
 
@@ -4250,6 +4250,51 @@ function bindPlayerNav() {
   bindLiveUnitSwitcher();
 }
 
+
+// Anonymous, aggregate traffic counters. Requires the Firestore rules in TRAFFIC_SETUP.md.
+const TRAFFIC_COLLECTION = 'trafficDaily';
+let trafficRows = [];
+let trafficError = '';
+let trafficLoading = false;
+function trafficDayKey() { return new Date().toLocaleDateString('en-CA', {timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}); }
+async function trackPublicVisit() {
+  if (IS_ADMIN || LOCAL_TEST_MODE) return;
+  const day = trafficDayKey();
+  const visitKey = 'tw-traffic-visit-' + day;
+  const visitorKey = 'tw-traffic-visitor-' + day;
+  try {
+    if (sessionStorage.getItem(visitKey)) return;
+    const firstToday = !localStorage.getItem(visitorKey);
+    await setDoc(doc(db, TRAFFIC_COLLECTION, day), {
+      visits: increment(1), visitors: increment(firstToday ? 1 : 0), updatedAt: new Date().toISOString()
+    }, {merge:true});
+    sessionStorage.setItem(visitKey, '1');
+    if (firstToday) localStorage.setItem(visitorKey, '1');
+  } catch (error) { console.warn('Traffic analytics unavailable:', error); }
+}
+function renderTrafficStats() {
+  const sum = key => trafficRows.reduce((n,r)=>n+(Number(r[key])||0),0);
+  const today = trafficDayKey();
+  const todayRow = trafficRows.find(r=>r.date===today) || {};
+  const max = Math.max(1,...trafficRows.map(r=>Number(r.visits)||0));
+  const bars = [...trafficRows].slice(0,14).reverse().map(r=>`<div class="traffic-bar-cell" title="${esc(r.date)}: ${Number(r.visits)||0} visits"><span class="traffic-bar" style="height:${Math.max(3,Math.round((Number(r.visits)||0)/max*100))}%"></span><small>${esc(r.date.slice(5))}</small></div>`).join('');
+  return `<div class="traffic-page"><div class="traffic-heading"><div><span class="card-lbl">ADMIN ANALYTICS</span><h2>Site traffic</h2><p class="mono dim">Daily visits · Europe/Rome</p></div><button class="btn" type="button" id="traffic-refresh">Refresh</button></div>
+    <div class="traffic-metrics"><div class="traffic-metric"><span>VISITS TODAY</span><strong>${Number(todayRow.visits)||0}</strong></div><div class="traffic-metric"><span>VISITORS TODAY*</span><strong>${Number(todayRow.visitors)||0}</strong></div><div class="traffic-metric"><span>VISITS · 30 DAYS</span><strong>${sum('visits')}</strong></div><div class="traffic-metric"><span>VISITORS · 30 DAYS*</span><strong>${sum('visitors')}</strong></div></div>
+    <div class="traffic-panel"><h3>Last 14 days</h3>${trafficLoading?'<p class="mono dim">Loading statistics…</p>':trafficError?`<p class="mono dim">${esc(trafficError)}</p>`:bars?`<div class="traffic-bars">${bars}</div>`:'<p class="mono dim">No traffic data yet. Tracking starts after deployment and Firestore setup.</p>'}</div>
+    <p class="mono dim traffic-footnote">*Visitors are approximate unique browsers per day, not identified people. Admin visits are excluded. Data starts when tracking is activated. Requires Firestore trafficDaily rules.</p></div>`;
+}
+async function loadTrafficStats() {
+  if (!IS_ADMIN || !currentUser || LOCAL_TEST_MODE) return;
+  trafficLoading=true; trafficError='';
+  try {
+    const snap=await getDocs(query(collection(db,TRAFFIC_COLLECTION),orderBy('__name__','desc'),limit(30)));
+    trafficRows=snap.docs.map(d=>({date:d.id,...d.data()}));
+  } catch(e) { trafficError='Unable to read traffic statistics. Check Firestore rules.'; console.warn(e); }
+  trafficLoading=false;
+  if (_tab==='stats') { const el=document.getElementById('tab-stats'); if(el) el.innerHTML=renderTrafficStats(); bindTrafficRefresh(); }
+}
+function bindTrafficRefresh() { document.getElementById('traffic-refresh')?.addEventListener('click',loadTrafficStats); }
+
 function renderMain() {
   const totalDays = getInternalProjectDayNumber();
   const estWrap = S.today?.estWrap || '--:--';
@@ -4267,16 +4312,18 @@ function renderMain() {
   <button class="nav-btn ${_tab==='today'?'on':''}" data-tab="today">Today</button>
   <button class="nav-btn ${_tab==='board'?'on':''}" data-tab="board">Boards</button>
   <button class="nav-btn ${_tab==='history'?'on':''}" data-tab="history">History</button>
+  <button class="nav-btn ${_tab==='stats'?'on':''}" data-tab="stats">Stats</button>
   <button class="nav-btn ${_tab==='settings'?'on':''}" data-tab="settings">Settings</button>
   ${renderDesktopProjectProgress()}
 </nav>
 ${renderDesktopLiveBar()}
 
 <div class="tab-viewport">
-  <div class="tab-strip" style="--view-count:4">
+  <div class="tab-strip" style="--view-count:5">
     <section class="sec ${_tab==='today'?'on':''}" id="tab-today" data-view="today">${renderToday()}</section>
     <section class="sec ${_tab==='board'?'on':''}" id="tab-board" data-view="board">${renderBoard(_boardView)}</section>
     <section class="sec ${_tab==='history'?'on':''}" id="tab-history" data-view="history">${renderHistory()}</section>
+    <section class="sec ${_tab==='stats'?'on':''}" id="tab-stats" data-view="stats">${renderTrafficStats()}</section>
     <section class="sec ${_tab==='settings'?'on':''}" id="tab-settings" data-view="settings">${renderSettings()}</section>
   </div>
 </div>`;
@@ -9138,6 +9185,7 @@ async function createNewLiveUnit() {
 }
 
 function bindMain() {
+  bindTrafficRefresh();
   bindLiveUnitSwitcher();
   document
   .getElementById('admin-logout-btn')
@@ -9174,7 +9222,7 @@ function bindMain() {
       window.dispatchEvent(new CustomEvent('totowrap-open-final-recap'));
     });
   });
-  document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>setMainTab(btn.dataset.tab)));
+  document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>{setMainTab(btn.dataset.tab); if(btn.dataset.tab==='stats') loadTrafficStats();}));
   document
     .getElementById('new-day-btn')
     ?.addEventListener(
@@ -9347,3 +9395,6 @@ if (LOCAL_TEST_MODE) {
     }
   });
 }
+
+// Track public sessions without collecting IP addresses or personal identifiers.
+trackPublicVisit();
