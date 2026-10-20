@@ -3761,7 +3761,7 @@ function getShareResultInfo(day, dayNumber=null) {
 function renderShareResultCard(info) {
   return `<article class="result-share-card${info.noWinner ? ' no-winner' : ''}">
     <div class="result-share-top">
-      <div class="result-share-brand"><img src="${CUSTOM_UI_ASSETS.logoPrimary}" alt="TotoWrap"></div>
+      <div class="result-share-brand"><img src="${CUSTOM_UI_ASSETS.logoSecondary}" alt="TotoWrap Upgraded"></div>
       <div class="result-share-meta"><span>${esc(info.dayLabel)}</span><span>-</span><span>Estimated Wrap ${esc(info.estWrap)}</span></div>
     </div>
     <div class="result-share-main">
@@ -3847,13 +3847,16 @@ async function renderShareResultBlob() {
   const info = _shareResultInfo || (S.today?.wrapTime ? getShareResultInfo(S.today) : null);
   if (!info) throw new Error('No completed result');
   if (document.fonts?.ready) await document.fonts.ready.catch(() => {});
-  const yellow = themeVar('--accent', '#1a1a1a');
-  const red = themeVar('--red', '#d65656');
-  const greenRgb = themeVar('--green-rgb', '143,223,106');
-  const redRgb = themeVar('--red-rgb', '214,86,86');
-  const yellowRgb = themeVar('--yellow-rgb', '240,180,40');
-  const neutral = themeVar('--neutral', '#8D5A63');
-  const neutralRgb = themeVar('--neutral-rgb', '184,201,168');
+  // Read the active site's CSS variables so the exported PNG follows Light/Dark mode.
+  const bgColor = themeVar('--bg', '#fffefd');
+  const surfaceColor = themeVar('--surface-container', '#F4F2EC');
+  const textColor = themeVar('--text', '#1a1a1a');
+  const accentColor = themeVar('--accent', '#1a1a1a');
+  const mutedColor = themeVar('--dim', '#666666');
+  const borderColor = themeVar('--border', '#e0dfde');
+  const redColor = themeVar('--red', '#ee0038');
+  const redRgb = themeVar('--red-rgb', '238, 0, 56');
+  const greenRgb = themeVar('--green-rgb', '46, 125, 50');
   const canvas = document.createElement('canvas');
   const imageSize = 1080;
   const exportScale = 2;
@@ -3861,52 +3864,55 @@ async function renderShareResultBlob() {
   canvas.height = imageSize * exportScale;
   const ctx = canvas.getContext('2d');
   ctx.scale(exportScale, exportScale);
-  const bg = ctx.createLinearGradient(0, 0, imageSize, imageSize);
-  bg.addColorStop(0, '#F4EFB4');
-  bg.addColorStop(1, '#E8E2AA');
-  ctx.fillStyle = bg;
+  ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, imageSize, imageSize);
 
-  ctx.strokeStyle = `rgba(${yellowRgb},.22)`;
-  ctx.lineWidth = 3;
-  canvasRoundRect(ctx, 20, 20, 1040, 1040, 22);
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = 2;
+  canvasRoundRect(ctx, 20, 20, 1040, 1040, 24);
   ctx.stroke();
 
   ctx.textBaseline = 'middle';
-  const logoImg = await loadShareImage(CUSTOM_UI_ASSETS.logoPrimary);
+  // The official Upgraded logo, not the plain gold TotoWrap logo.
+  const logoImg = await loadShareImage(CUSTOM_UI_ASSETS.logoSecondary);
   if (logoImg) {
-    ctx.drawImage(logoImg, 80, 84, 220, 69);
+    const maxW = 330;
+    const maxH = 136;
+    const scale = Math.min(maxW / logoImg.naturalWidth, maxH / logoImg.naturalHeight);
+    const w = logoImg.naturalWidth * scale;
+    const h = logoImg.naturalHeight * scale;
+    ctx.drawImage(logoImg, 80, 53 + (136 - h) / 2, w, h);
   } else {
-    ctx.fillStyle = yellow;
+    ctx.fillStyle = redColor;
     ctx.textAlign = 'left';
-    ctx.font = "bold 50px 'Google Sans Flex', sans-serif";
-    ctx.fillText('TotoWrap', 80, 116);
+    ctx.font = "bold 48px 'Google Sans Flex', sans-serif";
+    ctx.fillText('TotoWrap Upgraded', 80, 116);
   }
-  ctx.fillStyle = neutral;
+  ctx.fillStyle = mutedColor;
   ctx.textAlign = 'right';
-  ctx.font = "bold 27px 'Google Sans Flex', sans-serif";
+  ctx.font = "bold 25px 'Google Sans Flex', sans-serif";
   ctx.fillText(`${info.dayLabel} - Estimated Wrap ${info.estWrap}`, 1000, 116);
 
-  ctx.strokeStyle = 'rgba(190,180,120,.72)';
+  ctx.strokeStyle = borderColor;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(80, 168);
-  ctx.lineTo(1000, 168);
+  ctx.moveTo(80, 205);
+  ctx.lineTo(1000, 205);
   ctx.stroke();
 
   const shareMainY = 22;
-  canvasRoundRect(ctx, 80, 238 + shareMainY, 920, 300, 20);
-  ctx.fillStyle = info.noWinner ? `rgba(${redRgb},.14)` : `rgba(${greenRgb},.12)`;
+  canvasRoundRect(ctx, 80, 238 + shareMainY, 920, 300, 24);
+  ctx.fillStyle = surfaceColor;
   ctx.fill();
-  ctx.strokeStyle = info.noWinner ? `rgba(${redRgb},.56)` : `rgba(${greenRgb},.56)`;
+  ctx.strokeStyle = info.noWinner ? redColor : `rgba(${greenRgb},.65)`;
   ctx.lineWidth = 3;
   ctx.stroke();
 
   ctx.textAlign = 'center';
-  ctx.fillStyle = neutral;
+  ctx.fillStyle = mutedColor;
   ctx.font = "bold 25px 'Google Sans Flex', sans-serif";
   ctx.fillText(info.kicker.toUpperCase(), 540, 335 + shareMainY);
-  ctx.fillStyle = info.noWinner ? red : yellow;
+  ctx.fillStyle = info.noWinner ? redColor : accentColor;
   drawShareText(ctx, info.name, 540, 415 + shareMainY, 800, info.name.length > 20 ? 72 : 98, 48);
 
   const times = [
@@ -3915,33 +3921,33 @@ async function renderShareResultBlob() {
   ];
   times.forEach((item, idx) => {
     const x = 80 + idx * 468;
-    canvasRoundRect(ctx, x, 578 + shareMainY, 452, 172, 18);
-    ctx.fillStyle = 'rgba(255,253,208,.58)';
+    canvasRoundRect(ctx, x, 578 + shareMainY, 452, 172, 20);
+    ctx.fillStyle = surfaceColor;
     ctx.fill();
-    ctx.strokeStyle = `rgba(${neutralRgb},.14)`;
+    ctx.strokeStyle = borderColor;
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.textAlign = 'center';
-    ctx.fillStyle = neutral;
+    ctx.fillStyle = mutedColor;
     ctx.font = "bold 22px 'Google Sans Flex', sans-serif";
     ctx.fillText(item.label, x + 226, 632 + shareMainY);
-    ctx.fillStyle = yellow;
+    ctx.fillStyle = textColor;
     ctx.font = "bold 54px 'Google Sans Flex', sans-serif";
     ctx.fillText(item.value, x + 226, 696 + shareMainY);
   });
 
-  ctx.strokeStyle = 'rgba(190,180,120,.72)';
+  ctx.strokeStyle = borderColor;
   ctx.beginPath();
   ctx.moveTo(80, 888);
   ctx.lineTo(1000, 888);
   ctx.stroke();
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
-  ctx.fillStyle = yellow;
+  ctx.fillStyle = accentColor;
   ctx.font = "bold 54px 'Google Sans Flex', sans-serif";
   ctx.fillText(info.pointsText, 80, 974);
   ctx.textAlign = 'right';
-  ctx.fillStyle = neutral;
+  ctx.fillStyle = mutedColor;
   ctx.font = "bold 27px 'Google Sans Flex', sans-serif";
   ctx.fillText(info.detail.toUpperCase(), 1000, 974);
 
