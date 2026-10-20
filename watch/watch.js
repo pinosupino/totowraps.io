@@ -30,7 +30,24 @@ const day=()=>{const unit=state?.activeUnit||'main';return state?.liveGames?.[un
 const roster=()=>Array.isArray(state?.playerRoster)?state.playerRoster:[];
 const guesses=()=>Array.isArray(day()?.guesses)?day().guesses.filter(x=>x?.time):[];
 const sortTime=(a,b)=>String(a.time).localeCompare(String(b.time));
-function render(){if(!state){content.innerHTML='<p class="empty">Waiting for live data…</p>';return}const d=day();if(tab==='today'){
+// Match the mobile header: shoot-day progress, WRAP and its time.
+// Count distinct game dates, just as getProjectGameDates() does on desktop/mobile.
+function isoDate(v){if(!v)return null;const t=String(v).trim();if(/^\d{4}-\d{2}-\d{2}$/.test(t))return t;const m=t.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);return m?`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`:null}
+function renderDayWrapStatus(){
+ const el=document.querySelector('#day-wrap-status');if(!el)return;
+ const d=day(),dates=new Set();
+ (Array.isArray(state?.days)?state.days:[]).forEach(x=>{const date=isoDate(x?.date);if(date)dates.add(date)});
+ Object.values(state?.liveGames||{}).forEach(x=>{const date=isoDate(x?.date);if(date)dates.add(date)});
+ const currentDate=isoDate(d?.date);const ordered=[...dates].sort();
+ const dayNumber=currentDate&&ordered.includes(currentDate)?ordered.indexOf(currentDate)+1:ordered.length;
+ const number=dayNumber||'—';const finished=Boolean(d?.wrapTime);
+ const wrap=finished?d.wrapTime:d?.estWrap;
+ const display= /^\d{1,2}:\d{2}/.test(String(wrap||''))?String(wrap):'--:--';
+ el.classList.toggle('off',finished);el.classList.toggle('live',!finished);
+ el.innerHTML=`<span class="shoot-day">DAY ${esc(number)}/38</span><span class="wrap-word">WRAP</span><strong class="wrap-value">${esc(display)}</strong>`;
+}
+
+function render(){renderDayWrapStatus();if(!state){content.innerHTML='<p class="empty">Waiting for live data…</p>';return}const d=day();if(tab==='today'){
  const done=Boolean(d?.wrapTime);const active=Boolean(d&&!done&&(d.approvedAt||d.guesses?.length));
  if(!d||(!done&&!active)){content.innerHTML='<div class="hero no-game"><div class="big">No active game yet</div></div>';return}
  if(done){content.innerHTML=`<div class="hero"><div class="wrap-result-label">TODAY’S WRAP</div><div class="wrap-result">${esc(d.wrapTime)}</div><div class="sub">${esc(Array.isArray(d.winners)&&d.winners.length?d.winners.map(w=>w.name||w).join(' & '):d.winner||'Official result')}</div></div>`;return}
@@ -41,7 +58,7 @@ function render(){if(!state){content.innerHTML='<p class="empty">Waiting for liv
 }else{const scores=state?.scores||{};const people=roster().map(p=>({name:p.name,score:Number(scores[p.name])||0})).sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name));content.innerHTML='<div class="eyebrow">LEADERBOARD</div>'+(people.length?`<div class="list">${people.map((p,i)=>`<div class="entry"><span>${i+1}. ${esc(p.name)}</span><strong>${p.score} PT</strong></div>`).join('')}</div>`:'<p class="empty">No players yet.</p>')}
 }
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));render()}));
-onSnapshot(doc(db,'totowrap','state'),snap=>{state=snap.exists()?snap.data():{};document.querySelector('#connection').textContent='● CONNECTED';render()},err=>{document.querySelector('#connection').textContent='OFFLINE';content.innerHTML='<p class="empty">Unable to load live data. Check your connection and retry.</p>';console.error('Watch Firebase',err)});
+onSnapshot(doc(db,'totowrap','state'),snap=>{state=snap.exists()?snap.data():{};document.querySelector('#connection-error').hidden=true;render()},err=>{document.querySelector('#connection-error').hidden=false;content.innerHTML='<p class="empty">Unable to load live data. Check your connection and retry.</p>';console.error('Watch Firebase',err)});
 
 // Capture time once, at the moment the admin taps the clock.
 const nowClock=()=>new Date().toLocaleTimeString('en-GB',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});

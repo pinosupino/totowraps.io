@@ -43,3 +43,13 @@ footer{font-size:9px;letter-spacing:.12em;font-weight:800;color:var(--muted);tex
 @media(max-width:280px){.watch-actions button{font-size:10px;min-height:38px;padding:6px 5px}}
 
 #wrap-dialog{position:fixed;inset:0;margin:auto;width:min(88vw,290px);max-height:85dvh;overflow:auto;border:2px solid var(--border);border-radius:30px;background:var(--bg);color:var(--fg);padding:18px;text-align:center;box-shadow:0 0 0 100vmax #0009}#wrap-dialog:not([open]){display:none}#wrap-dialog::backdrop{background:#0009}.dialog-inner{display:grid;gap:10px}#wrap-dialog h2{font-size:17px;margin:0}#wrap-confirm-time{font-size:clamp(22px,8vw,34px);font-weight:900;margin:0;font-variant-numeric:tabular-nums}.dialog-hint{font-size:12px;margin:0}#wrap-confirm,#wrap-cancel{min-height:48px;border-radius:999px;border:1px solid var(--border);font:850 12px 'Google Sans Flex',Arial,sans-serif}#wrap-confirm{background:var(--accent);color:white}#wrap-cancel{background:var(--surface);color:var(--fg)}#wrap-error{font-size:11px;color:var(--accent);margin:0}.clock-wrap{display:block;width:100%;border:2px solid var(--accent);border-radius:22px;background:var(--surface);color:var(--fg);padding:15px 3px;font:900 clamp(24px,9vw,38px) 'Google Sans Flex',Arial,sans-serif;font-variant-numeric:tabular-nums;touch-action:manipulation}.clock-wrap:disabled{border-color:var(--border);opacity:.6}.clock-hint{font-size:11px;color:var(--muted);font-weight:700;margin-top:8px}.wrap-result{font-size:clamp(23px,8vw,35px);font-weight:900}.wrap-result-label{font-size:11px;font-weight:850;letter-spacing:.07em;color:var(--muted)}
+
+/* Mobile-matched shoot day and wrap status, replacing CONNECTED */
+.status{min-height:25px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px}
+.day-wrap-status{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;font-size:clamp(10px,3.3vw,13px);font-weight:850;line-height:1.25;letter-spacing:0}
+.day-wrap-status .shoot-day{color:var(--fg)}
+.day-wrap-status .wrap-word{color:var(--muted);font-size:.85em;letter-spacing:.04em}
+.day-wrap-status .wrap-value{font-size:1.15em;font-weight:900;font-variant-numeric:tabular-nums}
+.day-wrap-status.live .wrap-value{color:#62B982}
+.day-wrap-status.off .wrap-value{color:#A4293D}
+#connection-error{font-size:10px;font-weight:850;color:#A4293D}
