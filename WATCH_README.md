@@ -1,0 +1,1 @@
+TotoWrap Watch Edition: official light/dark palette and Google Sans Flex. Admin shortcut opens the main site, where the existing authenticated wrap workflow remains authoritative. The Watch page itself is read-only. Upload watch/index.html, watch/watch.css, watch/watch.js.
