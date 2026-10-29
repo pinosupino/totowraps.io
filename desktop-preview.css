@@ -442,3 +442,9 @@ body.desktop-preview-active #app > .desktop-live-bar,
   }
 }
 
+
+/* Remove only the two desktop divider lines meeting below the TotoWrap logo. */
+@media (min-width: 900px) {
+  body.desktop-preview-active #app > .hdr { border-right:0; border-bottom:0; }
+  body.desktop-preview-active #app > .nav { border-right:0; }
+}

@@ -68,3 +68,15 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   #app .traffic-bar-cell { flex-basis: 28px; }
   #app .compact-preview-head, #app .compact-preview-row { column-gap: 4px; }
 }
+
+/* 2026-10-29: stable-height danger indicators and overflow-safe names */
+#app .board-row { align-items:center; }
+#app .board-player-name { display:flex; flex-wrap:nowrap; width:100%; min-width:0; overflow:hidden; white-space:nowrap; line-height:1.2; }
+#app .board-player-name-text { display:block; min-width:0; flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#app .danger-label { flex:0 0 auto; display:inline-flex; align-items:center; gap:2px; margin:0; padding:0; background:transparent; color:#c72a38; font-size:clamp(8px,.7vw,10px); line-height:1; letter-spacing:0; font-weight:750; white-space:nowrap; }
+#app .board-player-danger .board-player-name { flex-wrap:nowrap; }
+#app .board-player-wins { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#app .hist-main-info { min-width:0; overflow:hidden; }
+#app .hist-title { flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#app .hist-bet { flex:0 0 auto; }
+@media (max-width:480px) { #app .danger-label { font-size:8px; } #app .board-player-name { font-size:clamp(.82rem,3.3vw,1.04rem); } }
