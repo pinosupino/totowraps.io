@@ -4994,7 +4994,7 @@ function renderBoard(view=_boardView) {
   return `<div class="board-player${isOpen ? ' open' : ''}${danger ? ' board-player-danger' : ''}">
     <div class="board-row">
       <div class="board-rank${medalRankClass}">${rank}</div>
-      <button class="board-player-name" type="button" data-board-player="${esc(openKey)}" title="${esc(p.name)}"><span class="board-player-name-text">${esc(p.name)}</span>${danger ? `<span class="danger-label" title="${missedDays} consecutive shooting days without a bet"><span aria-hidden="true">⚠️</span> ${missedDays} DAYS</span>` : ''}</button>
+      <button class="board-player-name" type="button" data-board-player="${esc(openKey)}" title="${esc(p.name)}"><span class="board-player-name-text">${esc(p.name)}</span>${danger ? `<span class="danger-label" title="${missedDays} consecutive shooting days without a bet"><span aria-hidden="true">⚠️</span> ${missedDays}</span>` : ''}</button>
       <div class="board-player-wins">${wins} ${countWord(wins, 'game', 'games')} won</div>
       <div class="board-player-points accent"><strong>${score}</strong><span class="mono dim">${countWord(score, 'pt', 'pts')}</span></div>
     </div>
