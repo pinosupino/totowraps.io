@@ -5908,20 +5908,7 @@ async function addHistoryPlayerBet(
     return false;
   }
 
-  const duplicateTimeGuess =
-    (target.day.guesses || []).find(guess =>
-      guess?.time &&
-      nameKey(guess.name) !== nameKey(name) &&
-      normalizeHMInput(String(guess.time).trim()) === normalizedBet
-    );
 
-  if (duplicateTimeGuess) {
-    toast(
-      `Bet time ${normalizedBet} is already used by ${duplicateTimeGuess.name}`,
-      'err'
-    );
-    return false;
-  }
 
   const prevS = cloneState();
 
@@ -6203,20 +6190,7 @@ async function addCurrentPlayerBet(name, betTime, betDate='') {
     return false;
   }
 
-  const takenBy = (S.today.guesses || []).find(
-    g =>
-      g !== existingGuess &&
-      g?.time &&
-      normalizeHMInput(String(g.time).trim()) === normalizedBet
-  );
 
-  if (takenBy) {
-    toast(
-      `${normalizedBet} is already taken by ${takenBy.name}`,
-      'err'
-    );
-    return false;
-  }
 
   const prevS = cloneState();
   const finalBetDate =
@@ -6264,20 +6238,7 @@ async function updateCurrentPlayerBet(name, betTime, betDate='') {
     return false;
   }
 
-  const takenBy = (S.today.guesses || []).find(
-    g =>
-      g !== existingGuess &&
-      g?.time &&
-      normalizeHMInput(String(g.time).trim()) === normalizedBet
-  );
 
-  if (takenBy) {
-    toast(
-      `${normalizedBet} is already taken by ${takenBy.name}`,
-      'err'
-    );
-    return false;
-  }
 
   const prevS = cloneState();
   
@@ -8415,7 +8376,7 @@ async function showPreview() {
   
   const duplicates = getDuplicateNameKeys(parsed.map(g => g.name));
   
-  const duplicateTimes = getDuplicateBetTimes(parsed);
+
 
   const duplicateWarning = duplicates.length > 0 
     ? `<div class="card" style="border: 1px solid var(--red); background: rgba(var(--red-rgb), 0.1); margin-bottom: 12px;">
@@ -8425,23 +8386,7 @@ async function showPreview() {
        </div>`
     : '';
 
-  const duplicateTimeWarning = duplicateTimes.length > 0
-    ? `
-      <div class="card" style="border: 1px solid var(--red); background: rgba(var(--red-rgb), 0.1); margin-bottom: 12px;">
-        <p class="red" style="font-weight:bold; font-size:0.8rem; text-align:center;">
-          ⚠️ DUPLICATE BET TIMES DETECTED:<br>
-          ${duplicateTimes.map(item =>
-            `${esc(item.time)} — ${item.names.map(esc).join(', ')}`
-          ).join('<br>')}
-        </p>
-
-        <p class="dim" style="font-size:0.6rem; text-align:center; margin-top:4px;">
-          Each minute can only belong to one player.
-          Edit the duplicated bets below before confirming.
-        </p>
-      </div>
-    `
-    : '';
+  const duplicateTimeWarning = '';
 
   const existingNames = new Set(S.playerRoster.map(p => nameKey(p.name)));
   const newPlayers = [];
@@ -8703,27 +8648,6 @@ async function showPreview() {
       });
 
       if (editedFullList.some(g => !g)) {
-        return;
-      }
-
-      // IMPORTANT:
-      // controlliamo i minuti DOPO le modifiche fatte nella preview.
-      const editedDuplicateTimes =
-        getDuplicateBetTimes(editedFullList);
-
-      if (editedDuplicateTimes.length > 0) {
-
-        const details = editedDuplicateTimes
-          .map(item =>
-            `${item.time}: ${item.names.join(', ')}`
-          )
-          .join(' · ');
-
-        toast(
-          `Duplicate bet time${editedDuplicateTimes.length > 1 ? 's' : ''}: ${details}`,
-          'err'
-        );
-
         return;
       }
 
