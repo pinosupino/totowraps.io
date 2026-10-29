@@ -1,0 +1,6 @@
+TotoWrap update 2026-10-29
+- DANGER class on standings after 3 consecutive completed game dates without a bet. No automatic elimination.
+- Daily visit counts on stats bars, plus average active-day visits, peak day, visits per estimated visitor, and today/yesterday comparison.
+- Three new boot phrases.
+- No Firestore schema or security-rule changes.
+Note: streak is based on all completed historical game days, including days before a player may have joined. Review this policy if roster members joined mid-season.

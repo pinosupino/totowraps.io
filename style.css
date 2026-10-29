@@ -946,24 +946,24 @@ input::placeholder, textarea::placeholder { color: var(--dim); }
 .result-share-close { position:relative; flex:0 0 auto; width:27px; height:27px; margin-top:calc((.58rem - 27px) / 2); display:inline-grid; place-items:center; border:1px solid rgba(var(--neutral-rgb), .16); border-radius:999px; background:rgba(255,254,253,.62); color:transparent; font-family:'Google Sans Flex', serif; font-size:0; line-height:1; cursor:pointer; z-index:2; overflow:hidden; }
 .result-share-close::before { content:"×"; position:absolute; left:50%; top:50%; transform:translate(-50%, -60%); color:var(--dim); font-family:'Google Sans Flex', serif; font-size:1.15rem; line-height:1; }
 .result-share-preview { display:flex; justify-content:center; margin-bottom:12px; }
-.result-share-card { position:relative; display:flex; flex-direction:column; justify-content:space-between; width:min(100%,400px); aspect-ratio:1; overflow:hidden; border:1px solid rgba(var(--yellow-rgb), .22); border-radius:8px; padding:22px; background:var(--bg); box-shadow:inset 0 1px 0 rgba(128,0,32,.1); }
-.result-share-card::before { content:none; }
+.result-share-card { position:relative; display:flex; flex-direction:column; justify-content:space-between; width:min(100%,400px); aspect-ratio:1; overflow:hidden; border:1px solid rgba(var(--yellow-rgb), .22); border-radius:8px; padding:22px; background:radial-gradient(circle at 50% 45%, rgba(var(--yellow-rgb), .08), transparent 31%), linear-gradient(145deg, rgba(244,239,180,.94), rgba(230,229,228,.98)); box-shadow:inset 0 1px 0 rgba(128,0,32,.1); }
+.result-share-card::before { content:""; position:absolute; inset:76px; opacity:.18; background:url('imgs/tunacan.png') center/contain no-repeat; pointer-events:none; }
 .result-share-top, .result-share-main, .result-share-bottom { position:relative; z-index:1; }
 .result-share-top { display:flex; align-items:center; justify-content:space-between; gap:10px; padding-bottom:14px; border-bottom:none; }
 .result-share-brand { flex:0 0 auto; }
-.result-share-brand img { display:block; width:130px; max-height:64px; object-fit:contain; height:auto; }
+.result-share-brand img { display:block; width:82px; height:auto; }
 .result-share-meta { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:5px; color:var(--dim); font-family:'Google Sans Flex', serif; font-size:.58rem; line-height:1.2; text-align:right;  }
 .result-share-main { display:grid; gap:10px; text-align:center; transform:translateY(8px); }
-.result-share-winner { border:1px solid rgba(var(--green-rgb), .5); border-radius:8px; padding:20px 14px 18px; background:var(--surface-container); box-shadow:inset 0 1px 0 rgba(128,0,32,.08); }
-.result-share-card.no-winner .result-share-winner { border-color:rgba(var(--red-rgb), .5); background:var(--surface-container); }
+.result-share-winner { border:1px solid rgba(var(--green-rgb), .5); border-radius:8px; padding:20px 14px 18px; background:linear-gradient(135deg, rgba(var(--green-rgb), .10), rgba(var(--green-rgb), .025)), linear-gradient(135deg, rgba(242,241,240,.54), rgba(242,241,240,.36)); box-shadow:inset 0 1px 0 rgba(128,0,32,.08); }
+.result-share-card.no-winner .result-share-winner { border-color:rgba(var(--red-rgb), .5); background:linear-gradient(135deg, rgba(var(--red-rgb), .12), rgba(var(--red-rgb), .03)), linear-gradient(135deg, rgba(242,241,240,.54), rgba(242,241,240,.36)); }
 .result-share-kicker { color:var(--dim); font-family:'Google Sans Flex', serif; font-size:.64rem; line-height:1; margin-bottom:8px;  }
 .result-share-name { color:var(--accent2); font-family:'Google Sans Flex', serif; font-weight: 700; font-size:clamp(1.8rem,6.5vw,3rem); line-height:.96; overflow-wrap:anywhere; }
 .result-share-card.no-winner .result-share-name { color:var(--red); }
 .result-share-times { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-.result-share-time { min-height:62px; border:1px solid rgba(var(--neutral-rgb), .14); border-radius:7px; padding:10px 8px; background:var(--surface-container); }
+.result-share-time { min-height:62px; border:1px solid rgba(var(--neutral-rgb), .14); border-radius:7px; padding:10px 8px; background:rgba(255,254,253,.58); }
 .result-share-time span { display:block; color:var(--dim); font-family:'Google Sans Flex', serif; font-size:.54rem; line-height:1; margin-bottom:6px;  }
 .result-share-time strong { display:block; color:var(--text); font-family:'Google Sans Flex', serif; font-size:1.16rem; line-height:1; }
-.result-share-bottom { display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding-top:12px; border-top:1px solid var(--border); }
+.result-share-bottom { display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding-top:12px; border-top:1px solid rgba(190,180,120,.62); }
 .result-share-points { color:var(--accent2); font-family:'Google Sans Flex', serif; font-size:1.22rem; line-height:1; }
 .result-share-detail { color:var(--dim); font-family:'Google Sans Flex', serif; font-size:.64rem; line-height:1; text-align:right;  }
 .result-share-actions { display:flex; gap:8px; }
@@ -1418,3 +1418,14 @@ html.dark-mode .hdr-wrap-time.off {
 /* Site Traffic heading: refresh directly below title */
 .traffic-heading{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:10px;margin-bottom:22px}
 .traffic-heading h2{margin:0}
+
+/* TotoWrap DANGER: three consecutive completed shoot days without a bet */
+.board-player-danger .board-row{background:rgba(200,36,48,.15)!important;box-shadow:inset 3px 0 0 #d32f3e;border-radius:8px}
+.board-player-danger .board-player-name{color:#c72a38}
+.danger-label{display:inline-block;margin-left:7px;padding:3px 5px;border-radius:4px;background:#c72a38;color:#fff;font-size:9px;font-weight:800;letter-spacing:.025em;white-space:nowrap}
+.board-player-danger .board-player-name{flex-wrap:wrap;row-gap:4px}
+.traffic-extra-metrics{margin-top:14px}
+.traffic-metric small{display:block;font-size:11px;opacity:.7;margin-top:5px}
+.traffic-bar-value{font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.traffic-bars{height:210px}
+@media(max-width:500px){.traffic-bars{gap:3px}.traffic-bar-value{font-size:9px}.traffic-bar-cell small{font-size:8px;transform:rotate(-45deg);transform-origin:center;min-height:24px;padding-top:6px}}

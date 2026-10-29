@@ -36,7 +36,10 @@
     'Mancano 2 setup',
     'La Federazione ti vuole bene',
     'La Federazione ti dà il benvenuto',
-    'La Federazione è magnanima'
+    'La Federazione è magnanima',
+    'Come ogni giorno, Federica ha vinto anche oggi.',
+    'Chi è Matilde?',
+    "Dov’è Matilde?"
   ];
 
   const PLAYER_BOOT_PHRASES = [

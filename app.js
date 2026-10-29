@@ -3761,7 +3761,7 @@ function getShareResultInfo(day, dayNumber=null) {
 function renderShareResultCard(info) {
   return `<article class="result-share-card${info.noWinner ? ' no-winner' : ''}">
     <div class="result-share-top">
-      <div class="result-share-brand"><img src="${CUSTOM_UI_ASSETS.logoSecondary}" alt="TotoWrap Upgraded"></div>
+      <div class="result-share-brand"><img src="${CUSTOM_UI_ASSETS.logoPrimary}" alt="TotoWrap"></div>
       <div class="result-share-meta"><span>${esc(info.dayLabel)}</span><span>-</span><span>Estimated Wrap ${esc(info.estWrap)}</span></div>
     </div>
     <div class="result-share-main">
@@ -3847,16 +3847,13 @@ async function renderShareResultBlob() {
   const info = _shareResultInfo || (S.today?.wrapTime ? getShareResultInfo(S.today) : null);
   if (!info) throw new Error('No completed result');
   if (document.fonts?.ready) await document.fonts.ready.catch(() => {});
-  // Read the active site's CSS variables so the exported PNG follows Light/Dark mode.
-  const bgColor = themeVar('--bg', '#fffefd');
-  const surfaceColor = themeVar('--surface-container', '#F4F2EC');
-  const textColor = themeVar('--text', '#1a1a1a');
-  const accentColor = themeVar('--accent', '#1a1a1a');
-  const mutedColor = themeVar('--dim', '#666666');
-  const borderColor = themeVar('--border', '#e0dfde');
-  const redColor = themeVar('--red', '#ee0038');
-  const redRgb = themeVar('--red-rgb', '238, 0, 56');
-  const greenRgb = themeVar('--green-rgb', '46, 125, 50');
+  const yellow = themeVar('--accent', '#1a1a1a');
+  const red = themeVar('--red', '#d65656');
+  const greenRgb = themeVar('--green-rgb', '143,223,106');
+  const redRgb = themeVar('--red-rgb', '214,86,86');
+  const yellowRgb = themeVar('--yellow-rgb', '240,180,40');
+  const neutral = themeVar('--neutral', '#8D5A63');
+  const neutralRgb = themeVar('--neutral-rgb', '184,201,168');
   const canvas = document.createElement('canvas');
   const imageSize = 1080;
   const exportScale = 2;
@@ -3864,55 +3861,52 @@ async function renderShareResultBlob() {
   canvas.height = imageSize * exportScale;
   const ctx = canvas.getContext('2d');
   ctx.scale(exportScale, exportScale);
-  ctx.fillStyle = bgColor;
+  const bg = ctx.createLinearGradient(0, 0, imageSize, imageSize);
+  bg.addColorStop(0, '#F4EFB4');
+  bg.addColorStop(1, '#E8E2AA');
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, imageSize, imageSize);
 
-  ctx.strokeStyle = borderColor;
-  ctx.lineWidth = 2;
-  canvasRoundRect(ctx, 20, 20, 1040, 1040, 24);
+  ctx.strokeStyle = `rgba(${yellowRgb},.22)`;
+  ctx.lineWidth = 3;
+  canvasRoundRect(ctx, 20, 20, 1040, 1040, 22);
   ctx.stroke();
 
   ctx.textBaseline = 'middle';
-  // The official Upgraded logo, not the plain gold TotoWrap logo.
-  const logoImg = await loadShareImage(CUSTOM_UI_ASSETS.logoSecondary);
+  const logoImg = await loadShareImage(CUSTOM_UI_ASSETS.logoPrimary);
   if (logoImg) {
-    const maxW = 330;
-    const maxH = 136;
-    const scale = Math.min(maxW / logoImg.naturalWidth, maxH / logoImg.naturalHeight);
-    const w = logoImg.naturalWidth * scale;
-    const h = logoImg.naturalHeight * scale;
-    ctx.drawImage(logoImg, 80, 53 + (136 - h) / 2, w, h);
+    ctx.drawImage(logoImg, 80, 84, 220, 69);
   } else {
-    ctx.fillStyle = redColor;
+    ctx.fillStyle = yellow;
     ctx.textAlign = 'left';
-    ctx.font = "bold 48px 'Google Sans Flex', sans-serif";
-    ctx.fillText('TotoWrap Upgraded', 80, 116);
+    ctx.font = "bold 50px 'Google Sans Flex', sans-serif";
+    ctx.fillText('TotoWrap', 80, 116);
   }
-  ctx.fillStyle = mutedColor;
+  ctx.fillStyle = neutral;
   ctx.textAlign = 'right';
-  ctx.font = "bold 25px 'Google Sans Flex', sans-serif";
+  ctx.font = "bold 27px 'Google Sans Flex', sans-serif";
   ctx.fillText(`${info.dayLabel} - Estimated Wrap ${info.estWrap}`, 1000, 116);
 
-  ctx.strokeStyle = borderColor;
+  ctx.strokeStyle = 'rgba(190,180,120,.72)';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(80, 205);
-  ctx.lineTo(1000, 205);
+  ctx.moveTo(80, 168);
+  ctx.lineTo(1000, 168);
   ctx.stroke();
 
   const shareMainY = 22;
-  canvasRoundRect(ctx, 80, 238 + shareMainY, 920, 300, 24);
-  ctx.fillStyle = surfaceColor;
+  canvasRoundRect(ctx, 80, 238 + shareMainY, 920, 300, 20);
+  ctx.fillStyle = info.noWinner ? `rgba(${redRgb},.14)` : `rgba(${greenRgb},.12)`;
   ctx.fill();
-  ctx.strokeStyle = info.noWinner ? redColor : `rgba(${greenRgb},.65)`;
+  ctx.strokeStyle = info.noWinner ? `rgba(${redRgb},.56)` : `rgba(${greenRgb},.56)`;
   ctx.lineWidth = 3;
   ctx.stroke();
 
   ctx.textAlign = 'center';
-  ctx.fillStyle = mutedColor;
+  ctx.fillStyle = neutral;
   ctx.font = "bold 25px 'Google Sans Flex', sans-serif";
   ctx.fillText(info.kicker.toUpperCase(), 540, 335 + shareMainY);
-  ctx.fillStyle = info.noWinner ? redColor : accentColor;
+  ctx.fillStyle = info.noWinner ? red : yellow;
   drawShareText(ctx, info.name, 540, 415 + shareMainY, 800, info.name.length > 20 ? 72 : 98, 48);
 
   const times = [
@@ -3921,33 +3915,33 @@ async function renderShareResultBlob() {
   ];
   times.forEach((item, idx) => {
     const x = 80 + idx * 468;
-    canvasRoundRect(ctx, x, 578 + shareMainY, 452, 172, 20);
-    ctx.fillStyle = surfaceColor;
+    canvasRoundRect(ctx, x, 578 + shareMainY, 452, 172, 18);
+    ctx.fillStyle = 'rgba(255,253,208,.58)';
     ctx.fill();
-    ctx.strokeStyle = borderColor;
+    ctx.strokeStyle = `rgba(${neutralRgb},.14)`;
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.textAlign = 'center';
-    ctx.fillStyle = mutedColor;
+    ctx.fillStyle = neutral;
     ctx.font = "bold 22px 'Google Sans Flex', sans-serif";
     ctx.fillText(item.label, x + 226, 632 + shareMainY);
-    ctx.fillStyle = textColor;
+    ctx.fillStyle = yellow;
     ctx.font = "bold 54px 'Google Sans Flex', sans-serif";
     ctx.fillText(item.value, x + 226, 696 + shareMainY);
   });
 
-  ctx.strokeStyle = borderColor;
+  ctx.strokeStyle = 'rgba(190,180,120,.72)';
   ctx.beginPath();
   ctx.moveTo(80, 888);
   ctx.lineTo(1000, 888);
   ctx.stroke();
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
-  ctx.fillStyle = accentColor;
+  ctx.fillStyle = yellow;
   ctx.font = "bold 54px 'Google Sans Flex', sans-serif";
   ctx.fillText(info.pointsText, 80, 974);
   ctx.textAlign = 'right';
-  ctx.fillStyle = mutedColor;
+  ctx.fillStyle = neutral;
   ctx.font = "bold 27px 'Google Sans Flex', sans-serif";
   ctx.fillText(info.detail.toUpperCase(), 1000, 974);
 
@@ -4282,12 +4276,27 @@ function renderTrafficStats() {
   const sum = key => trafficRows.reduce((n,r)=>n+(Number(r[key])||0),0);
   const today = trafficDayKey();
   const todayRow = trafficRows.find(r=>r.date===today) || {};
-  const max = Math.max(1,...trafficRows.map(r=>Number(r.visits)||0));
-  const bars = [...trafficRows].slice(0,14).reverse().map(r=>`<div class="traffic-bar-cell" title="${esc(r.date)}: ${Number(r.visits)||0} visits"><span class="traffic-bar" style="height:${Math.max(3,Math.round((Number(r.visits)||0)/max*100))}%"></span><small>${esc(r.date.slice(5))}</small></div>`).join('');
+  const chronological = [...trafficRows].sort((a,b)=>a.date.localeCompare(b.date));
+  const last14 = chronological.slice(-14);
+  const max = Math.max(1,...last14.map(r=>Number(r.visits)||0));
+  const bars = last14.map(r=>{
+    const visits=Number(r.visits)||0;
+    return `<div class="traffic-bar-cell" title="${esc(r.date)}: ${visits} visits"><strong class="traffic-bar-value">${visits}</strong><span class="traffic-bar" style="height:${Math.max(3,Math.round(visits/max*100))}%"></span><small>${esc(r.date.slice(5))}</small></div>`;
+  }).join('');
+  const activeDays=chronological.filter(r=>(Number(r.visits)||0)>0);
+  const avg = activeDays.length ? (sum('visits')/activeDays.length).toFixed(1) : '0';
+  const peak = chronological.reduce((best,r)=>(Number(r.visits)||0)>(Number(best?.visits)||0)?r:best,null);
+  const repeatRatio = sum('visitors') ? (sum('visits')/sum('visitors')).toFixed(2) : '0';
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+  const yesterdayKey=yesterday.toLocaleDateString('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'});
+  const yesterdayVisits=Number(trafficRows.find(r=>r.date===yesterdayKey)?.visits)||0;
+  const todayVisits=Number(todayRow.visits)||0;
+  const delta=yesterdayVisits ? `${todayVisits>=yesterdayVisits?'+':''}${Math.round((todayVisits-yesterdayVisits)/yesterdayVisits*100)}%` : '—';
   return `<div class="traffic-page"><div class="traffic-heading"><h2>Site Traffic</h2><button class="btn" type="button" id="traffic-refresh">Refresh</button></div>
-    <div class="traffic-metrics"><div class="traffic-metric"><span>VISITS TODAY</span><strong>${Number(todayRow.visits)||0}</strong></div><div class="traffic-metric"><span>VISITORS TODAY*</span><strong>${Number(todayRow.visitors)||0}</strong></div><div class="traffic-metric"><span>VISITS · 30 DAYS</span><strong>${sum('visits')}</strong></div><div class="traffic-metric"><span>VISITORS · 30 DAYS*</span><strong>${sum('visitors')}</strong></div></div>
-    <div class="traffic-panel"><h3>Last 14 days</h3>${trafficLoading?'<p class="mono dim">Loading statistics…</p>':trafficError?`<p class="mono dim">${esc(trafficError)}</p>`:bars?`<div class="traffic-bars">${bars}</div>`:'<p class="mono dim">No traffic data yet. Tracking starts after deployment and Firestore setup.</p>'}</div>
-    <p class="mono dim traffic-footnote">*Visitors are approximate unique browsers per day, not identified people. Admin visits are excluded. Data starts when tracking is activated. Requires Firestore trafficDaily rules.</p></div>`;
+    <div class="traffic-metrics"><div class="traffic-metric"><span>VISITS TODAY</span><strong>${todayVisits}</strong></div><div class="traffic-metric"><span>VISITORS TODAY*</span><strong>${Number(todayRow.visitors)||0}</strong></div><div class="traffic-metric"><span>VISITS · 30 DAYS</span><strong>${sum('visits')}</strong></div><div class="traffic-metric"><span>VISITORS · 30 DAYS*</span><strong>${sum('visitors')}</strong></div></div>
+    <div class="traffic-panel"><h3>Visits per day · Last 14 recorded days</h3>${trafficLoading?'<p class="mono dim">Loading statistics…</p>':trafficError?`<p class="mono dim">${esc(trafficError)}</p>`:bars?`<div class="traffic-bars">${bars}</div>`:'<p class="mono dim">No traffic data yet.</p>'}</div>
+    <div class="traffic-metrics traffic-extra-metrics"><div class="traffic-metric"><span>AVERAGE VISITS / ACTIVE DAY</span><strong>${avg}</strong></div><div class="traffic-metric"><span>BUSIEST DAY</span><strong>${peak?Number(peak.visits)||0:0}</strong><small>${peak?esc(peak.date):'No data'}</small></div><div class="traffic-metric"><span>VISITS PER EST. VISITOR*</span><strong>${repeatRatio}</strong></div><div class="traffic-metric"><span>TODAY VS YESTERDAY**</span><strong>${delta}</strong><small>Yesterday: ${yesterdayVisits}</small></div></div>
+    <p class="mono dim traffic-footnote">*Visitors are approximate unique browsers per day, not people. Visits count one session per browser tab/day, not page views. **Today's comparison is partial until the day ends. Admin visits excluded. Data starts when tracking was activated.</p></div>`;
 }
 async function loadTrafficStats() {
   if (!IS_ADMIN || LOCAL_TEST_MODE) return;
@@ -4935,6 +4944,27 @@ function getStandingsEntries() {
   });
 }
 
+// Consecutive missed completed shooting days (not calendar days).
+// Multiple units on the same date count as a single shooting day.
+function getPlayerMissedGameStreak(playerName) {
+  const daysByDate = new Map();
+  for (const day of (S.days || [])) {
+    if (!day?.wrapTime) continue;
+    const date = displayToISO(day.date);
+    if (!date) continue;
+    if (!daysByDate.has(date)) daysByDate.set(date, new Set());
+    for (const guess of (day.guesses || [])) {
+      if (guess.time) daysByDate.get(date).add(nameKey(guess.name));
+    }
+  }
+  let missed = 0;
+  for (const date of [...daysByDate.keys()].sort().reverse()) {
+    if (daysByDate.get(date).has(nameKey(playerName))) break;
+    missed++;
+  }
+  return missed;
+}
+
 function renderBoard(view=_boardView) {
   const pl = getSortedPlayerRoster();
   if (!pl.length) return '<div class="empty">No players yet</div>';
@@ -4959,10 +4989,12 @@ function renderBoard(view=_boardView) {
   const openKey = `${i}:${p.name}`;
   const isOpen = _openBoardPlayer === openKey;
   const medalRankClass = [1, 2, 3].includes(rank) ? ` board-rank-${rank}` : '';
-  return `<div class="board-player${isOpen ? ' open' : ''}">
+  const missedDays = getPlayerMissedGameStreak(p.name);
+  const danger = p.active !== false && missedDays >= 3;
+  return `<div class="board-player${isOpen ? ' open' : ''}${danger ? ' board-player-danger' : ''}">
     <div class="board-row">
       <div class="board-rank${medalRankClass}">${rank}</div>
-      <button class="board-player-name" type="button" data-board-player="${esc(openKey)}"><span>${esc(p.name)}</span></button>
+      <button class="board-player-name" type="button" data-board-player="${esc(openKey)}"><span>${esc(p.name)}</span>${danger ? `<span class="danger-label" title="${missedDays} consecutive shooting days without a bet">DANGER · ${missedDays} DAYS</span>` : ''}</button>
       <div class="board-player-wins">${wins} ${countWord(wins, 'game', 'games')} won</div>
       <div class="board-player-points accent"><strong>${score}</strong><span class="mono dim">${countWord(score, 'pt', 'pts')}</span></div>
     </div>
@@ -5876,6 +5908,21 @@ async function addHistoryPlayerBet(
     return false;
   }
 
+  const duplicateTimeGuess =
+    (target.day.guesses || []).find(guess =>
+      guess?.time &&
+      nameKey(guess.name) !== nameKey(name) &&
+      normalizeHMInput(String(guess.time).trim()) === normalizedBet
+    );
+
+  if (duplicateTimeGuess) {
+    toast(
+      `Bet time ${normalizedBet} is already used by ${duplicateTimeGuess.name}`,
+      'err'
+    );
+    return false;
+  }
+
   const prevS = cloneState();
 
   const gameDate =
@@ -6156,6 +6203,21 @@ async function addCurrentPlayerBet(name, betTime, betDate='') {
     return false;
   }
 
+  const takenBy = (S.today.guesses || []).find(
+    g =>
+      g !== existingGuess &&
+      g?.time &&
+      normalizeHMInput(String(g.time).trim()) === normalizedBet
+  );
+
+  if (takenBy) {
+    toast(
+      `${normalizedBet} is already taken by ${takenBy.name}`,
+      'err'
+    );
+    return false;
+  }
+
   const prevS = cloneState();
   const finalBetDate =
     normalizedDate ||
@@ -6199,6 +6261,21 @@ async function updateCurrentPlayerBet(name, betTime, betDate='') {
   const normalizedDate = dateValue ? parseDateInput(dateValue) : null;
   if (dateValue && !normalizedDate) {
     toast('Use a valid bet date', 'err');
+    return false;
+  }
+
+  const takenBy = (S.today.guesses || []).find(
+    g =>
+      g !== existingGuess &&
+      g?.time &&
+      normalizeHMInput(String(g.time).trim()) === normalizedBet
+  );
+
+  if (takenBy) {
+    toast(
+      `${normalizedBet} is already taken by ${takenBy.name}`,
+      'err'
+    );
     return false;
   }
 
@@ -8337,6 +8414,8 @@ async function showPreview() {
   
   const duplicates = getDuplicateNameKeys(parsed.map(g => g.name));
   
+  const duplicateTimes = getDuplicateBetTimes(parsed);
+
   const duplicateWarning = duplicates.length > 0 
     ? `<div class="card" style="border: 1px solid var(--red); background: rgba(var(--red-rgb), 0.1); margin-bottom: 12px;">
          <p class="red" style="font-weight:bold; font-size:0.8rem; text-align:center;">
@@ -8345,7 +8424,23 @@ async function showPreview() {
        </div>`
     : '';
 
-  const duplicateTimeWarning = ''; // Shared times are allowed.
+  const duplicateTimeWarning = duplicateTimes.length > 0
+    ? `
+      <div class="card" style="border: 1px solid var(--red); background: rgba(var(--red-rgb), 0.1); margin-bottom: 12px;">
+        <p class="red" style="font-weight:bold; font-size:0.8rem; text-align:center;">
+          ⚠️ DUPLICATE BET TIMES DETECTED:<br>
+          ${duplicateTimes.map(item =>
+            `${esc(item.time)} — ${item.names.map(esc).join(', ')}`
+          ).join('<br>')}
+        </p>
+
+        <p class="dim" style="font-size:0.6rem; text-align:center; margin-top:4px;">
+          Each minute can only belong to one player.
+          Edit the duplicated bets below before confirming.
+        </p>
+      </div>
+    `
+    : '';
 
   const existingNames = new Set(S.playerRoster.map(p => nameKey(p.name)));
   const newPlayers = [];
@@ -8607,6 +8702,27 @@ async function showPreview() {
       });
 
       if (editedFullList.some(g => !g)) {
+        return;
+      }
+
+      // IMPORTANT:
+      // controlliamo i minuti DOPO le modifiche fatte nella preview.
+      const editedDuplicateTimes =
+        getDuplicateBetTimes(editedFullList);
+
+      if (editedDuplicateTimes.length > 0) {
+
+        const details = editedDuplicateTimes
+          .map(item =>
+            `${item.time}: ${item.names.join(', ')}`
+          )
+          .join(' · ');
+
+        toast(
+          `Duplicate bet time${editedDuplicateTimes.length > 1 ? 's' : ''}: ${details}`,
+          'err'
+        );
+
         return;
       }
 
