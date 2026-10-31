@@ -428,3 +428,8 @@ html.dark-mode .board-player:nth-child(even) .board-row {
   background: rgba(255,255,255,.065) !important;
   border-color: rgba(255,255,255,.055) !important;
 }
+
+html.dark-mode .result-share-card { background: var(--bg3); border-color: var(--border); }
+html.dark-mode .result-share-winner, html.dark-mode .result-share-time { background: var(--bg); }
+html.dark-mode .result-share-name { color: var(--text); }
+html.dark-mode .result-share-card.no-winner .result-share-name { color: var(--red); }

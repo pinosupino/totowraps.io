@@ -3761,7 +3761,7 @@ function getShareResultInfo(day, dayNumber=null) {
 function renderShareResultCard(info) {
   return `<article class="result-share-card${info.noWinner ? ' no-winner' : ''}">
     <div class="result-share-top">
-      <div class="result-share-brand"><img src="${CUSTOM_UI_ASSETS.logoPrimary}" alt="TotoWrap"></div>
+      <div class="result-share-brand"><img src="${CUSTOM_UI_ASSETS.logoSecondary}" alt="TotoWrap Upgraded"></div>
       <div class="result-share-meta"><span>${esc(info.dayLabel)}</span><span>-</span><span>Estimated Wrap ${esc(info.estWrap)}</span></div>
     </div>
     <div class="result-share-main">
@@ -3848,6 +3848,10 @@ async function renderShareResultBlob() {
   if (!info) throw new Error('No completed result');
   if (document.fonts?.ready) await document.fonts.ready.catch(() => {});
   const yellow = themeVar('--accent', '#1a1a1a');
+  const background = themeVar('--bg', '#fffefd');
+  const surface = themeVar('--bg3', '#f2f1f0');
+  const textColor = themeVar('--text', '#1a1a1a');
+  const darkShare = document.documentElement.classList.contains('dark-mode');
   const red = themeVar('--red', '#d65656');
   const greenRgb = themeVar('--green-rgb', '143,223,106');
   const redRgb = themeVar('--red-rgb', '214,86,86');
@@ -3862,8 +3866,8 @@ async function renderShareResultBlob() {
   const ctx = canvas.getContext('2d');
   ctx.scale(exportScale, exportScale);
   const bg = ctx.createLinearGradient(0, 0, imageSize, imageSize);
-  bg.addColorStop(0, '#F4EFB4');
-  bg.addColorStop(1, '#E8E2AA');
+  bg.addColorStop(0, background);
+  bg.addColorStop(1, surface);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, imageSize, imageSize);
 
@@ -3873,9 +3877,14 @@ async function renderShareResultBlob() {
   ctx.stroke();
 
   ctx.textBaseline = 'middle';
-  const logoImg = await loadShareImage(CUSTOM_UI_ASSETS.logoPrimary);
+  const logoImg = await loadShareImage(CUSTOM_UI_ASSETS.logoSecondary);
   if (logoImg) {
-    ctx.drawImage(logoImg, 80, 84, 220, 69);
+    const maxLogoW = 260;
+    const maxLogoH = 105;
+    const ratio = Math.min(maxLogoW / logoImg.naturalWidth, maxLogoH / logoImg.naturalHeight);
+    const logoW = logoImg.naturalWidth * ratio;
+    const logoH = logoImg.naturalHeight * ratio;
+    ctx.drawImage(logoImg, 80, 116 - logoH / 2, logoW, logoH);
   } else {
     ctx.fillStyle = yellow;
     ctx.textAlign = 'left';
@@ -3885,9 +3894,9 @@ async function renderShareResultBlob() {
   ctx.fillStyle = neutral;
   ctx.textAlign = 'right';
   ctx.font = "bold 27px 'Google Sans Flex', sans-serif";
-  ctx.fillText(`${info.dayLabel} - Estimated Wrap ${info.estWrap}`, 1000, 116);
+  ctx.fillText(`${info.dayLabel} - Estimated Wrap ${info.estWrap}`, 1000, 116, 620);
 
-  ctx.strokeStyle = 'rgba(190,180,120,.72)';
+  ctx.strokeStyle = `rgba(${neutralRgb},.25)`;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(80, 168);
@@ -3906,7 +3915,7 @@ async function renderShareResultBlob() {
   ctx.fillStyle = neutral;
   ctx.font = "bold 25px 'Google Sans Flex', sans-serif";
   ctx.fillText(info.kicker.toUpperCase(), 540, 335 + shareMainY);
-  ctx.fillStyle = info.noWinner ? red : yellow;
+  ctx.fillStyle = info.noWinner ? red : (darkShare ? textColor : themeVar('--green', '#2E7D32'));
   drawShareText(ctx, info.name, 540, 415 + shareMainY, 800, info.name.length > 20 ? 72 : 98, 48);
 
   const times = [
@@ -3916,7 +3925,7 @@ async function renderShareResultBlob() {
   times.forEach((item, idx) => {
     const x = 80 + idx * 468;
     canvasRoundRect(ctx, x, 578 + shareMainY, 452, 172, 18);
-    ctx.fillStyle = 'rgba(255,253,208,.58)';
+    ctx.fillStyle = surface;
     ctx.fill();
     ctx.strokeStyle = `rgba(${neutralRgb},.14)`;
     ctx.lineWidth = 2;
@@ -3925,12 +3934,12 @@ async function renderShareResultBlob() {
     ctx.fillStyle = neutral;
     ctx.font = "bold 22px 'Google Sans Flex', sans-serif";
     ctx.fillText(item.label, x + 226, 632 + shareMainY);
-    ctx.fillStyle = yellow;
+    ctx.fillStyle = textColor;
     ctx.font = "bold 54px 'Google Sans Flex', sans-serif";
     ctx.fillText(item.value, x + 226, 696 + shareMainY);
   });
 
-  ctx.strokeStyle = 'rgba(190,180,120,.72)';
+  ctx.strokeStyle = `rgba(${neutralRgb},.25)`;
   ctx.beginPath();
   ctx.moveTo(80, 888);
   ctx.lineTo(1000, 888);
@@ -3943,7 +3952,7 @@ async function renderShareResultBlob() {
   ctx.textAlign = 'right';
   ctx.fillStyle = neutral;
   ctx.font = "bold 27px 'Google Sans Flex', sans-serif";
-  ctx.fillText(info.detail.toUpperCase(), 1000, 974);
+  ctx.fillText(info.detail.toUpperCase(), 1000, 974, 510);
 
   const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
   if (!blob) throw new Error('Could not create image');

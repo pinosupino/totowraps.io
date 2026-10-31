@@ -1429,3 +1429,13 @@ html.dark-mode .hdr-wrap-time.off {
 .traffic-bar-value{font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
 .traffic-bars{height:210px}
 @media(max-width:500px){.traffic-bars{gap:3px}.traffic-bar-value{font-size:9px}.traffic-bar-cell small{font-size:8px;transform:rotate(-45deg);transform-origin:center;min-height:24px;padding-top:6px}}
+
+/* Winner sharing follows the active site theme. */
+.result-share-card { background: var(--bg3); border-color: var(--border); box-shadow: none; }
+.result-share-card::before { display: none; }
+.result-share-brand img { width: min(130px, 32vw); height: auto; max-height: 64px; object-fit: contain; object-position: left center; }
+.result-share-winner { background: var(--bg); box-shadow: none; }
+.result-share-time { background: var(--bg); border-color: var(--border); }
+.result-share-bottom { border-top-color: var(--border); }
+.result-share-name { color: var(--green); }
+.result-share-card.no-winner .result-share-name { color: var(--red); }
