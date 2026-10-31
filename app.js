@@ -2699,17 +2699,6 @@ function calcCrazyDayPenalties(guesses, wrapHMSInput, day, noWinner=false, exclu
     addPenalty(guess.name, 'missed-bet');
   });
 
-  const distances = guesses
-    .filter(guess => guess?.name && guess.time && !excluded.has(nameKey(guess.name)))
-    .map(guess => ({ name: guess.name, gap: guessWrapDistanceSec(guess, wrapHMSInput, day, noWinner) }))
-    .filter(item => Number.isFinite(item.gap));
-  const maxGap = distances.length ? Math.max(...distances.map(item => item.gap)) : null;
-  if (scoring.penaltyPoints && maxGap !== null) {
-    distances.filter(item => item.gap === maxGap).forEach(item => {
-      addPenalty(item.name, 'furthest-from-wrap');
-    });
-  }
-
   // Penalize the nearest occupied betting slot on either side of the winning slot.
   // Shared times are all included. Winners are always excluded.
   if (scoring.nearMissPenaltyPoints && !noWinner && excluded.size) {
@@ -2833,7 +2822,6 @@ function compactSignedPoints(value) {
 
 function todayPenaltyStatus(penalty) {
   if (!penalty?.points) return null;
-  if (penalty.reason === 'furthest-from-wrap') return { cls: 'b-penalty', text: 'FAR' };
   if (penalty.reason === 'near-miss') return { cls: 'b-penalty', text: 'NEAR' };
   return { cls: 'b-penalty', text: compactSignedPoints(penalty.points) };
 }
@@ -3650,7 +3638,7 @@ function renderCrazyDayIndicator(day=S.today) {
   return `
     <div class="crazy-day-indicator" role="note" aria-label="Crazy Day scoring">
       <span class="crazy-day-indicator-title">Crazy Day</span>
-      <span class="crazy-day-indicator-rules">${regular} regular / ${perfect} perfect / ${penalty} no bet / ${penalty} furthest / ${formatSignedPoints(cfg.nearMissPenaltyPoints).replace(' points', '').replace(' point', '')} near miss</span>
+      <span class="crazy-day-indicator-rules">${regular} regular / ${perfect} perfect / ${penalty} no bet / ${formatSignedPoints(cfg.nearMissPenaltyPoints).replace(' points', '').replace(' point', '')} near miss</span>
     </div>
   `;
 }
@@ -4539,10 +4527,10 @@ function renderCrazyDaySetupCard(day) {
   const cfg = getCrazyDayConfig(day);
   const regular = cfg ? String(cfg.regularPoints) : '';
   const perfect = cfg ? String(cfg.perfectPoints) : '';
-  const penalty = cfg ? String(Math.abs(cfg.penaltyPoints)) : '';
+  const penalty = cfg ? String(Math.abs(cfg.penaltyPoints)) : '0';
   const nearMiss = cfg ? String(Math.abs(cfg.nearMissPenaltyPoints)) : '0';
   const statusText = cfg
-    ? `Crazy Day is active: ${cfg.regularPoints > 0 ? '+' : ''}${cfg.regularPoints} regular, ${cfg.perfectPoints > 0 ? '+' : ''}${cfg.perfectPoints} perfect wrap, ${cfg.penaltyPoints} no bet/furthest from wrap, ${cfg.nearMissPenaltyPoints} nearest losing slots.`
+    ? `Crazy Day is active: ${cfg.regularPoints > 0 ? '+' : ''}${cfg.regularPoints} regular, ${cfg.perfectPoints > 0 ? '+' : ''}${cfg.perfectPoints} perfect wrap, ${cfg.penaltyPoints} no bet, ${cfg.nearMissPenaltyPoints} nearest losing slots.`
     : 'Tap to set special scoring for this day.';
   return `<div class="card crazy-day-card${cfg ? ' is-saved' : ''}${_crazyDayPanelOpen ? ' expanded' : ''}">
     <div class="crazy-day-top">
@@ -4558,12 +4546,14 @@ function renderCrazyDaySetupCard(day) {
         <input type="number" id="crazy-regular-points" value="${esc(regular)}" placeholder="" step="1" inputmode="numeric">
         <label for="crazy-perfect-points">Perfect wrap winner gets</label>
         <input type="number" id="crazy-perfect-points" value="${esc(perfect)}" placeholder="" step="1" inputmode="numeric">
-        <label for="crazy-penalty-points">No bet or furthest from wrap loses</label>
+        <div class="crazy-penalty-section-title" style="grid-column:1/-1;font-weight:700;margin-top:12px">No bet</div>
+        <label for="crazy-penalty-points">No bet penalty</label>
         <div class="crazy-penalty-input-wrap">
           <span aria-hidden="true">-</span>
           <input type="number" id="crazy-penalty-points" value="${esc(penalty)}" placeholder="" min="0" step="1" inputmode="numeric">
         </div>
-        <label for="crazy-near-miss-points">Nearest losing slots (before and after) lose</label>
+        <div class="crazy-penalty-section-title" style="grid-column:1/-1;font-weight:700;margin-top:12px">Near miss</div>
+        <label for="crazy-near-miss-points">Near miss penalty (slots before and after winner)</label>
         <div class="crazy-penalty-input-wrap">
           <span aria-hidden="true">-</span>
           <input type="number" id="crazy-near-miss-points" value="${esc(nearMiss)}" min="0" step="1" inputmode="numeric">
