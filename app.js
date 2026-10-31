@@ -7234,7 +7234,10 @@ async function reconcileMultiUnitBonusesAfterEdit(
 
 function applyScoreDelta(name, delta) {
   if (!name || !Number.isFinite(delta) || delta === 0) return;
-  const nextScore = (Number(S.scores[name]) || 0) + delta;
+  // Crazy Day penalties may bring a player below zero.
+  // Never clamp scores to zero: 0 - 1 must be -1.
+  const currentScore = Number(S.scores[name]) || 0;
+  const nextScore = currentScore + delta;
   if (nextScore === 0) {
     delete S.scores[name];
   } else {
@@ -7445,7 +7448,7 @@ function removeAutoAddedPlayersFromDeletedDays(deletedDays) {
   S.playerRoster = S.playerRoster.filter(player => {
     const key = nameKey(player.name);
     if (!autoAddedKeys.has(key)) return true;
-    if (usedKeys.has(key) || (Number(S.scores[player.name]) || 0) > 0) return true;
+    if (usedKeys.has(key) || (Number(S.scores[player.name]) || 0) !== 0) return true;
     delete S.scores[player.name];
     return false;
   });
