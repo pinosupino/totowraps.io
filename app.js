@@ -2659,11 +2659,13 @@ function getCrazyDayConfig(day=S.today) {
   const penaltyAmount = Math.abs(Number(cfg.penaltyPoints));
   if (![regularPoints, perfectPoints, penaltyAmount].every(Number.isFinite)) return null;
   const penaltyPoints = penaltyAmount ? -penaltyAmount : 0;
-  return { enabled: true, regularPoints, perfectPoints, penaltyPoints };
+  const nearMissAmount = Math.abs(Number(cfg.nearMissPenaltyPoints || 0));
+  const nearMissPenaltyPoints = Number.isFinite(nearMissAmount) ? -nearMissAmount : 0;
+  return { enabled: true, regularPoints, perfectPoints, penaltyPoints, nearMissPenaltyPoints };
 }
 
 function getDayScoring(day=S.today) {
-  return getCrazyDayConfig(day) || { enabled: false, regularPoints: 1, perfectPoints: 2, penaltyPoints: 0 };
+  return getCrazyDayConfig(day) || { enabled: false, regularPoints: 1, perfectPoints: 2, penaltyPoints: 0, nearMissPenaltyPoints: 0 };
 }
 
 function guessWrapDistanceSec(guess, wrapHMSInput, day, noWinner=false) {
@@ -2682,7 +2684,7 @@ function guessWrapDistanceSec(guess, wrapHMSInput, day, noWinner=false) {
 
 function calcCrazyDayPenalties(guesses, wrapHMSInput, day, noWinner=false, excludedNames=[]) {
   const scoring = getDayScoring(day);
-  if (!scoring.enabled || !scoring.penaltyPoints) return [];
+  if (!scoring.enabled || (!scoring.penaltyPoints && !scoring.nearMissPenaltyPoints)) return [];
   const penalties = [];
   const seen = new Set();
   const excluded = new Set(excludedNames.map(name => nameKey(name)));
@@ -2693,7 +2695,7 @@ function calcCrazyDayPenalties(guesses, wrapHMSInput, day, noWinner=false, exclu
     penalties.push({ name, points: scoring.penaltyPoints, reason });
   };
 
-  guesses.filter(guess => guess?.name && !guess.time).forEach(guess => {
+  if (scoring.penaltyPoints) guesses.filter(guess => guess?.name && !guess.time).forEach(guess => {
     addPenalty(guess.name, 'missed-bet');
   });
 
@@ -2702,12 +2704,32 @@ function calcCrazyDayPenalties(guesses, wrapHMSInput, day, noWinner=false, exclu
     .map(guess => ({ name: guess.name, gap: guessWrapDistanceSec(guess, wrapHMSInput, day, noWinner) }))
     .filter(item => Number.isFinite(item.gap));
   const maxGap = distances.length ? Math.max(...distances.map(item => item.gap)) : null;
-  if (maxGap !== null) {
+  if (scoring.penaltyPoints && maxGap !== null) {
     distances.filter(item => item.gap === maxGap).forEach(item => {
       addPenalty(item.name, 'furthest-from-wrap');
     });
   }
 
+  // Penalize the nearest occupied betting slot on either side of the winning slot.
+  // Shared times are all included. Winners are always excluded.
+  if (scoring.nearMissPenaltyPoints && !noWinner && excluded.size) {
+    const wrapSec = wrapTimelineSec(wrapHMSInput, day);
+    const winnerBets = guesses.filter(g => g?.time && excluded.has(nameKey(g.name)));
+    const winningTimes = winnerBets.map(g => betTimelineSec(g, wrapSec)).filter(Number.isFinite);
+    if (winningTimes.length) {
+      const winningTime = winningTimes[0];
+      const candidates = guesses.filter(g => g?.name && g.time && !excluded.has(nameKey(g.name)))
+        .map(g => ({ name: g.name, time: betTimelineSec(g, wrapSec) }))
+        .filter(g => Number.isFinite(g.time));
+      const before = candidates.filter(g => g.time < winningTime);
+      const after = candidates.filter(g => g.time > winningTime);
+      const nearestBefore = before.length ? Math.max(...before.map(g => g.time)) : null;
+      const nearestAfter = after.length ? Math.min(...after.map(g => g.time)) : null;
+      candidates.filter(g => g.time === nearestBefore || g.time === nearestAfter).forEach(g => {
+        penalties.push({ name: g.name, points: scoring.nearMissPenaltyPoints, reason: 'near-miss' });
+      });
+    }
+  }
   return penalties;
 }
 
@@ -2812,6 +2834,7 @@ function compactSignedPoints(value) {
 function todayPenaltyStatus(penalty) {
   if (!penalty?.points) return null;
   if (penalty.reason === 'furthest-from-wrap') return { cls: 'b-penalty', text: 'FAR' };
+  if (penalty.reason === 'near-miss') return { cls: 'b-penalty', text: 'NEAR' };
   return { cls: 'b-penalty', text: compactSignedPoints(penalty.points) };
 }
 
@@ -3627,7 +3650,7 @@ function renderCrazyDayIndicator(day=S.today) {
   return `
     <div class="crazy-day-indicator" role="note" aria-label="Crazy Day scoring">
       <span class="crazy-day-indicator-title">Crazy Day</span>
-      <span class="crazy-day-indicator-rules">${regular} regular / ${perfect} perfect / ${penalty} no bet / ${penalty} furthest</span>
+      <span class="crazy-day-indicator-rules">${regular} regular / ${perfect} perfect / ${penalty} no bet / ${penalty} furthest / ${formatSignedPoints(cfg.nearMissPenaltyPoints).replace(' points', '').replace(' point', '')} near miss</span>
     </div>
   `;
 }
@@ -4517,8 +4540,9 @@ function renderCrazyDaySetupCard(day) {
   const regular = cfg ? String(cfg.regularPoints) : '';
   const perfect = cfg ? String(cfg.perfectPoints) : '';
   const penalty = cfg ? String(Math.abs(cfg.penaltyPoints)) : '';
+  const nearMiss = cfg ? String(Math.abs(cfg.nearMissPenaltyPoints)) : '0';
   const statusText = cfg
-    ? `Crazy Day is active: ${cfg.regularPoints > 0 ? '+' : ''}${cfg.regularPoints} regular, ${cfg.perfectPoints > 0 ? '+' : ''}${cfg.perfectPoints} perfect wrap, ${cfg.penaltyPoints} no bet/furthest from wrap.`
+    ? `Crazy Day is active: ${cfg.regularPoints > 0 ? '+' : ''}${cfg.regularPoints} regular, ${cfg.perfectPoints > 0 ? '+' : ''}${cfg.perfectPoints} perfect wrap, ${cfg.penaltyPoints} no bet/furthest from wrap, ${cfg.nearMissPenaltyPoints} nearest losing slots.`
     : 'Tap to set special scoring for this day.';
   return `<div class="card crazy-day-card${cfg ? ' is-saved' : ''}${_crazyDayPanelOpen ? ' expanded' : ''}">
     <div class="crazy-day-top">
@@ -4538,6 +4562,11 @@ function renderCrazyDaySetupCard(day) {
         <div class="crazy-penalty-input-wrap">
           <span aria-hidden="true">-</span>
           <input type="number" id="crazy-penalty-points" value="${esc(penalty)}" placeholder="" min="0" step="1" inputmode="numeric">
+        </div>
+        <label for="crazy-near-miss-points">Nearest losing slots (before and after) lose</label>
+        <div class="crazy-penalty-input-wrap">
+          <span aria-hidden="true">-</span>
+          <input type="number" id="crazy-near-miss-points" value="${esc(nearMiss)}" min="0" step="1" inputmode="numeric">
         </div>
       </div>
       <div class="crazy-day-summary">
@@ -6539,7 +6568,8 @@ async function saveCrazyDaySettings() {
   const regularPoints = readCrazyDayInput('crazy-regular-points');
   const perfectPoints = readCrazyDayInput('crazy-perfect-points');
   const penaltyPoints = readCrazyDayPenaltyInput('crazy-penalty-points');
-  if ([regularPoints, perfectPoints, penaltyPoints].some(value => value === null)) {
+  const nearMissPenaltyPoints = readCrazyDayPenaltyInput('crazy-near-miss-points');
+  if ([regularPoints, perfectPoints, penaltyPoints, nearMissPenaltyPoints].some(value => value === null)) {
     toast('Enter Crazy Day points', 'err');
     return false;
   }
@@ -6553,7 +6583,8 @@ async function saveCrazyDaySettings() {
     enabled: true,
     regularPoints,
     perfectPoints,
-    penaltyPoints
+    penaltyPoints,
+    nearMissPenaltyPoints
   };
 
   setCrazyDayForLiveGameDate(
