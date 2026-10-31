@@ -1589,7 +1589,10 @@ function restoreAfterFailedSave(prevS) {
 }
 
 function getSortedPlayerRoster() {
-  return [...S.playerRoster].sort(comparePlayersByScoreThenName);
+  // Board views must exclude inactive players without deleting their history or scores.
+  return [...S.playerRoster]
+    .filter(player => player && player.active !== false)
+    .sort(comparePlayersByScoreThenName);
 }
 
 function comparePlayersByScoreThenName(a, b) {
@@ -2810,13 +2813,9 @@ function dayPenaltyDetailsMap(day) {
 }
 
 function dayPenalties(day) {
-  if (Array.isArray(day?.penalties) && day.penalties.length) return day.penalties;
-  if (day?.noBetPenaltyApplied === true && !day.wrapTime) return day.noBetPenaltyEntries || [];
-  if (!day?.wrapTime) return [];
-  const calculated = calcWinner(day.guesses || [], day.wrapTime, day).penalties || [];
-  const charged = day.noBetPenaltyApplied === true ? (day.noBetPenaltyEntries || []) : [];
-  const keys = new Set(charged.map(p => nameKey(p.name)));
-  return [...charged, ...calculated.filter(p => p.reason !== 'missed-bet' || !keys.has(nameKey(p.name)))];
+  return Array.isArray(day?.penalties) && day.penalties.length
+    ? day.penalties
+    : (day?.wrapTime ? calcWinner(day.guesses || [], day.wrapTime, day).penalties || [] : []);
 }
 
 function compactSignedPoints(value) {
@@ -2983,64 +2982,6 @@ function formatBetCloseCountdown(diffSec) {
   return parts.join(' ');
 }
 
-// Apply Crazy Day no-bet penalties at the official betting deadline.
-// Stored on the day so that reloading or logging in on another device cannot
-// apply the same penalty twice. Only an authenticated admin can persist it.
-let _closingPenaltySaveInFlight = false;
-let _closingPenaltyLastAttempt = 0;
-
-function getPendingCrazyNoBetPenalties(day) {
-  const cfg = getCrazyDayConfig(day);
-  if (!cfg || !cfg.penaltyPoints || !day || day.wrapTime ||
-      day.noBetPenaltyApplied === true || !day.betCloseAt ||
-      !day.betCloseDate || betCloseDiffSec(day) > 0) return null;
-
-  // The WhatsApp bets are published AFTER betting closes. Empty guesses
-  // means not yet imported, NOT that everyone missed their bet.
-  if (!day.approvedAt || !Array.isArray(day.guesses) ||
-      !day.guesses.some(g => g && g.name && g.time)) return null;
-
-  const roster = (S.playerRoster || []).filter(p => p && p.name && p.active !== false);
-  const rosterKeys = new Set(roster.map(p => nameKey(p.name)));
-  const betNames = new Set(day.guesses
-    .filter(g => g && g.name && g.time)
-    .map(g => nameKey(g.name)));
-
-  // Unknown names may be aliases: never punish someone on an ambiguous list.
-  if ([...betNames].some(key => !rosterKeys.has(key))) return null;
-
-  return roster
-    .filter(p => !betNames.has(nameKey(p.name)))
-    .map(p => ({ name: p.name, points: cfg.penaltyPoints, reason: 'missed-bet' }));
-}
-async function applyClosedCrazyDayNoBetPenalties() {
-  if (!IS_ADMIN || !currentUser || !_stateReady || _closingPenaltySaveInFlight) return;
-  // Avoid repeated transaction attempts on network failure.
-  if (Date.now() - _closingPenaltyLastAttempt < 15000) return;
-  const games = Object.values(getLiveGames());
-  const eligible = games.filter(day => {
-    return getPendingCrazyNoBetPenalties(day) !== null;
-  });
-  if (!eligible.length) return;
-  _closingPenaltySaveInFlight = true;
-  _closingPenaltyLastAttempt = Date.now();
-  const previous = cloneState();
-  try {
-    for (const day of eligible) {
-      const penalties = getPendingCrazyNoBetPenalties(day);
-      if (penalties === null) continue;
-      penalties.forEach(p => applyScoreDelta(p.name, p.points));
-      day.noBetPenaltyApplied = true;
-      day.noBetPenaltyEntries = penalties;
-    }
-    const saved = await saveS();
-    if (!saved) restoreAfterFailedSave(previous);
-    else render();
-  } finally {
-    _closingPenaltySaveInFlight = false;
-  }
-}
-
 function updateBetCloseCountdown() {
   document.querySelectorAll('[data-player-bet-close-card]').forEach(card => {
     const diff = betCloseDiffSec();
@@ -3073,7 +3014,6 @@ function tickClock() {
   // Update all clocks on the page
   document.querySelectorAll('.js-clock').forEach(el => el.textContent = t);
   updateBetCloseCountdown();
-  void applyClosedCrazyDayNoBetPenalties();
   
   const countdownEl = document.getElementById('next-out-countdown');
   if (!countdownEl || !S.today || !S.today.guesses || S.today.wrapTime) {
@@ -6416,18 +6356,6 @@ async function confirmTodayWrap(wrapTime, wrapDate = '') {
 
   currentGame.penalties =
     penalties || [];
-  // Keep the persisted no-bet charges in the completed day's ledger,
-  // even when there is no winner. Prevent duplicate entries by name/reason.
-  if (currentGame.noBetPenaltyApplied === true) {
-    const charged = currentGame.noBetPenaltyEntries || [];
-    const chargedKeys = new Set(charged.map(p => nameKey(p.name)));
-    currentGame.penalties = [
-      ...charged,
-      ...currentGame.penalties.filter(p =>
-        p.reason !== 'missed-bet' || !chargedKeys.has(nameKey(p.name))
-      )
-    ];
-  }
 
   /*
    * Applichiamo punteggio e penalità
@@ -6442,17 +6370,10 @@ async function confirmTodayWrap(wrapTime, wrapDate = '') {
     );
   }
 
-  // Missed-bet penalties were already charged when betting closed.
-  // At wrap only apply penalties that have not been charged yet.
-  const chargedNoBetNames = new Set(
-    (currentGame.noBetPenaltyEntries || []).map(p => nameKey(p.name))
+  applyDayPenalties(
+    currentGame,
+    1
   );
-  (currentGame.penalties || []).forEach(penalty => {
-    if (penalty.reason === 'missed-bet' &&
-        currentGame.noBetPenaltyApplied === true &&
-        chargedNoBetNames.has(nameKey(penalty.name))) return;
-    applyScoreDelta(penalty.name, Number(penalty.points) || 0);
-  });
 
   /*
   * L'Official Wrap conclude questa unità,
@@ -7371,12 +7292,7 @@ function recalculateCompletedDay(day) {
   day.winners = winners;
   day.points = points;
   day.noWinner = noWinner;
-  const charged = day.noBetPenaltyApplied === true ? (day.noBetPenaltyEntries || []) : [];
-  const chargedKeys = new Set(charged.map(p => nameKey(p.name)));
-  day.penalties = [
-    ...charged,
-    ...(penalties || []).filter(p => p.reason !== 'missed-bet' || !chargedKeys.has(nameKey(p.name)))
-  ];
+  day.penalties = penalties || [];
 }
 
 function recalculateCompletedResultsForCurrentBoundaryRule() {
