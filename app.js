@@ -2993,25 +2993,33 @@ function getPendingCrazyNoBetPenalties(day) {
   const cfg = getCrazyDayConfig(day);
   if (!cfg || !cfg.penaltyPoints || !day || day.wrapTime ||
       day.noBetPenaltyApplied === true || !day.betCloseAt ||
-      !day.betCloseDate || betCloseDiffSec(day) > 0) return [];
-  const betNames = new Set((day.guesses || [])
-    .filter(g => g?.name && g.time)
+      !day.betCloseDate || betCloseDiffSec(day) > 0) return null;
+
+  // The WhatsApp bets are published AFTER betting closes. Empty guesses
+  // means not yet imported, NOT that everyone missed their bet.
+  if (!day.approvedAt || !Array.isArray(day.guesses) ||
+      !day.guesses.some(g => g && g.name && g.time)) return null;
+
+  const roster = (S.playerRoster || []).filter(p => p && p.name && p.active !== false);
+  const rosterKeys = new Set(roster.map(p => nameKey(p.name)));
+  const betNames = new Set(day.guesses
+    .filter(g => g && g.name && g.time)
     .map(g => nameKey(g.name)));
-  return (S.playerRoster || [])
-    .filter(p => p?.name && p.active !== false && !betNames.has(nameKey(p.name)))
+
+  // Unknown names may be aliases: never punish someone on an ambiguous list.
+  if ([...betNames].some(key => !rosterKeys.has(key))) return null;
+
+  return roster
+    .filter(p => !betNames.has(nameKey(p.name)))
     .map(p => ({ name: p.name, points: cfg.penaltyPoints, reason: 'missed-bet' }));
 }
-
 async function applyClosedCrazyDayNoBetPenalties() {
   if (!IS_ADMIN || !currentUser || !_stateReady || _closingPenaltySaveInFlight) return;
   // Avoid repeated transaction attempts on network failure.
   if (Date.now() - _closingPenaltyLastAttempt < 15000) return;
   const games = Object.values(getLiveGames());
   const eligible = games.filter(day => {
-    const cfg = getCrazyDayConfig(day);
-    return day && !day.wrapTime && cfg?.penaltyPoints &&
-      day.noBetPenaltyApplied !== true && day.betCloseAt && day.betCloseDate &&
-      betCloseDiffSec(day) <= 0;
+    return getPendingCrazyNoBetPenalties(day) !== null;
   });
   if (!eligible.length) return;
   _closingPenaltySaveInFlight = true;
@@ -3020,6 +3028,7 @@ async function applyClosedCrazyDayNoBetPenalties() {
   try {
     for (const day of eligible) {
       const penalties = getPendingCrazyNoBetPenalties(day);
+      if (penalties === null) continue;
       penalties.forEach(p => applyScoreDelta(p.name, p.points));
       day.noBetPenaltyApplied = true;
       day.noBetPenaltyEntries = penalties;
