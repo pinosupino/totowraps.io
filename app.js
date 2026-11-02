@@ -1861,34 +1861,14 @@ function formatUnitLabel(unit) {
 }
 
 function nextUnitForDate(gameDate) {
+  // Only unfinished LIVE games reserve a unit name. Completed/archived
+  // games never prevent a fresh Main Unit, even on the same game date.
   const usedUnits = new Set();
-
-  /*
-   * Un nome unità è occupato sia se la partita
-   * è già nello storico, sia se è ancora live.
-   */
-  (S.days || [])
-    .filter(day => displayToISO(day.date) === gameDate)
-    .forEach(day => {
-      usedUnits.add(day.unit || 'main');
-    });
-
   Object.values(getLiveGames())
-    .filter(day => displayToISO(day?.date) === gameDate)
-    .forEach(day => {
-      usedUnits.add(day.unit || 'main');
-    });
-
+    .filter(day => day && !day.wrapTime && displayToISO(day.date) === gameDate)
+    .forEach(day => usedUnits.add(day.unit || 'main'));
   let index = 0;
-
-  while (
-    usedUnits.has(
-      unitNameFromIndex(index)
-    )
-  ) {
-    index += 1;
-  }
-
+  while (usedUnits.has(unitNameFromIndex(index))) index++;
   return unitNameFromIndex(index);
 }
 function dateFromISO(iso) {
@@ -3670,6 +3650,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
 	        <span class="winner-pts">${CUSTOM_UI_TEXT.wrapOutsideAllBets(esc(t.wrapTime))}</span>
       </${winnerCloseTag}>
       ${renderCrazyDayIndicator(t)}
+      ${canStartNextDay ? renderCrazyDaySetupCard(t) : ''}
       ${fridayBanner}
       <div class="card today-scroll-card"><div class="card-lbl">Results</div>
         <div class="today-scroll-list">
@@ -4427,7 +4408,7 @@ function renderToday() {
     return `<div class="tab-page-frame"><div class="card">
       <div class="card-lbl">Start New Day</div>
       <button class="btn btn-p" id="new-day-btn">Start Today's Game</button>
-    </div></div>`;
+    </div>${renderCrazyDaySetupCard(null)}</div>`;
   }
 
   const clockCard = `
@@ -4458,6 +4439,7 @@ function renderToday() {
       ${renderCancelLiveUnitAction(t)}
       ${clockCard}
       ${renderCrazyDayIndicator(t)}
+      ${renderCrazyDaySetupCard(t)}
       <div class="card today-scroll-card"><div class="card-lbl">${statusHeader}</div>
         <div class="today-scroll-list">${renderActiveTodayRows(t, sg, out, slices)}</div>
       </div>
@@ -4526,7 +4508,7 @@ function renderToday() {
 }
 
 function renderCrazyDaySetupCard(day) {
-  if ((day?.unit || 'main') !== 'main') return '';
+  const editable = Boolean(day && (day.unit || 'main') === 'main' && !day.wrapTime && !day.guesses?.some(g => g.time));
   const cfg = getCrazyDayConfig(day);
   const regular = cfg ? String(cfg.regularPoints) : '';
   const perfect = cfg ? String(cfg.perfectPoints) : '';
@@ -4534,7 +4516,7 @@ function renderCrazyDaySetupCard(day) {
   const nearMiss = cfg ? String(Math.abs(cfg.nearMissPenaltyPoints)) : '0';
   const statusText = cfg
     ? `Crazy Day is active: ${cfg.regularPoints > 0 ? '+' : ''}${cfg.regularPoints} regular, ${cfg.perfectPoints > 0 ? '+' : ''}${cfg.perfectPoints} perfect wrap, ${cfg.penaltyPoints} no bet, ${cfg.nearMissPenaltyPoints} nearest losing slots.`
-    : 'Tap to set special scoring for this day.';
+    : editable ? 'Tap to set special scoring for this day.' : 'Available for every new Main Unit. Start or select an unplayed Main Unit to edit.';
   return `<div class="card crazy-day-card${cfg ? ' is-saved' : ''}${_crazyDayPanelOpen ? ' expanded' : ''}">
     <div class="crazy-day-top">
       <div class="crazy-day-title">
@@ -4566,8 +4548,8 @@ function renderCrazyDaySetupCard(day) {
         Save Crazy Day to apply special scoring. Cancel Crazy Day removes it from this day and clears these fields.
       </div>
       <div class="crazy-day-actions">
-        <button class="btn btn-s" id="clear-crazy-day-btn" type="button">Cancel Crazy Day</button>
-        <button class="btn btn-p" id="save-crazy-day-btn" type="button">Save Crazy Day</button>
+        <button class="btn btn-s" id="clear-crazy-day-btn" type="button" ${editable ? '' : 'disabled'}>Cancel Crazy Day</button>
+        <button class="btn btn-p" id="save-crazy-day-btn" type="button" ${editable ? '' : 'disabled'}>Save Crazy Day</button>
       </div>
     </div>
   </div>`;
@@ -7903,13 +7885,9 @@ async function archiveCurrentLiveUnit() {
       (day.unit || 'main') === currentUnit
     );
 
-  if (!alreadyArchived) {
-    S.days.push(
-      JSON.parse(
-        JSON.stringify(currentGame)
-      )
-    );
-  }
+  // Same date and unit may occur multiple times; each completed game
+  // is a distinct history record.
+  S.days.push(JSON.parse(JSON.stringify(currentGame)));
 
   /*
    * Da questo momento la partita non è più una
@@ -9080,13 +9058,7 @@ async function createNewLiveUnit() {
             (historyDay.unit || 'main') === unit
           );
 
-        if (!alreadyArchived) {
-          S.days.push(
-            JSON.parse(
-              JSON.stringify(day)
-            )
-          );
-        }
+        S.days.push(JSON.parse(JSON.stringify(day)));
 
         delete S.liveGames[unitKey];
       });
@@ -9103,6 +9075,14 @@ async function createNewLiveUnit() {
    */
   const unit =
     nextUnitForDate(gameDate);
+
+  // A finished Main Unit may still be live. Archive it before reusing
+  // its key, without applying its score a second time.
+  const completedUnit = getLiveGames()[unit];
+  if (completedUnit?.wrapTime) {
+    S.days.push(JSON.parse(JSON.stringify(completedUnit)));
+    delete S.liveGames[unit];
+  }
 
   /*
    * Crazy Day appartiene alla gameDate
@@ -9133,7 +9113,7 @@ async function createNewLiveUnit() {
     null;
 
   const inheritedCrazyDay =
-    crazyDaySource?.crazyDay
+    unit !== 'main' && crazyDaySource?.crazyDay
       ? JSON.parse(
           JSON.stringify(
             crazyDaySource.crazyDay
@@ -9257,10 +9237,6 @@ function bindMain() {
   document.getElementById('crazy-day-toggle-btn')?.addEventListener('click', async () => {
     const card = document.querySelector('.crazy-day-card');
     const next = !card?.classList.contains('expanded');
-    if (!next && S.today?.crazyDay) {
-      await cancelCrazyDayForSafety();
-      return;
-    }
     _crazyDayPanelOpen = next;
     card?.classList.toggle('expanded', next);
     document.getElementById('crazy-day-toggle-btn')?.setAttribute('aria-expanded', String(next));
