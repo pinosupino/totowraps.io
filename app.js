@@ -134,6 +134,8 @@ let _territoryRuleMigrationPending = false;
 let _territoryRuleMigrationSaving = false;
 let _historyRowScrollAnimation = null;
 let _crazyDayPanelOpen = false;
+let _chainedPanelOpen = false;
+let _chainedDraft = null;
 let _shareResultInfo = null;
 const INACTIVITY_REFRESH_MS = 15 * 60 * 1000;
 const INACTIVITY_STORAGE_KEY = 'totowrap-inactive-at';
@@ -4470,6 +4472,7 @@ function renderToday() {
       ${renderCancelLiveUnitAction(t)}
       ${clockCard}
       ${renderCrazyDayIndicator(t)}
+      ${renderCrazyDaySetupCard(t)}
       ${renderChainedSetupCard()}
       <div class="card today-scroll-card"><div class="card-lbl">${statusHeader}</div>
         <div class="today-scroll-list">${renderActiveTodayRows(t, sg, out, slices)}</div>
@@ -4576,57 +4579,74 @@ function chainedExpandBets(bets, day=S.today) {
   return result;
 }
 function renderChainedSetupCard() {
-  const cfg = S.chainedTogether || {};
+  const saved = S.chainedTogether;
+  const cfg = _chainedDraft || saved || {};
   const pairs = cfg.pairs || [];
   const target = cfg.date || localDateISO();
-  const locked = Boolean(cfg.published);
-  return `<div class="card chained-card">
-    <div class="card-lbl">Chained Together</div>
-    <p class="mono dim" style="margin:8px 0">Draw pairs in advance. Only the admin can randomize. Players see the published draw.</p>
-    <label class="mono dim" for="chained-date">Game date</label>
-    <input id="chained-date" type="date" value="${esc(target)}" ${locked ? 'disabled' : ''} style="display:block;width:100%;margin:8px 0;padding:10px;border:1px solid var(--border,#ccc);border-radius:8px;background:var(--card,#fff);color:inherit">
-    <p class="mono dim">${locked ? 'Published · pairs are locked' : 'Draft · not visible to players'}</p>
-    <div class="chained-pair-grid">${pairs.map((pair,i) => `<div class="chained-pair"><small>PAIR ${i+1}</small><strong>${pair.map(esc).join(' + ')}</strong></div>`).join('')}</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-      <button class="btn btn-s" id="chained-randomize" ${locked ? 'disabled' : ''}>Randomize pairs</button>
-      <button class="btn btn-p" id="chained-publish" ${locked || !pairs.length ? 'disabled' : ''}>Publish pairs</button>
-      <button class="btn btn-s" id="chained-share" ${!locked ? 'disabled' : ''}>Share WhatsApp recap</button>
-      <button class="btn btn-s" id="chained-clear">Cancel Chained Together</button>
+  const locked = Boolean(saved?.published);
+  const open = _chainedPanelOpen;
+  return `<div class="card crazy-day-card chained-card${open ? ' expanded' : ''}${locked ? ' is-saved' : ''}">
+    <div class="crazy-day-top">
+      <div class="crazy-day-title"><strong>Chained Together</strong>
+      <span>${locked ? `Active on ${esc(saved.date)} · ${saved.pairs.length} groups published` : 'Enable to draw and publish pairs for one day.'}</span></div>
+      <button class="crazy-day-toggle" id="chained-toggle-btn" type="button" aria-label="Show Chained Together settings" aria-expanded="${open}"></button>
+    </div>
+    <div class="crazy-day-options">
+      <p class="mono dim" style="margin:8px 0">Draw pairs locally, then publish once to Firebase. Players see only published pairs.</p>
+      <label class="mono dim" for="chained-date">Game date</label>
+      <input id="chained-date" type="date" value="${esc(target)}" ${locked ? 'disabled' : ''} style="display:block;width:100%;margin:8px 0;padding:10px;border:1px solid var(--border,#ccc);border-radius:8px;background:var(--card,#fff);color:inherit">
+      <p class="mono dim">${locked ? 'Published · pairs are locked' : pairs.length ? 'Draft · not visible to players' : 'No draw yet'}</p>
+      <div class="chained-pair-grid">${pairs.map((pair,i) => `<div class="chained-pair"><small>PAIR ${i+1}</small><strong>${pair.map(esc).join(' + ')}</strong></div>`).join('')}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn btn-s" id="chained-randomize" ${locked ? 'disabled' : ''}>Randomize pairs</button>
+        <button class="btn btn-p" id="chained-publish" ${locked || !pairs.length ? 'disabled' : ''}>Publish pairs</button>
+        <button class="btn btn-s" id="chained-share" ${!locked ? 'disabled' : ''}>Share WhatsApp recap</button>
+        <button class="btn btn-s" id="chained-clear">${locked ? 'Cancel Chained Together' : 'Clear draft'}</button>
+      </div>
     </div>
   </div>`;
 }
 async function chainedSave(next) {
-  const old = cloneState();
+  if (!IS_ADMIN && !LOCAL_TEST_MODE) return toast('Admin access required', 'err');
+  const previous = cloneState();
   S.chainedTogether = next;
-  if (!await saveS()) { restoreAfterFailedSave(old); return false; }
+  const success = await saveS();
+  if (!success) {
+    if (!_lastSaveWasConflict) restoreAfterFailedSave(previous);
+    return false;
+  }
+  _chainedDraft = null;
+  _chainedPanelOpen = true;
   render();
   return true;
 }
-async function chainedRandomize() {
+function chainedRandomize() {
   const date = document.getElementById('chained-date')?.value;
   if (!date) return toast('Select a date', 'err');
   if (S.chainedTogether?.published) return toast('Cancel the published draw before creating another', 'err');
   if (S.today?.approvedAt && chainedDate() === date) return toast('Cannot redraw pairs after guesses were confirmed', 'err');
   const names = (S.playerRoster || []).filter(p => p.active !== false && p.name).map(p => p.name);
   if (names.length < 2) return toast('At least two active players required', 'err');
-  // Uniform Fisher-Yates draw; no repeats. Odd roster: final group of three.
   const a = [...names];
   for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
   const pairs=[];
   for(let i=0;i<a.length;i+=2) pairs.push(a.slice(i,i+2));
-  if (pairs.length>1 && pairs[pairs.length-1].length===1) {
-    pairs[pairs.length-2].push(pairs.pop()[0]);
-  }
-  await chainedSave({date,pairs,published:false});
+  if (pairs.length>1 && pairs[pairs.length-1].length===1) pairs[pairs.length-2].push(pairs.pop()[0]);
+  // A draft is local UI state only. Never write an unpublished randomization to Firebase.
+  _chainedDraft={date,pairs,published:false};
+  _chainedPanelOpen=true;
+  render();
 }
 async function chainedPublish() {
-  const cfg=S.chainedTogether;
-  if (!cfg?.pairs?.length || cfg.published) return;
+  const cfg=_chainedDraft;
+  if (!cfg?.pairs?.length || S.chainedTogether?.published) return;
   if (!confirm('Publish and lock these pairs for all players?')) return;
   if (await chainedSave({...cfg,published:true})) toast('Pairs published', 'ok');
 }
 async function chainedCancel() {
-  if (!S.chainedTogether) return;
+  if (!S.chainedTogether?.published) {
+    _chainedDraft=null;_chainedPanelOpen=true;render();return;
+  }
   if (S.today?.approvedAt && chainedDate() === S.chainedTogether.date) return toast('Cannot cancel after guesses were confirmed', 'err');
   if (!confirm('Cancel Chained Together? This removes the published pairs.')) return;
   if (await chainedSave(null)) toast('Chained Together canceled', 'ok');
@@ -9441,13 +9461,16 @@ function bindMain() {
   document.getElementById('crazy-day-toggle-btn')?.addEventListener('click', async () => {
     const card = document.querySelector('.crazy-day-card');
     const next = !card?.classList.contains('expanded');
-    if (!next && S.today?.crazyDay) {
-      await cancelCrazyDayForSafety();
-      return;
-    }
     _crazyDayPanelOpen = next;
     card?.classList.toggle('expanded', next);
     document.getElementById('crazy-day-toggle-btn')?.setAttribute('aria-expanded', String(next));
+  });
+  document.getElementById('chained-toggle-btn')?.addEventListener('click', () => {
+    const card = document.querySelector('.chained-card');
+    const next = !card?.classList.contains('expanded');
+    _chainedPanelOpen = next;
+    card?.classList.toggle('expanded', next);
+    document.getElementById('chained-toggle-btn')?.setAttribute('aria-expanded', String(next));
   });
   document.getElementById('chained-randomize')?.addEventListener('click', chainedRandomize);
   document.getElementById('chained-publish')?.addEventListener('click', chainedPublish);
