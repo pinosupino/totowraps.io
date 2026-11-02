@@ -3456,6 +3456,7 @@ function renderPlayer(app) {
   app.innerHTML=renderPlayerMain();
   startClock();
   bindPlayerNav();
+  chainedMaybeReveal();
 }
 
 function renderDesktopLiveBar() {
@@ -3541,7 +3542,7 @@ ${renderDesktopLiveBar()}
 
 <div class="tab-viewport">
   <div class="tab-strip" style="--view-count:3">
-    <section class="sec ${_tab==='today'?'on':''}" data-view="today">${renderPlayerToday()}</section>
+    <section class="sec ${_tab==='today'?'on':''}" data-view="today">${renderChainedPublicCard()}${renderPlayerToday()}</section>
     <section class="sec ${_tab==='board'?'on':''}" data-view="board">${renderBoard(_boardView)}</section>
     <section class="sec ${_tab==='history'?'on':''}" data-view="history">${renderHistory()}</section>
   </div>
@@ -4202,6 +4203,17 @@ function bindLiveUnitSwitcher() {
     );
 }
 
+function renderChainedPublicCard() {
+  const cfg = S.chainedTogether;
+  if (!cfg?.published || !Array.isArray(cfg.pairs)) return '';
+  const today = localDateISO();
+  if (cfg.date < today) return '';
+  return `<div class="card chained-public-card">
+    <div class="card-lbl">Chained Together · ${esc(cfg.date)}</div>
+    <p class="mono dim">One shared bet per pair. Both players earn points if they win.</p>
+    <div class="chained-pair-grid">${cfg.pairs.map((pair,i)=>`<div class="chained-pair"><small>PAIR ${i+1}</small><strong>${pair.map(esc).join(' + ')}</strong></div>`).join('')}</div>
+  </div>`;
+}
 function renderPlayerToday() {
   const t = S.today;
   const lastDay =
@@ -4458,6 +4470,7 @@ function renderToday() {
       ${renderCancelLiveUnitAction(t)}
       ${clockCard}
       ${renderCrazyDayIndicator(t)}
+      ${renderChainedSetupCard()}
       <div class="card today-scroll-card"><div class="card-lbl">${statusHeader}</div>
         <div class="today-scroll-list">${renderActiveTodayRows(t, sg, out, slices)}</div>
       </div>
@@ -4511,6 +4524,7 @@ function renderToday() {
     </div>
     ${renderCrazyDayIndicator(t)}
     ${renderCrazyDaySetupCard(t)}
+    ${renderChainedSetupCard()}
     <div class="card">
       <div class="card-lbl">Paste ${esc(unitLabel)} Guesses</div>
       <p class="mono dim" style="margin-bottom:10px">Format: Name - hh:mm (one per line).</p>
@@ -4523,6 +4537,169 @@ function renderToday() {
       <button class="btn btn-p mt12" id="parse-btn">Preview Guesses</button>
     </div>
   </div>`;
+}
+
+
+// CHAINED TOGETHER: pairs are drawn once by admin, persisted with the game state.
+// The draw is never randomized in a player's browser.
+function chainedDate(day=S.today) {
+  return displayToISO(day?.date || '') || '';
+}
+function chainedConfig(day=S.today) {
+  const cfg = S.chainedTogether;
+  return cfg?.published && cfg.date === chainedDate(day) && Array.isArray(cfg.pairs) ? cfg : null;
+}
+function chainedPairFor(name, day=S.today) {
+  return chainedConfig(day)?.pairs.find(pair => pair.some(n => nameKey(n) === nameKey(name))) || null;
+}
+function chainedExpandBets(bets, day=S.today) {
+  const cfg = chainedConfig(day);
+  if (!cfg) return bets;
+  const result = bets.map(g => ({...g}));
+  for (const pair of cfg.pairs) {
+    const submitted = result.filter(g => pair.some(n => nameKey(n) === nameKey(g.name)) && g.time);
+    if (submitted.length > 1 && new Set(submitted.map(g => g.time)).size > 1) {
+      throw new Error(`${pair.join(' + ')} must bet the same time.`);
+    }
+    if (!submitted.length) continue;
+    const reference = submitted[0];
+    for (const name of pair) {
+      const found = result.find(g => nameKey(g.name) === nameKey(name));
+      if (found) {
+        found.time = reference.time;
+        found.date = reference.date;
+      } else {
+        result.push({...reference, name});
+      }
+    }
+  }
+  return result;
+}
+function renderChainedSetupCard() {
+  const cfg = S.chainedTogether || {};
+  const pairs = cfg.pairs || [];
+  const target = cfg.date || localDateISO();
+  const locked = Boolean(cfg.published);
+  return `<div class="card chained-card">
+    <div class="card-lbl">Chained Together</div>
+    <p class="mono dim" style="margin:8px 0">Draw pairs in advance. Only the admin can randomize. Players see the published draw.</p>
+    <label class="mono dim" for="chained-date">Game date</label>
+    <input id="chained-date" type="date" value="${esc(target)}" ${locked ? 'disabled' : ''} style="display:block;width:100%;margin:8px 0;padding:10px;border:1px solid var(--border,#ccc);border-radius:8px;background:var(--card,#fff);color:inherit">
+    <p class="mono dim">${locked ? 'Published · pairs are locked' : 'Draft · not visible to players'}</p>
+    <div class="chained-pair-grid">${pairs.map((pair,i) => `<div class="chained-pair"><small>PAIR ${i+1}</small><strong>${pair.map(esc).join(' + ')}</strong></div>`).join('')}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn btn-s" id="chained-randomize" ${locked ? 'disabled' : ''}>Randomize pairs</button>
+      <button class="btn btn-p" id="chained-publish" ${locked || !pairs.length ? 'disabled' : ''}>Publish pairs</button>
+      <button class="btn btn-s" id="chained-share" ${!locked ? 'disabled' : ''}>Share WhatsApp recap</button>
+      <button class="btn btn-s" id="chained-clear">Cancel Chained Together</button>
+    </div>
+  </div>`;
+}
+async function chainedSave(next) {
+  const old = cloneState();
+  S.chainedTogether = next;
+  if (!await saveS()) { restoreAfterFailedSave(old); return false; }
+  render();
+  return true;
+}
+async function chainedRandomize() {
+  const date = document.getElementById('chained-date')?.value;
+  if (!date) return toast('Select a date', 'err');
+  if (S.chainedTogether?.published) return toast('Cancel the published draw before creating another', 'err');
+  if (S.today?.approvedAt && chainedDate() === date) return toast('Cannot redraw pairs after guesses were confirmed', 'err');
+  const names = (S.playerRoster || []).filter(p => p.active !== false && p.name).map(p => p.name);
+  if (names.length < 2) return toast('At least two active players required', 'err');
+  // Uniform Fisher-Yates draw; no repeats. Odd roster: final group of three.
+  const a = [...names];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  const pairs=[];
+  for(let i=0;i<a.length;i+=2) pairs.push(a.slice(i,i+2));
+  if (pairs.length>1 && pairs[pairs.length-1].length===1) {
+    pairs[pairs.length-2].push(pairs.pop()[0]);
+  }
+  await chainedSave({date,pairs,published:false});
+}
+async function chainedPublish() {
+  const cfg=S.chainedTogether;
+  if (!cfg?.pairs?.length || cfg.published) return;
+  if (!confirm('Publish and lock these pairs for all players?')) return;
+  if (await chainedSave({...cfg,published:true})) toast('Pairs published', 'ok');
+}
+async function chainedCancel() {
+  if (!S.chainedTogether) return;
+  if (S.today?.approvedAt && chainedDate() === S.chainedTogether.date) return toast('Cannot cancel after guesses were confirmed', 'err');
+  if (!confirm('Cancel Chained Together? This removes the published pairs.')) return;
+  if (await chainedSave(null)) toast('Chained Together canceled', 'ok');
+}
+function chainedShare() {
+  const cfg=S.chainedTogether;
+  if (!cfg?.published) return;
+  const dark = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark');
+  const c=document.createElement('canvas'); c.width=1080;
+  c.height=380+Math.ceil(cfg.pairs.length/2)*112;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle=dark?'#202124':'#fffdd0';ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle=dark?'#f5f5f5':'#222';ctx.textAlign='center';
+  ctx.font='900 72px Arial';ctx.fillText('TOTOWRAP',540,112);
+  ctx.fillStyle='#bd3035';ctx.font='800 46px Arial';ctx.fillText('CHAINED TOGETHER',540,182);
+  ctx.fillStyle=dark?'#ccc':'#666';ctx.font='28px Arial';ctx.fillText(cfg.date,540,231);
+  cfg.pairs.forEach((pair,i)=>{
+    const x=50+(i%2)*500,y=280+Math.floor(i/2)*112;
+    ctx.fillStyle=dark?'#35363a':'#fff';ctx.fillRect(x,y,480,94);
+    ctx.fillStyle='#bd3035';ctx.textAlign='left';ctx.font='bold 19px Arial';ctx.fillText('PAIR '+String(i+1).padStart(2,'0'),x+18,y+28);
+    ctx.fillStyle=dark?'#fff':'#222';ctx.font='bold 25px Arial';
+    const line=pair.join(' + ');
+    let font=25;while(ctx.measureText(line).width>440 && font>14){font--;ctx.font=`bold ${font}px Arial`;}
+    ctx.fillText(line,x+18,y+65);
+  });
+  ctx.textAlign='center';ctx.fillStyle=dark?'#ddd':'#555';ctx.font='24px Arial';
+  ctx.fillText('ONE BET · SHARED POINTS',540,c.height-40);
+  c.toBlob(async blob=>{
+    if(!blob)return;
+    const file=new File([blob],'totowrap-chained-'+cfg.date+'.png',{type:'image/png'});
+    try {
+      if(navigator.canShare?.({files:[file]})){await navigator.share({files:[file],title:'TotoWrap Chained Together'});return;}
+    } catch(e){if(e.name==='AbortError')return;}
+    const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
+  },'image/png');
+}
+function chainedMaybeReveal() {
+  if (IS_ADMIN) return;
+  const cfg=S.chainedTogether;
+  if(!cfg?.published || cfg.date!==localDateISO() || !cfg.pairs?.length)return;
+  const key='totowrap-chained-reveal-'+cfg.date+'-'+cfg.pairs.map(p=>p.join('|')).join(';');
+  try{if(sessionStorage.getItem(key))return;sessionStorage.setItem(key,'1');}catch(_){}
+  const overlay=document.createElement('div');
+  overlay.className='chained-reveal-overlay';
+  overlay.innerHTML=`<div class="chained-reveal-content"><img src="imgs/totoswrap.png" alt="TotoWrap"><h1>CHAINED TOGETHER</h1><p>THE PAIRING REVEAL</p><div class="chained-reveal-name"></div><div class="chained-reveal-list"></div></div>`;
+  document.body.appendChild(overlay);
+  const list=overlay.querySelector('.chained-reveal-list'),label=overlay.querySelector('.chained-reveal-name');
+  const all=cfg.pairs.flat();
+  let index=0;
+  const reveal=()=>{
+    if(!overlay.isConnected)return;
+    if(index>=cfg.pairs.length){
+      label.textContent='PAIRS REVEALED';
+      setTimeout(()=>overlay.remove(),1600);
+      return;
+    }
+    let ticks=0;
+    const spinner=setInterval(()=>{
+      if(!overlay.isConnected){clearInterval(spinner);return;}
+      label.textContent=all[Math.floor(Math.random()*all.length)];
+      if(++ticks>=9){
+        clearInterval(spinner);
+        const pair=cfg.pairs[index];
+        label.textContent=pair.join(' + ');
+        const el=document.createElement('div');el.className='chained-reveal-pair';
+        el.textContent=`PAIR ${index+1} · ${pair.join(' + ')}`;
+        list.appendChild(el);
+        index++;
+        setTimeout(reveal,450);
+      }
+    },65);
+  };
+  reveal();
 }
 
 function renderCrazyDaySetupCard(day) {
@@ -8687,6 +8864,13 @@ async function showPreview() {
         return;
       }
 
+      let pairedFullList;
+      try {
+        pairedFullList = chainedExpandBets(editedFullList);
+      } catch(error) {
+        toast(error.message, 'err');
+        return;
+      }
       const prevS = cloneState();
 
 	    newPlayers.forEach(name => {
@@ -8696,7 +8880,7 @@ async function showPreview() {
     
       S.today.approvedAt = previewApprovedAt;
 	      S.today.approvedDate = previewApprovedDate;
-	      S.today.guesses = editedFullList;
+	      S.today.guesses = pairedFullList;
 	      S.today.estWrap = finalWrap;
 	      S.today.estWrapDate = savedWrapDate;
 	      S.today.addedPlayers = newPlayers;
@@ -9265,6 +9449,10 @@ function bindMain() {
     card?.classList.toggle('expanded', next);
     document.getElementById('crazy-day-toggle-btn')?.setAttribute('aria-expanded', String(next));
   });
+  document.getElementById('chained-randomize')?.addEventListener('click', chainedRandomize);
+  document.getElementById('chained-publish')?.addEventListener('click', chainedPublish);
+  document.getElementById('chained-clear')?.addEventListener('click', chainedCancel);
+  document.getElementById('chained-share')?.addEventListener('click', chainedShare);
   document.getElementById('save-crazy-day-btn')?.addEventListener('click', saveCrazyDaySettings);
   document.getElementById('clear-crazy-day-btn')?.addEventListener('click', clearCrazyDaySettings);
   document.getElementById('admin-clock')?.addEventListener('click', () => {
