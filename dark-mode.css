@@ -433,11 +433,3 @@ html.dark-mode .result-share-card { background: var(--bg3); border-color: var(--
 html.dark-mode .result-share-winner, html.dark-mode .result-share-time { background: var(--bg); }
 html.dark-mode .result-share-name { color: var(--text); }
 html.dark-mode .result-share-card.no-winner .result-share-name { color: var(--red); }
-
-/* Theme control next to the wrap pill, in the header on all screen sizes. */
-.hdr-right { display:flex; align-items:center; justify-content:flex-end; gap:8px; }
-.theme-toggle.theme-toggle-desktop,
-html.dark-mode .theme-toggle.theme-toggle-desktop {
-  position:static; inset:auto; z-index:auto; width:34px; height:34px;
-  margin:0; flex-shrink:0; box-shadow:none;
-}
