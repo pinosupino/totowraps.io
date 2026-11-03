@@ -1528,7 +1528,7 @@ async function exportProjectBackup() {
   }
 }
 
-const DISPLAY_TOTAL_DAYS = 38;
+const DISPLAY_TOTAL_DAYS = 39;
 
 function displayDayNumber(internalDayNumber) {
   const n = Number(internalDayNumber);
@@ -1548,24 +1548,16 @@ function displayDayProgressHeader(internalDayNumber) {
 }
 
 function getProjectGameDates() {
+  // One shoot day per calendar date with a Main Unit game.
+  // Other units on the same date must never increment the counter.
   const dates = new Set();
-
-  (S.days || []).forEach(day => {
-    const isoDate = displayToISO(day?.date);
+  const addMainUnitDate = day => {
+    if (!day || (day.unit || 'main') !== 'main') return;
+    const isoDate = displayToISO(day.date);
     if (isoDate) dates.add(isoDate);
-  });
-
-  Object.values(
-    getLiveGames()
-  ).forEach(day => {
-    const isoDate =
-      displayToISO(day?.date);
-
-    if (isoDate) {
-      dates.add(isoDate);
-    }
-  });
-
+  };
+  (S.days || []).forEach(addMainUnitDate);
+  Object.values(getLiveGames()).forEach(addMainUnitDate);
   return [...dates].sort();
 }
 
