@@ -136,6 +136,8 @@ let _territoryRuleMigrationSaving = false;
 let _historyRowScrollAnimation = null;
 let _crazyDayPanelOpen = false;
 let _settingsView = 'general';
+let _chainedPanelOpen = false;
+let _chainedDraft = null;
 let _shareResultInfo = null;
 const INACTIVITY_REFRESH_MS = 15 * 60 * 1000;
 const INACTIVITY_STORAGE_KEY = 'totowrap-inactive-at';
@@ -3650,7 +3652,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
       ${fridayBanner}
       <div class="card today-scroll-card"><div class="card-lbl">Results</div>
         <div class="today-scroll-list">
-        ${sg.map(g => {
+        ${chainedPairs(t).length ? renderChainedTodayRows(t,true) : sg.map(g => {
           const st = getPreviousStreak(g.name);
           const penalty = penaltiesByPlayer.get(nameKey(g.name));
           const penaltyStatus = todayPenaltyStatus(penalty);
@@ -3686,7 +3688,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
   ${fridayBanner}
   <div class="card today-scroll-card"><div class="card-lbl">Results</div>
     <div class="today-scroll-list">
-    ${sg.map(g => {
+    ${chainedPairs(t).length ? renderChainedTodayRows(t,true) : sg.map(g => {
       const st = getPreviousStreak(g.name);
       const isWinner = todayWinnerNames.includes(g.name);
       const penalty = penaltiesByPlayer.get(nameKey(g.name));
@@ -4055,6 +4057,7 @@ function renderActiveTodayRows(t, sg, out, slices) {
         : `<div class="badge b-missing">${CUSTOM_UI_TEXT.forgotBet}</div>`}
     </div>`;
   }).join('');
+  if (chainedPairs(t).length) return renderChainedTodayRows(t) + renderAddableCurrentPlayerRows(t);
   return rows + renderAddableCurrentPlayerRows(t);
 }
 
@@ -4503,6 +4506,201 @@ function renderToday() {
       <button class="btn btn-p mt12" id="parse-btn">Preview Guesses</button>
     </div>
   </div>`;
+}
+
+// CHAINED TOGETHER: stored on the individual game, never as a global setting.
+function chainedPairs(day=S.today) {
+  if (!day?.chainedTogether?.enabled || !Array.isArray(day.chainedTogether.pairs)) return [];
+  return day.chainedTogether.pairs.filter(p => Array.isArray(p) && p.length === 2 && p[0] && p[1]);
+}
+function chainedPairFor(name, day=S.today) {
+  return chainedPairs(day).find(pair => pair.some(n => nameKey(n) === nameKey(name))) || null;
+}
+function chainedPairKey(pair) { return pair.map(nameKey).sort().join('|'); }
+function chainedRoster() { return getAlphabeticalPlayerRoster().filter(p => p.active !== false).map(p => p.name); }
+function chainedDraftPairs() {
+  if (_chainedDraft) return _chainedDraft;
+  return chainedPairs(S.today).map(pair => [...pair]);
+}
+function renderChainedSetupCard(day) {
+  const saved = chainedPairs(day);
+  const editable = !!(day && (day.unit || 'main') === 'main' && !day.wrapTime && !(day.guesses || []).some(g => g.time));
+  const draft = chainedDraftPairs();
+  const players = chainedRoster();
+  const selected = new Set(draft.flat().map(nameKey));
+  const unpaired = players.filter(n => !selected.has(nameKey(n)));
+  const options = (current, other) => `<option value="">Choose player</option>` + players.filter(n => nameKey(n) === nameKey(current) || (nameKey(n) !== nameKey(other) && !draft.some(p => p.some(x => nameKey(x) === nameKey(n))))).map(n => `<option value="${esc(n)}" ${nameKey(n)===nameKey(current)?'selected':''}>${esc(n)}</option>`).join('');
+  return `<div class="card chained-card${_chainedPanelOpen?' expanded':''}">
+    <div class="crazy-day-top"><div class="crazy-day-title"><strong>Chained Together ${saved.length ? '· ON' : '· OFF'}</strong><span>${saved.length ? `${saved.length} saved pairs · one shared bet per pair` : 'Pair players for one shared bet and individual winner points.'}</span></div>
+    <button class="crazy-day-toggle" id="chained-toggle-btn" type="button" aria-label="Configure Chained Together" aria-expanded="${_chainedPanelOpen}"></button></div>
+    <div class="chained-options" ${_chainedPanelOpen?'':'hidden'}>
+      <p class="mono dim">Each pair votes for one time. Enter a single bet under either player's name; both receive the same bet and any normal or exact win points.</p>
+      ${!editable ? '<p class="mono dim chained-warning">Start or select an unplayed Main Unit to configure pairs. Pairings lock when bets are confirmed.</p>' : ''}
+      <div class="chained-pair-list">${draft.map((p,i)=>`<div class="chained-pair-edit"><span class="chained-index">${String(i+1).padStart(2,'0')}</span><select data-chained-pair="${i}" data-side="0" ${editable?'':'disabled'}>${options(p[0],p[1])}</select><span class="chained-link">↔</span><select data-chained-pair="${i}" data-side="1" ${editable?'':'disabled'}>${options(p[1],p[0])}</select><button class="settings-delete" data-chained-remove="${i}" type="button" ${editable?'':'disabled'} aria-label="Remove pair">×</button></div>`).join('')}</div>
+      ${unpaired.length ? `<p class="mono dim chained-unpaired">Unpaired: ${esc(unpaired.join(', '))}</p>` : ''}
+      <div class="chained-actions"><button class="btn btn-s" type="button" id="chained-add" ${editable?'':'disabled'}>Add Pair</button><button class="btn btn-s" type="button" id="chained-random" ${editable?'':'disabled'}>Shuffle Pairs</button></div>
+      <div class="chained-actions"><button class="btn btn-s" type="button" id="chained-clear" ${editable?'':'disabled'}>Turn Off</button><button class="btn btn-p" type="button" id="chained-save" ${editable?'':'disabled'}>Save Pairs</button></div>
+      ${saved.length ? `<div class="chained-actions"><button class="btn btn-p" type="button" id="chained-export">Export Pairs Image</button></div>` : ''}
+      ${players.length%2 ? '<p class="mono dim">Odd number of active players: one player can remain unpaired and bet individually.</p>' : ''}
+    </div>
+  </div>`;
+}
+function refreshChainedCard() {
+  const old = document.querySelector('.chained-card');
+  if (!old) return;
+  const holder = document.createElement('div');
+  holder.innerHTML = renderChainedSetupCard(S.today);
+  old.replaceWith(holder.firstElementChild);
+}
+function validateChainedPairs(pairs) {
+  const roster = new Set(chainedRoster().map(nameKey));
+  const used = new Set();
+  for (const p of pairs) {
+    if (!Array.isArray(p) || p.length !== 2 || !p[0] || !p[1]) return 'Complete both names in each pair';
+    for (const name of p) {
+      const key = nameKey(name);
+      if (!roster.has(key)) return `Inactive or unknown player: ${name}`;
+      if (used.has(key)) return `Player assigned twice: ${name}`;
+      used.add(key);
+    }
+  }
+  return '';
+}
+function expandChainedBets(parsed, day=S.today) {
+  const pairs = chainedPairs(day);
+  if (!pairs.length) return { guesses: parsed, error: '' };
+  const times = new Map();
+  for (const guess of parsed) {
+    const pair = chainedPairFor(guess.name, day);
+    if (!pair) continue;
+    const key = chainedPairKey(pair);
+    const prior = times.get(key);
+    if (prior && prior !== guess.time) return { guesses: [], error: `${pair.join(' + ')} submitted different times` };
+    times.set(key, guess.time);
+  }
+  const existing = new Set(parsed.map(g => nameKey(g.name)));
+  const result = parsed.map(g => ({...g}));
+  for (const pair of pairs) {
+    const time = times.get(chainedPairKey(pair));
+    if (!time) continue;
+    for (const name of pair) if (!existing.has(nameKey(name))) {
+      result.push({ name, time });
+      existing.add(nameKey(name));
+    }
+  }
+  return { guesses: result, error: '' };
+}
+function renderChainedTodayRows(day, completed=false) {
+  const pairs = chainedPairs(day);
+  if (!pairs.length) return '';
+  const guesses = day.guesses || [];
+  const used = new Set();
+  const groups = [];
+  for (const pair of pairs) {
+    const items = pair.map(n => guesses.find(g => nameKey(g.name) === nameKey(n)) || {name:n,time:null});
+    items.forEach(g => used.add(nameKey(g.name)));
+    groups.push({names:pair, time:items.find(g=>g.time)?.time || null});
+  }
+  for (const g of guesses) if (!used.has(nameKey(g.name))) groups.push({names:[g.name],time:g.time});
+  groups.sort((a,b) => (a.time ? 0:1)-(b.time ? 0:1) || (a.time||'').localeCompare(b.time||''));
+  const winners = new Set((day.winners || []).map(w=>nameKey(w.name)));
+  const now = gameNowSec(day);
+  const out = !completed ? eliminated(guesses,now,day) : null;
+  return groups.map(group => {
+    const won = group.names.some(n => winners.has(nameKey(n)));
+    const eliminatedAll = !completed && group.names.every(n => out.has(n));
+    const status = completed ? (won ? 'WIN' : 'OUT') : (eliminatedAll ? 'OUT' : 'IN');
+    return `<div class="row chained-today-row${won?' golden-winner-row':''}"><div class="row-name chained-today-names">${group.names.map(n=>`<span>${esc(n)}</span>`).join('<span class="chained-link">↔</span>')}</div><div class="row-time">${group.time?esc(group.time):'--:--'}</div><div class="badge ${won?'b-win':status==='OUT'?'b-out':'b-in'}">${group.time?status:'NO BET'}</div></div>`;
+  }).join('');
+}
+function chainedExportImage(day=S.today) {
+  const pairs = chainedPairs(day);
+  if (!pairs.length) { toast('Save pairs before exporting', 'err'); return; }
+  const dark = document.documentElement.classList.contains('dark-mode') || document.body.classList.contains('dark-mode');
+  const width = 1080, rowHeight = 114, height = 420 + pairs.length * rowHeight;
+  const canvas = document.createElement('canvas');
+  canvas.width = width; canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  const bg = dark ? '#202226' : '#fffdd0', panel = dark ? '#303238' : '#ffffff';
+  const ink = dark ? '#f8f8f6' : '#202124', muted = dark ? '#b5b9c0' : '#656a70';
+  ctx.fillStyle = bg; ctx.fillRect(0,0,width,height);
+  const round = (x,y,w,h,r) => {ctx.beginPath();ctx.roundRect(x,y,w,h,r);};
+  const center = (txt,y,size=30,color=ink,weight=700) => {ctx.fillStyle=color;ctx.font=`${weight} ${size}px "Google Sans Flex",Arial,sans-serif`;ctx.textAlign='center';ctx.fillText(txt,width/2,y);};
+  const logo = new Image();
+  logo.onload = () => {
+    const maxW=420,maxH=120, scale=Math.min(maxW/logo.width,maxH/logo.height);
+    ctx.drawImage(logo,(width-logo.width*scale)/2,28,logo.width*scale,logo.height*scale);
+    finish();
+  };
+  logo.onerror = finish;
+  function finish() {
+    center('CHAINED TOGETHER',205,56,ink,800);
+    center(`${displayDayLabel(getInternalProjectDayNumberForDate(day.date))}  ·  PAIR REVEAL`,254,23,muted,600);
+    pairs.forEach((p,i) => {
+      const y=290+i*rowHeight;
+      ctx.fillStyle=panel;round(54,y,width-108,96,16);ctx.fill();
+      ctx.textAlign='left';ctx.fillStyle=muted;ctx.font='600 22px "Google Sans Flex",Arial,sans-serif';ctx.fillText(String(i+1).padStart(2,'0'),84,y+58);
+      ctx.fillStyle=ink;ctx.font='700 31px "Google Sans Flex",Arial,sans-serif';
+      ctx.textAlign='right';ctx.fillText(p[0],502,y+60,360);
+      ctx.textAlign='center';ctx.fillText('↔',540,y+60);
+      ctx.textAlign='left';ctx.fillText(p[1],578,y+60,360);
+    });
+    center('TWO PLAYERS · ONE BET',height-42,22,muted,700);
+    canvas.toBlob(blob => {
+      if (!blob) {toast('Could not create image','err');return;}
+      const url=URL.createObjectURL(blob), a=document.createElement('a');
+      a.href=url;a.download=`TotoWrap_Chained_Together_${day.date||'today'}.png`;a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+    },'image/png');
+  }
+  logo.src = IS_ADMIN && location.pathname.includes('/admin/') ? '../imgs/totowrap.png' : 'imgs/totowrap.png';
+}
+async function saveChainedPairs(pairs) {
+  if (!IS_ADMIN || !currentUser || !S.today || S.today.wrapTime || (S.today.guesses||[]).some(g=>g.time) || (S.today.unit||'main')!=='main') return;
+  const error=validateChainedPairs(pairs);
+  if (error) {toast(error,'err');return;}
+  if (!pairs.length) {toast('Create at least one pair','err');return;}
+  const previous=cloneState();
+  S.today.chainedTogether={enabled:true,pairs:pairs.map(p=>[...p])};
+  if (!await saveS()) {restoreAfterFailedSave(previous);return;}
+  _chainedDraft=null;toast('Chained Together pairs saved','ok');render();
+}
+function bindChainedSettings() {
+  const settings=document.getElementById('tab-settings');
+  if (!settings || settings.dataset.chainedBound) return;
+  settings.dataset.chainedBound='1';
+  settings.addEventListener('click', async event => {
+    const btn=event.target.closest('button');if(!btn)return;
+    if(btn.id==='chained-toggle-btn') { _chainedPanelOpen=!_chainedPanelOpen;refreshChainedCard();return; }
+    if(btn.id==='chained-export') {chainedExportImage();return;}
+    if(btn.id==='chained-add') {
+      const pairs=chainedDraftPairs().map(p=>[...p]);
+      pairs.push(['','']);_chainedDraft=pairs;refreshChainedCard();return;
+    }
+    if(btn.id==='chained-random') {
+      const roster=chainedRoster();
+      for(let i=roster.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[roster[i],roster[j]]=[roster[j],roster[i]];}
+      _chainedDraft=[];for(let i=0;i+1<roster.length;i+=2)_chainedDraft.push([roster[i],roster[i+1]]);
+      refreshChainedCard();return;
+    }
+    if(btn.hasAttribute('data-chained-remove')) {
+      const pairs=chainedDraftPairs().map(p=>[...p]);pairs.splice(Number(btn.dataset.chainedRemove),1);
+      _chainedDraft=pairs;refreshChainedCard();return;
+    }
+    if(btn.id==='chained-save'){await saveChainedPairs(chainedDraftPairs());return;}
+    if(btn.id==='chained-clear') {
+      if (!S.today || S.today.wrapTime || (S.today.guesses||[]).some(g=>g.time)) return;
+      const previous=cloneState();delete S.today.chainedTogether;
+      if(!await saveS()){restoreAfterFailedSave(previous);return;}
+      _chainedDraft=null;_chainedPanelOpen=false;toast('Chained Together turned off','ok');render();
+    }
+  });
+  settings.addEventListener('change', event=>{
+    const el=event.target.closest('[data-chained-pair]');if(!el)return;
+    const pairs=chainedDraftPairs().map(p=>[...p]);
+    pairs[Number(el.dataset.chainedPair)][Number(el.dataset.side)]=el.value;
+    _chainedDraft=pairs;refreshChainedCard();
+  });
 }
 
 function renderCrazyDaySetupCard(day) {
@@ -8386,6 +8584,7 @@ ${hasCurrentDay ? `
 </div></div>
 <div class="settings-subview" ${_settingsView==='extra'?'':'hidden'}>
   ${renderCrazyDaySetupCard(S.today)}
+  ${renderChainedSetupCard(S.today)}
 </div></div>`;
 }
 
@@ -8425,7 +8624,11 @@ async function showPreview() {
   if (!text.trim()) { toast('Paste guesses first', 'err'); return; }
   // The Crazy Day editor now lives under Settings > Extra Rules.
   // Never remove saved special scoring simply because its editor is not open.
-  const { guesses: parsed, formatErrors } = parsePaste(text);
+  const parsedInput = parsePaste(text);
+  const expanded = expandChainedBets(parsedInput.guesses, S.today);
+  if (expanded.error) {toast(expanded.error,'err');return;}
+  const { guesses: parsed } = expanded;
+  const { formatErrors } = parsedInput;
   if (!parsed.length && (!formatErrors || !formatErrors.length)) {
       toast('No valid data found', 'err');
       return;
@@ -8723,6 +8926,14 @@ async function showPreview() {
       });
 
       if (editedFullList.some(g => !g)) {
+        return;
+      }
+      // A pair must still share one time after manual preview edits.
+      if (chainedPairs(S.today).some(pair => {
+        const bets = pair.map(name => editedFullList.find(g => nameKey(g.name) === nameKey(name))?.time || null);
+        return bets[0] !== bets[1];
+      })) {
+        toast('Chained Together: both players must have the same bet time', 'err');
         return;
       }
 
@@ -9194,6 +9405,7 @@ async function createNewLiveUnit() {
     noWinner: false,
     penalties: [],
     crazyDay: inheritedCrazyDay,
+    chainedTogether: null,
     estWrap: null,
     estWrapDate: null,
     betCloseAt: null,
@@ -9308,6 +9520,7 @@ function bindMain() {
       panel.hidden = index !== (view === 'general' ? 0 : 1);
     });
   }));
+  bindChainedSettings();
   document.getElementById('crazy-day-toggle-btn')?.addEventListener('click', async () => {
     const card = document.querySelector('.crazy-day-card');
     const next = !card?.classList.contains('expanded');
