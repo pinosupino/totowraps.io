@@ -24,10 +24,13 @@
       button.type = 'button';
       button.dataset.themeToggle = '';
       document.body.appendChild(button);
-    } else if (button.parentElement !== document.body) {
-      document.body.appendChild(button);
     }
-    button.className = 'theme-toggle theme-toggle-desktop';
+    // Place the switch next to the Wrap pill whenever the main header exists.
+    // Keep it accessible on sign-in/error screens without a Wrap pill.
+    const headerRight = document.querySelector('#app .hdr .hdr-right');
+    const destination = headerRight || document.body;
+    if (button.parentElement !== destination) destination.appendChild(button);
+    button.className = 'theme-toggle theme-toggle-desktop' + (headerRight ? ' theme-toggle-in-header' : '');
     button.textContent = dark ? '☀' : '☾';
     button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
     button.setAttribute('title', dark ? 'Light mode' : 'Dark mode');
