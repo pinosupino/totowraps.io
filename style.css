@@ -1548,3 +1548,11 @@ html.dark-mode .hdr-wrap-time.off {
 @media(max-width:450px) {
   .chained-card .chained-pair-edit {padding:6px 5px;gap:4px;}
 }
+
+/* Steal the Day: flat, consistent with existing Extra Rules cards */
+.steal-day-card {background:var(--bg2);box-shadow:none;background-image:none;}
+.steal-day-options {padding:12px 14px 14px;border-top:1px solid var(--border);background:transparent;}
+.steal-day-options[hidden] {display:none!important;}
+.steal-day-options p {margin:0 0 10px;line-height:1.55;}
+.steal-day-actions {display:flex;gap:8px;flex-wrap:wrap;}
+.steal-day-indicator {padding:10px 14px;margin-bottom:12px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);font-size:12px;font-weight:700;letter-spacing:.04em;}

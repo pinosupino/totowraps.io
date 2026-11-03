@@ -2643,6 +2643,35 @@ function getCrazyDayConfig(day=S.today) {
   return { enabled: true, regularPoints, perfectPoints, penaltyPoints, nearMissPenaltyPoints };
 }
 
+function isStealTheDay(day=S.today) {
+  return day?.stealTheDay?.enabled === true;
+}
+function validateStealBets(guesses, day=S.today) {
+  if (!isStealTheDay(day)) return '';
+  const bets = (guesses || []).filter(g => g?.time);
+  if (bets.length < 3) return 'Steal the Day requires at least 3 valid bets.';
+  const seen = new Set();
+  for (const bet of bets) {
+    const key = `${bet.date || inferBetDate(bet.time, day)}|${normalizeHMInput(bet.time)}`;
+    if (seen.has(key)) return 'Steal the Day: shared betting times are not allowed.';
+    seen.add(key);
+  }
+  return '';
+}
+function stealDayVictims(guesses, winnerName, day, wrapTime) {
+  const reference = wrapTimelineSec(wrapTime, day);
+  const bets = (guesses || []).filter(g => g?.time)
+    .map(g => ({name:g.name, sec:betTimelineSec(g, reference)}))
+    .sort((a,b) => a.sec-b.sec);
+  const index = bets.findIndex(g => nameKey(g.name) === nameKey(winnerName));
+  if (index < 0 || bets.length < 3) return [];
+  let neighbors;
+  if (index === 0) neighbors = bets.slice(1,3);
+  else if (index === bets.length-1) neighbors = bets.slice(-3,-1);
+  else neighbors = [bets[index-1],bets[index+1]];
+  return neighbors.map(g => ({name:g.name,points:-1,reason:'steal-the-day'}));
+}
+
 function getDayScoring(day=S.today) {
   return getCrazyDayConfig(day) || { enabled: false, regularPoints: 1, perfectPoints: 2, penaltyPoints: 0, nearMissPenaltyPoints: 0 };
 }
@@ -2708,6 +2737,9 @@ function calcWinner(guesses, wrapHMSInput, day=S.today) {
   const slices = boundaries(guesses, day, wrapSec);
 
   const scoring = getDayScoring(day);
+  if (isStealTheDay(day) && validateStealBets(guesses, day)) {
+    return {winner:CUSTOM_UI_TEXT.noWinner,winners:[],points:0,noWinner:true,penalties:[]};
+  }
 
   const winningSlice = slices.find(s => wrapSec >= s.start && wrapSec <= s.end);
 
@@ -2735,9 +2767,11 @@ function calcWinner(guesses, wrapHMSInput, day=S.today) {
 
   const firstWinnerGuess = guesses.find(g => g.name === winnerName);
 
-  const points = isExactBetForWrap(firstWinnerGuess, wrapHMSInput, day)
-    ? scoring.perfectPoints
-    : scoring.regularPoints;
+  const points = isStealTheDay(day) ? 2 : (
+    isExactBetForWrap(firstWinnerGuess, wrapHMSInput, day)
+      ? scoring.perfectPoints
+      : scoring.regularPoints
+  );
 
   return {
 
@@ -2749,13 +2783,9 @@ function calcWinner(guesses, wrapHMSInput, day=S.today) {
 
     noWinner: false,
 
-    penalties: calcCrazyDayPenalties(
-      guesses,
-      wrapHMSInput,
-      day,
-      false,
-      winningSlice.names
-    )
+    penalties: isStealTheDay(day)
+      ? stealDayVictims(guesses, winnerName, day, wrapHMSInput)
+      : calcCrazyDayPenalties(guesses, wrapHMSInput, day, false, winningSlice.names)
 
   };
 
@@ -3648,6 +3678,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
 	        <span class="winner-pts">${CUSTOM_UI_TEXT.wrapOutsideAllBets(esc(t.wrapTime))}</span>
       </${winnerCloseTag}>
       ${renderCrazyDayIndicator(t)}
+      ${isStealTheDay(t) ? '<div class="steal-day-indicator">STEAL THE DAY · Exclusive bets · Winner steals 2 points</div>' : ''}
       
       ${fridayBanner}
       <div class="card today-scroll-card"><div class="card-lbl">Results</div>
@@ -4663,6 +4694,7 @@ function chainedExportImage(day=S.today) {
 }
 async function saveChainedPairs(pairs) {
   if (!IS_ADMIN || !currentUser || !S.today || S.today.wrapTime || (S.today.guesses||[]).some(g=>g.time) || (S.today.unit||'main')!=='main') return;
+  if (isStealTheDay(S.today)) {toast('Turn off Steal the Day before saving Chained Together pairs','err');return;}
   const error=validateChainedPairs(pairs);
   if (error) {toast(error,'err');return;}
   if (!pairs.length) {toast('Create at least one pair','err');return;}
@@ -6514,6 +6546,9 @@ async function updateCurrentPlayerBet(name, betTime, betDate='') {
 
 
 
+  if (isStealTheDay(S.today) && (S.today.guesses||[]).some(g => g !== existingGuess && g.time === normalizedBet && (g.date||'') === (normalizedDate||inferBetDate(normalizedBet,S.today)))) {
+    toast('Steal the Day: this time is already taken','err');return false;
+  }
   const prevS = cloneState();
   
   existingGuess.time = normalizedBet;
@@ -6559,6 +6594,9 @@ async function confirmTodayWrap(wrapTime, wrapDate = '') {
     toast('Use a valid wrap date', 'err');
     return false;
   }
+
+  const stealError = validateStealBets(currentGame.guesses, currentGame);
+  if (stealError) {toast(stealError,'err');return false;}
 
   const prevS =
     cloneState();
@@ -6794,6 +6832,7 @@ function readCrazyDayPenaltyInput(id) {
 }
 
 async function saveCrazyDaySettings() {
+  if (isStealTheDay(S.today)) {toast('Turn off Steal the Day before configuring Crazy Day','err');return;}
   if (
     !IS_ADMIN ||
     !S.today ||
@@ -8523,6 +8562,51 @@ function renderHistory() {
   return `<div class="tab-page-frame">${historyRows}</div>`;
 }
 
+let _stealDayPanelOpen = false;
+function renderStealDaySetupCard(day=S.today) {
+  const enabled = isStealTheDay(day);
+  const editable = !!(day && (day.unit || 'main') === 'main' && !day.wrapTime && !(day.guesses||[]).some(g => g.time));
+  return `<div class="card steal-day-card${_stealDayPanelOpen?' expanded':''}">
+    <div class="crazy-day-top"><div class="crazy-day-title">
+      <strong>Steal the Day · ${enabled?'ON':'OFF'}</strong>
+      <span>Exclusive bets. The winner steals 1 point from each of two neighboring bets.</span>
+    </div><button class="crazy-day-toggle" id="steal-day-expand" type="button" aria-label="Configure Steal the Day" aria-expanded="${_stealDayPanelOpen}"></button></div>
+    <div class="steal-day-options" ${_stealDayPanelOpen?'':'hidden'}>
+      <p class="mono dim">One unique time per player. At least three valid bets. No shared times.</p>
+      <p class="mono dim">Regular or exact winner: +2 points. Two nearest players: −1 each. Negative scores are allowed. No other points are awarded.</p>
+      <p class="mono dim">If the winner is first or last, the next two bets on that side lose one point each.</p>
+      ${!editable?'<p class="mono dim">Settings lock when bets are confirmed. Select an unplayed Main Unit.</p>':''}
+      <div class="steal-day-actions"><button type="button" class="btn ${enabled?'btn-s':'btn-p'}" id="steal-day-switch" ${editable?'':'disabled'}>${enabled?'Turn Off':'Activate Steal the Day'}</button></div>
+    </div>
+  </div>`;
+}
+function bindStealDaySettings() {
+  const root = document.getElementById('tab-settings');
+  if (!root || root.dataset.stealBound) return;
+  root.dataset.stealBound = '1';
+  root.addEventListener('click', async event => {
+    const button = event.target.closest('button');
+    if (!button) return;
+    if (button.id === 'steal-day-expand') {
+      _stealDayPanelOpen = !_stealDayPanelOpen;
+      const card = root.querySelector('.steal-day-card');
+      if (card) card.outerHTML = renderStealDaySetupCard(S.today);
+      return;
+    }
+    if (button.id !== 'steal-day-switch') return;
+    const day = S.today;
+    if (!day || day.wrapTime || (day.guesses||[]).some(g => g.time) || (day.unit||'main')!=='main') return;
+    if (!isStealTheDay(day) && (day.crazyDay?.enabled || chainedPairs(day).length)) {
+      toast('Turn off Crazy Day and Chained Together before activating Steal the Day', 'err');return;
+    }
+    const previous=cloneState();
+    day.stealTheDay = isStealTheDay(day) ? null : {enabled:true};
+    if (!await saveS()) {restoreAfterFailedSave(previous);return;}
+    toast(isStealTheDay(day)?'Steal the Day activated':'Steal the Day turned off','ok');
+    render();
+  });
+}
+
 function renderSettings() {
   const pl = getAlphabeticalPlayerRoster();
   const hasCurrentDay =
@@ -8591,6 +8675,7 @@ ${hasCurrentDay ? `
 <div class="settings-subview" ${_settingsView==='extra'?'':'hidden'}>
   ${renderCrazyDaySetupCard(S.today)}
   ${renderChainedSetupCard(S.today)}
+  ${renderStealDaySetupCard(S.today)}
 </div></div>`;
 }
 
@@ -8942,6 +9027,9 @@ async function showPreview() {
         toast('Chained Together: both players must have the same bet time', 'err');
         return;
       }
+
+      const stealError = validateStealBets(editedFullList, S.today);
+      if (stealError) {toast(stealError,'err');return;}
 
       const prevS = cloneState();
 
@@ -9412,6 +9500,7 @@ async function createNewLiveUnit() {
     penalties: [],
     crazyDay: inheritedCrazyDay,
     chainedTogether: null,
+    stealTheDay: null,
     estWrap: null,
     estWrapDate: null,
     betCloseAt: null,
@@ -9527,6 +9616,7 @@ function bindMain() {
     });
   }));
   bindChainedSettings();
+  bindStealDaySettings();
   document.getElementById('crazy-day-toggle-btn')?.addEventListener('click', async () => {
     const card = document.querySelector('.crazy-day-card');
     const next = !card?.classList.contains('expanded');
