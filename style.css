@@ -1439,3 +1439,13 @@ html.dark-mode .hdr-wrap-time.off {
 .result-share-bottom { border-top-color: var(--border); }
 .result-share-name { color: var(--green); }
 .result-share-card.no-winner .result-share-name { color: var(--red); }
+
+/* Public game statistics */
+.game-stats-page { display:flex; flex-direction:column; gap:16px; padding-bottom:16px; }
+.near-miss-card h3 { margin:8px 0; }
+.near-miss-list { display:flex; flex-direction:column; margin-top:14px; }
+.near-miss-row { display:flex; align-items:center; gap:12px; padding:12px 4px; border-bottom:1px solid var(--line, rgba(128,128,128,.22)); }
+.near-miss-row:last-child { border-bottom:0; }
+.near-miss-row > strong { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.near-miss-rank { width:24px; text-align:center; opacity:.65; }
+@media(max-width:550px) { .near-miss-row { gap:7px; font-size:12px; } }
