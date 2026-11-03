@@ -4979,7 +4979,7 @@ function getPlayerMissedGameStreak(playerName) {
 // the winning slot. Multiple players sharing a slot are counted separately.
 function getNearMissLeaderboard() {
   const completed = getHistoryEntries().filter(day => day && day.wrapTime);
-  const minGames = Math.ceil(completed.length * 0.40);
+  const minGames = 1;
   const players = getSortedPlayerRoster().filter(p => p.active !== false);
   const rows = players.map(player => {
     const key = nameKey(player.name);
@@ -5013,7 +5013,7 @@ function renderNearMissLeaderboard() {
   return `<div class="card board-fixed-card near-miss-card">
     <div class="card-lbl">SO CLOSE</div>
     <h3>Most near misses without a win</h3>
-    <p class="mono dim">Adjacent time slots to the daily winner · Minimum 40% of completed games (${minGames} of ${completed}) · Never won</p>
+    <p class="mono dim">Adjacent time slots to the daily winner · At least one game played · Never won</p>
     ${rows.length ? `<div class="near-miss-list">${rows.map((row,i)=>`<div class="near-miss-row"><span class="near-miss-rank">${i+1}</span><strong>${esc(row.name)}</strong><span class="mono dim">${row.played} played</span><span class="accent"><strong>${row.nearMisses}</strong> near misses</span></div>`).join('')}</div>` : '<div class="empty">No eligible players yet</div>'}
   </div>`;
 }
