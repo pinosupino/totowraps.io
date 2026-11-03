@@ -433,3 +433,34 @@ html.dark-mode .result-share-card { background: var(--bg3); border-color: var(--
 html.dark-mode .result-share-winner, html.dark-mode .result-share-time { background: var(--bg); }
 html.dark-mode .result-share-name { color: var(--text); }
 html.dark-mode .result-share-card.no-winner .result-share-name { color: var(--red); }
+
+
+/* Safe theme placement v5: CSS-only, no DOM reparenting or observers. */
+#app > .hdr .hdr-right,
+#app .hdr .hdr-right {
+  padding-right: 39px;
+}
+.theme-toggle.theme-toggle-desktop,
+html.dark-mode .theme-toggle.theme-toggle-desktop {
+  position: fixed !important;
+  top: 9px !important;
+  right: 13px !important;
+  bottom: auto !important;
+  left: auto !important;
+  width: 32px !important;
+  height: 32px !important;
+  z-index: 12000 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+@media (max-width: 420px) {
+  #app > .hdr .hdr-right,
+  #app .hdr .hdr-right { padding-right: 35px; }
+  .theme-toggle.theme-toggle-desktop,
+  html.dark-mode .theme-toggle.theme-toggle-desktop {
+    top: 10px !important;
+    right: 11px !important;
+    width: 30px !important;
+    height: 30px !important;
+  }
+}
