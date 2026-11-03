@@ -24,9 +24,10 @@
       button.type = 'button';
       button.dataset.themeToggle = '';
       document.body.appendChild(button);
-    } else if (button.parentElement !== document.body) {
-      document.body.appendChild(button);
     }
+    const target = document.querySelector('.hdr-right');
+    if (target && button.parentElement !== target) target.appendChild(button);
+    else if (!target && button.parentElement !== document.body) document.body.appendChild(button);
     button.className = 'theme-toggle theme-toggle-desktop';
     button.textContent = dark ? '☀' : '☾';
     button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');

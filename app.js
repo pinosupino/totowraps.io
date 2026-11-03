@@ -111,6 +111,8 @@ const CUSTOM_UI_ASSETS = {
 const _logoStartedAt = performance.now();
 let _lastConfettiWinner = null;
 let _boardView = 'list';
+let _statsView = 'pie';
+let _settingsView = 'players';
 let _openBoardPlayer = null;
 let _closenessPlayer = null;
 let _closenessOrder = 'accuracy';
@@ -1527,7 +1529,7 @@ async function exportProjectBackup() {
   }
 }
 
-const DISPLAY_TOTAL_DAYS = 38;
+const DISPLAY_TOTAL_DAYS = 39;
 
 function displayDayNumber(internalDayNumber) {
   const n = Number(internalDayNumber);
@@ -1551,7 +1553,7 @@ function getProjectGameDates() {
 
   (S.days || []).forEach(day => {
     const isoDate = displayToISO(day?.date);
-    if (isoDate) dates.add(isoDate);
+    if (isoDate && (day.unit || 'main') === 'main') dates.add(isoDate);
   });
 
   Object.values(
@@ -1560,7 +1562,7 @@ function getProjectGameDates() {
     const isoDate =
       displayToISO(day?.date);
 
-    if (isoDate) {
+    if (isoDate && (day?.unit || 'main') === 'main') {
       dates.add(isoDate);
     }
   });
@@ -3652,7 +3654,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
 	        <span class="winner-pts">${CUSTOM_UI_TEXT.wrapOutsideAllBets(esc(t.wrapTime))}</span>
       </${winnerCloseTag}>
       ${renderCrazyDayIndicator(t)}
-      ${canStartNextDay ? renderCrazyDaySetupCard(t) : ''}
+      
       ${fridayBanner}
       <div class="card today-scroll-card"><div class="card-lbl">Results</div>
         <div class="today-scroll-list">
@@ -4247,6 +4249,7 @@ function renderPlayerToday() {
 }
 
 function bindPlayerNav() {
+  bindStatsSubnav();
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       setMainTab(btn.dataset.tab);
@@ -4412,7 +4415,7 @@ function renderToday() {
     return `<div class="tab-page-frame"><div class="card">
       <div class="card-lbl">Start New Day</div>
       <button class="btn btn-p" id="new-day-btn">Start Today's Game</button>
-    </div>${renderCrazyDaySetupCard(null)}</div>`;
+    </div></div>`;
   }
 
   const clockCard = `
@@ -4443,7 +4446,7 @@ function renderToday() {
       ${renderCancelLiveUnitAction(t)}
       ${clockCard}
       ${renderCrazyDayIndicator(t)}
-      ${renderCrazyDaySetupCard(t)}
+      
       <div class="card today-scroll-card"><div class="card-lbl">${statusHeader}</div>
         <div class="today-scroll-list">${renderActiveTodayRows(t, sg, out, slices)}</div>
       </div>
@@ -4496,7 +4499,7 @@ function renderToday() {
       ${t.betCloseAt ? `<p class="mono dim center mt8">Time left: <span class="accent" data-bet-close-countdown>--</span></p>` : ''}
     </div>
     ${renderCrazyDayIndicator(t)}
-    ${renderCrazyDaySetupCard(t)}
+    
     <div class="card">
       <div class="card-lbl">Paste ${esc(unitLabel)} Guesses</div>
       <p class="mono dim" style="margin-bottom:10px">Format: Name - hh:mm (one per line).</p>
@@ -5025,11 +5028,26 @@ function renderNearMissLeaderboard() {
 
 function renderGameStats() {
   const pl = getSortedPlayerRoster().filter(p => p.active !== false);
+  const views = [['pie','Pie Chart'],['accuracy','Accuracy'],['near','Near Misses']];
+  const body = _statsView === 'accuracy'
+    ? `<div class="card board-fixed-card" id="game-stats-accuracy"><div class="card-lbl">ACCURACY</div>${pl.length ? renderBoardCloseness(pl) : '<div class="empty">No players yet</div>'}</div>`
+    : _statsView === 'near' ? renderNearMissLeaderboard()
+    : `<div class="card board-fixed-card"><div class="card-lbl">PIE CHART</div>${pl.length ? renderBoardPie(pl) : '<div class="empty">No players yet</div>'}</div>`;
   return `<div class="game-stats-page">
-    <div class="card board-fixed-card"> <div class="card-lbl">PIE CHART</div>${pl.length ? renderBoardPie(pl) : '<div class="empty">No players yet</div>'}</div>
-    <div class="card board-fixed-card" id="game-stats-accuracy"><div class="card-lbl">ACCURACY</div>${pl.length ? renderBoardCloseness(pl) : '<div class="empty">No players yet</div>'}</div>
-    ${renderNearMissLeaderboard()}
+    <nav class="stats-subnav" aria-label="Statistics categories">${views.map(([key,label])=>`<button type="button" class="stats-subnav-btn${_statsView===key?' on':''}" data-stats-view="${key}" aria-pressed="${_statsView===key}">${label}</button>`).join('')}</nav>
+    <div class="stats-subview">${body}</div>
   </div>`;
+}
+
+function bindStatsSubnav() {
+  document.querySelectorAll('[data-stats-view]').forEach(button => button.addEventListener('click', () => {
+    const next = button.dataset.statsView;
+    if (!['pie','accuracy','near'].includes(next) || next === _statsView) return;
+    _statsView = next;
+    const section = document.querySelector('[data-view="stats"]');
+    if (section) section.innerHTML = renderGameStats();
+    bindStatsSubnav();
+  }));
 }
 
 function renderBoard(view='list') {
@@ -8305,7 +8323,9 @@ function renderSettings() {
   const pl = getAlphabeticalPlayerRoster();
   const hasCurrentDay =
     Object.keys(getLiveGames()).length > 0;
-  return `<div class="tab-page-frame"><div class="card"><div class="card-lbl">Editable Player Roster</div>
+  const nav = `<nav class="stats-subnav" aria-label="Admin settings"><button type="button" data-settings-view="players" class="stats-subnav-btn${_settingsView==='players'?' on':''}">General</button><button type="button" data-settings-view="extra" class="stats-subnav-btn${_settingsView==='extra'?' on':''}">Extra Rules</button></nav>`;
+  if (_settingsView === 'extra') return `<div class="tab-page-frame">${nav}<div class="extra-rules-page"><h3>Extra Rules</h3><p class="mono dim">Special day rules are configured for each Main Unit. Only Crazy Day is available for now.</p>${renderCrazyDaySetupCard(S.today)}</div></div>`;
+  return `<div class="tab-page-frame">${nav}<div class="card"><div class="card-lbl">Editable Player Roster</div>
 ${pl.map((p, idx)=> {
   const realIdx = S.playerRoster.findIndex(orig => orig.name === p.name);
   return `
@@ -9221,6 +9241,11 @@ async function createNewLiveUnit() {
 }
 
 function bindMain() {
+  bindStatsSubnav();
+  document.querySelectorAll('[data-settings-view]').forEach(button => button.addEventListener('click', () => {
+    _settingsView = button.dataset.settingsView === 'extra' ? 'extra' : 'players';
+    render();
+  }));
   bindTrafficRefresh();
   bindLiveUnitSwitcher();
   document

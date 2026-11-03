@@ -1449,3 +1449,11 @@ html.dark-mode .hdr-wrap-time.off {
 .near-miss-row > strong { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .near-miss-rank { width:24px; text-align:center; opacity:.65; }
 @media(max-width:550px) { .near-miss-row { gap:7px; font-size:12px; } }
+
+/* Second-level navigation for Stats and Admin Settings. */
+.stats-subnav { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 14px; padding:5px;
+  border:1px solid var(--border); border-radius:14px; background:var(--bg3); }
+.stats-subnav-btn { flex:1 1 100px; border:0; border-radius:10px; padding:10px 12px;
+  color:var(--text); background:transparent; font:inherit; font-weight:600; cursor:pointer; }
+.stats-subnav-btn.on { background:var(--bg); box-shadow:0 1px 4px rgba(0,0,0,.10); }
+.extra-rules-page .crazy-day-card { margin-top:12px; }
