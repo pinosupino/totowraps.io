@@ -53,6 +53,7 @@ function openPlayerVersion() {
   location.href = './';
 }
 let _tab = 'today';
+let _statsView = 'pie';
 let _activeLiveUnit = null;
 let _clockInterval = null;
 let _lastRenderedLocalDate = localDateISO();
@@ -4589,6 +4590,7 @@ function setBoardView(v) {
 function openAccuracyGraphForPlayer(name) {
   if (!name) return;
   _closenessPlayer = name;
+  _statsView = 'accuracy';
   setMainTab('stats');
   const stats = document.querySelector('.sec[data-view="stats"]');
   if (stats) {
@@ -5025,12 +5027,35 @@ function renderNearMissLeaderboard() {
 
 function renderGameStats() {
   const pl = getSortedPlayerRoster().filter(p => p.active !== false);
+  const options = [['pie','PIE CHART'],['accuracy','ACCURACY'],['near','NEAR MISSES']];
+  let content;
+  if (_statsView === 'accuracy') {
+    content = `<div class="card board-fixed-card" id="game-stats-accuracy"><div class="card-lbl">ACCURACY</div>${pl.length ? renderBoardCloseness(pl) : '<div class="empty">No players yet</div>'}</div>`;
+  } else if (_statsView === 'near') {
+    content = renderNearMissLeaderboard();
+  } else {
+    content = `<div class="card board-fixed-card"><div class="card-lbl">PIE CHART</div>${pl.length ? renderBoardPie(pl) : '<div class="empty">No players yet</div>'}</div>`;
+  }
   return `<div class="game-stats-page">
-    <div class="card board-fixed-card"> <div class="card-lbl">PIE CHART</div>${pl.length ? renderBoardPie(pl) : '<div class="empty">No players yet</div>'}</div>
-    <div class="card board-fixed-card" id="game-stats-accuracy"><div class="card-lbl">ACCURACY</div>${pl.length ? renderBoardCloseness(pl) : '<div class="empty">No players yet</div>'}</div>
-    ${renderNearMissLeaderboard()}
+    <nav class="stats-subnav" aria-label="Statistics">
+      ${options.map(([key,label]) => `<button type="button" class="stats-subnav-btn${_statsView===key?' on':''}" data-stats-view="${key}" aria-pressed="${_statsView===key}">${label}</button>`).join('')}
+    </nav>
+    <div class="stats-subview">${content}</div>
   </div>`;
 }
+
+// Delegated event listener works for both public and admin views, including
+// when the app refreshes its markup after a Firebase update.
+document.addEventListener('click', event => {
+  const button = event.target.closest('[data-stats-view]');
+  if (!button) return;
+  const view = button.dataset.statsView;
+  if (!['pie','accuracy','near'].includes(view) || view === _statsView) return;
+  _statsView = view;
+  document.querySelectorAll('.sec[data-view="stats"]').forEach(section => {
+    section.innerHTML = renderGameStats();
+  });
+});
 
 function renderBoard(view='list') {
   const pl = getSortedPlayerRoster();
