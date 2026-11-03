@@ -135,6 +135,7 @@ let _territoryRuleMigrationPending = false;
 let _territoryRuleMigrationSaving = false;
 let _historyRowScrollAnimation = null;
 let _crazyDayPanelOpen = false;
+let _settingsView = 'general';
 let _shareResultInfo = null;
 const INACTIVITY_REFRESH_MS = 15 * 60 * 1000;
 const INACTIVITY_STORAGE_KEY = 'totowrap-inactive-at';
@@ -3645,7 +3646,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
 	        <span class="winner-pts">${CUSTOM_UI_TEXT.wrapOutsideAllBets(esc(t.wrapTime))}</span>
       </${winnerCloseTag}>
       ${renderCrazyDayIndicator(t)}
-      ${canStartNextDay ? renderCrazyDaySetupCard(t) : ''}
+      
       ${fridayBanner}
       <div class="card today-scroll-card"><div class="card-lbl">Results</div>
         <div class="today-scroll-list">
@@ -4405,7 +4406,7 @@ function renderToday() {
     return `<div class="tab-page-frame"><div class="card">
       <div class="card-lbl">Start New Day</div>
       <button class="btn btn-p" id="new-day-btn">Start Today's Game</button>
-    </div>${renderCrazyDaySetupCard(null)}</div>`;
+    </div></div>`;
   }
 
   const clockCard = `
@@ -4436,7 +4437,7 @@ function renderToday() {
       ${renderCancelLiveUnitAction(t)}
       ${clockCard}
       ${renderCrazyDayIndicator(t)}
-      ${renderCrazyDaySetupCard(t)}
+      
       <div class="card today-scroll-card"><div class="card-lbl">${statusHeader}</div>
         <div class="today-scroll-list">${renderActiveTodayRows(t, sg, out, slices)}</div>
       </div>
@@ -4489,7 +4490,7 @@ function renderToday() {
       ${t.betCloseAt ? `<p class="mono dim center mt8">Time left: <span class="accent" data-bet-close-countdown>--</span></p>` : ''}
     </div>
     ${renderCrazyDayIndicator(t)}
-    ${renderCrazyDaySetupCard(t)}
+    
     <div class="card">
       <div class="card-lbl">Paste ${esc(unitLabel)} Guesses</div>
       <p class="mono dim" style="margin-bottom:10px">Format: Name - hh:mm (one per line).</p>
@@ -8322,7 +8323,12 @@ function renderSettings() {
   const pl = getAlphabeticalPlayerRoster();
   const hasCurrentDay =
     Object.keys(getLiveGames()).length > 0;
-  return `<div class="tab-page-frame"><div class="card"><div class="card-lbl">Editable Player Roster</div>
+  return `<div class="tab-page-frame">
+    <nav class="settings-subnav" aria-label="Settings sections">
+      <button type="button" class="settings-subnav-btn${_settingsView==='general'?' on':''}" data-settings-view="general" aria-pressed="${_settingsView==='general'}">GENERAL</button>
+      <button type="button" class="settings-subnav-btn${_settingsView==='extra'?' on':''}" data-settings-view="extra" aria-pressed="${_settingsView==='extra'}">EXTRA RULES</button>
+    </nav>
+    <div class="settings-subview" ${_settingsView==='general'?'':'hidden'}><div class="card"><div class="card-lbl">Editable Player Roster</div>
 ${pl.map((p, idx)=> {
   const realIdx = S.playerRoster.findIndex(orig => orig.name === p.name);
   return `
@@ -8377,6 +8383,9 @@ ${hasCurrentDay ? `
 ` : ''}
 <p class="mono dim mt8" style="margin-bottom:12px">This will erase all data permanently for everyone.</p>
 <button class="btn btn-d" id="reset-btn">Reset Entire Game</button>
+</div></div>
+<div class="settings-subview" ${_settingsView==='extra'?'':'hidden'}>
+  ${renderCrazyDaySetupCard(S.today)}
 </div></div>`;
 }
 
@@ -8414,12 +8423,8 @@ async function showPreview() {
   const inp = document.getElementById('paste-inp');
   const text = inp?.value || '';
   if (!text.trim()) { toast('Paste guesses first', 'err'); return; }
-  const crazyCardOpen = document.querySelector('.crazy-day-card')?.classList.contains('expanded');
-  if (S.today?.crazyDay && !crazyCardOpen) {
-    const cleared = await cancelCrazyDayForSafety();
-    if (!cleared) return;
-  }
-  
+  // The Crazy Day editor now lives under Settings > Extra Rules.
+  // Never remove saved special scoring simply because its editor is not open.
   const { guesses: parsed, formatErrors } = parsePaste(text);
   if (!parsed.length && (!formatErrors || !formatErrors.length)) {
       toast('No valid data found', 'err');
@@ -9290,6 +9295,19 @@ function bindMain() {
   document.getElementById('clear-est-wrap-btn')?.addEventListener('click', clearEstimatedWrapTime);
   document.getElementById('save-bet-close-btn')?.addEventListener('click', saveBetCloseTime);
   document.getElementById('clear-bet-close-btn')?.addEventListener('click', clearBetCloseTime);
+  document.querySelectorAll('[data-settings-view]').forEach(btn => btn.addEventListener('click', () => {
+    const view = btn.dataset.settingsView;
+    if (!['general', 'extra'].includes(view)) return;
+    _settingsView = view;
+    document.querySelectorAll('[data-settings-view]').forEach(item => {
+      const selected = item.dataset.settingsView === view;
+      item.classList.toggle('on', selected);
+      item.setAttribute('aria-pressed', String(selected));
+    });
+    document.querySelectorAll('#tab-settings .settings-subview').forEach((panel, index) => {
+      panel.hidden = index !== (view === 'general' ? 0 : 1);
+    });
+  }));
   document.getElementById('crazy-day-toggle-btn')?.addEventListener('click', async () => {
     const card = document.querySelector('.crazy-day-card');
     const next = !card?.classList.contains('expanded');
