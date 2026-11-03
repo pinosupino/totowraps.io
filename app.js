@@ -4511,7 +4511,13 @@ function renderToday() {
 // CHAINED TOGETHER: stored on the individual game, never as a global setting.
 function chainedPairs(day=S.today) {
   if (!day?.chainedTogether?.enabled || !Array.isArray(day.chainedTogether.pairs)) return [];
-  return day.chainedTogether.pairs.filter(p => Array.isArray(p) && p.length === 2 && p[0] && p[1]);
+  return day.chainedTogether.pairs.map(p => {
+    // Firestore does not allow arrays nested directly inside arrays.
+    // Persist pairs as objects; keep the rest of the UI using [nameA, nameB].
+    if (Array.isArray(p)) return p;
+    if (p && typeof p === 'object') return [p.playerA, p.playerB];
+    return null;
+  }).filter(p => Array.isArray(p) && p.length === 2 && p[0] && p[1]);
 }
 function chainedPairFor(name, day=S.today) {
   return chainedPairs(day).find(pair => pair.some(n => nameKey(n) === nameKey(name))) || null;
@@ -4661,7 +4667,7 @@ async function saveChainedPairs(pairs) {
   if (error) {toast(error,'err');return;}
   if (!pairs.length) {toast('Create at least one pair','err');return;}
   const previous=cloneState();
-  S.today.chainedTogether={enabled:true,pairs:pairs.map(p=>[...p])};
+  S.today.chainedTogether={enabled:true,pairs:pairs.map(p=>({playerA:p[0],playerB:p[1]}))};
   if (!await saveS()) {restoreAfterFailedSave(previous);return;}
   _chainedDraft=null;toast('Chained Together pairs saved','ok');render();
 }

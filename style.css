@@ -1487,3 +1487,64 @@ html.dark-mode .hdr-wrap-time.off {
 .chained-today-names{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-width:0;font-weight:700}
 .chained-today-names .chained-link{font-size:13px}
 @media(max-width:450px){.chained-pair-edit{gap:4px}.chained-pair-edit select{font-size:11px;padding:9px 2px}.chained-today-names{font-size:12px}}
+
+
+/* Chained Together: flat, consistent with TotoWrap cards and controls.
+   Presentation only: no changes to pairing, saving, scoring or exports. */
+.chained-card {
+  background:var(--bg3) !important;
+  background-image:none !important;
+  border:1px solid var(--border) !important;
+  border-radius:var(--radius, 12px) !important;
+  box-shadow:none !important;
+  filter:none !important;
+}
+.chained-card::before,.chained-card::after {
+  content:none !important;
+  display:none !important;
+}
+.chained-card .crazy-day-title strong {color:var(--text) !important;}
+.chained-card .crazy-day-title span {color:var(--dim) !important;}
+.chained-card .crazy-day-toggle {
+  background:var(--bg) !important;
+  background-image:none !important;
+  border:1px solid var(--border) !important;
+  box-shadow:none !important;
+  filter:none !important;
+}
+.chained-card .crazy-day-toggle::after {box-shadow:none !important;}
+.chained-card .chained-options {
+  background:transparent !important;
+  background-image:none !important;
+  border-top:1px solid var(--border);
+  box-shadow:none !important;
+}
+.chained-card .chained-pair-edit {
+  background:var(--bg) !important;
+  background-image:none !important;
+  border:1px solid var(--border) !important;
+  border-radius:var(--radius-sm, 9px);
+  padding:7px 9px;
+  box-shadow:none !important;
+}
+.chained-card .chained-pair-edit select {
+  background:var(--bg3) !important;
+  background-image:none !important;
+  border-color:var(--border) !important;
+  box-shadow:none !important;
+  filter:none !important;
+}
+.chained-card .chained-actions .btn,
+.chained-card .settings-delete {
+  background-image:none !important;
+  box-shadow:none !important;
+  filter:none !important;
+}
+.chained-today-row {
+  background-image:none !important;
+  box-shadow:none !important;
+  filter:none !important;
+}
+@media(max-width:450px) {
+  .chained-card .chained-pair-edit {padding:6px 5px;gap:4px;}
+}
