@@ -1556,3 +1556,11 @@ html.dark-mode .hdr-wrap-time.off {
 .steal-day-options p {margin:0 0 10px;line-height:1.55;}
 .steal-day-actions {display:flex;gap:8px;flex-wrap:wrap;}
 .steal-day-indicator {padding:10px 14px;margin-bottom:12px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);font-size:12px;font-weight:700;letter-spacing:.04em;}
+
+/* Crown Day: flat Extra Rules styling */
+.crown-day-card {background:var(--bg2);box-shadow:none;background-image:none;}
+.crown-day-options {padding:12px 14px 14px;border-top:1px solid var(--border);background:transparent;}
+.crown-day-options[hidden] {display:none!important;}
+.crown-day-options p {margin:0 0 10px;line-height:1.55;}
+.crown-day-actions {display:flex;gap:8px;flex-wrap:wrap;}
+.crown-day-indicator {padding:10px 14px;margin-bottom:12px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);font-size:12px;font-weight:700;letter-spacing:.04em;}

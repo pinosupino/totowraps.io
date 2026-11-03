@@ -2643,6 +2643,37 @@ function getCrazyDayConfig(day=S.today) {
   return { enabled: true, regularPoints, perfectPoints, penaltyPoints, nearMissPenaltyPoints };
 }
 
+function isCrownDay(day=S.today) {
+  return day?.crownDay?.enabled === true;
+}
+function previousCrownWinner(day=S.today) {
+  const date = displayToISO(day?.date);
+  const entries = getHistoryEntries().filter(entry =>
+    entry?.wrapTime && (entry.unit || 'main') === 'main' &&
+    displayToISO(entry.date) < date
+  );
+  const previous = entries[entries.length - 1];
+  if (!previous || previous.noWinner) return null;
+  const names = Array.isArray(previous.winners) && previous.winners.length
+    ? previous.winners.map(w => typeof w === 'string' ? w : w?.name).filter(Boolean)
+    : (previous.winner ? [previous.winner] : []);
+  return names.length === 1 ? names[0] : null;
+}
+function crownDayBonus(guesses, winnerName, day, wrapTime) {
+  if (!isCrownDay(day) || !winnerName) return [];
+  const holder = day.crownDay.holder;
+  if (!holder || nameKey(holder) === nameKey(winnerName)) return [];
+  const reference = wrapTimelineSec(wrapTime, day);
+  const bets = (guesses || []).filter(g => g?.name && g?.time)
+    .map(g => ({name:g.name,sec:betTimelineSec(g,reference)}))
+    .sort((a,b) => a.sec-b.sec);
+  const index = bets.findIndex(g => nameKey(g.name) === nameKey(holder));
+  if (index < 0) return [];
+  const neighborIndices = [index-1,index+1].filter(i => i >= 0 && i < bets.length);
+  return neighborIndices.some(i => nameKey(bets[i].name) === nameKey(winnerName))
+    ? [{name:holder,points:1,reason:'crown-day-bonus'}] : [];
+}
+
 function isStealTheDay(day=S.today) {
   return day?.stealTheDay?.enabled === true;
 }
@@ -2785,7 +2816,9 @@ function calcWinner(guesses, wrapHMSInput, day=S.today) {
 
     penalties: isStealTheDay(day)
       ? stealDayVictims(guesses, winnerName, day, wrapHMSInput)
-      : calcCrazyDayPenalties(guesses, wrapHMSInput, day, false, winningSlice.names)
+      : isCrownDay(day)
+        ? crownDayBonus(guesses, winnerName, day, wrapHMSInput)
+        : calcCrazyDayPenalties(guesses, wrapHMSInput, day, false, winningSlice.names)
 
   };
 
@@ -3679,6 +3712,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
       </${winnerCloseTag}>
       ${renderCrazyDayIndicator(t)}
       ${isStealTheDay(t) ? '<div class="steal-day-indicator">STEAL THE DAY · Exclusive bets · Winner steals 2 points</div>' : ''}
+      ${isCrownDay(t) ? `<div class="crown-day-indicator">👑 CROWN DAY · Crown Holder: ${esc(t.crownDay.holder)} · Neighbor win bonus +1</div>` : ''}
       
       ${fridayBanner}
       <div class="card today-scroll-card"><div class="card-lbl">Results</div>
@@ -3716,6 +3750,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
 	    <span class="winner-pts">+${t.points} ${countWord(t.points, 'pt', 'pts')} · Wrap at ${esc(t.wrapTime)}</span>
   </${winnerCloseTag}>
   ${renderCrazyDayIndicator(t)}
+  ${isCrownDay(t) ? `<div class="crown-day-indicator">👑 CROWN DAY · Crown Holder: ${esc(t.crownDay.holder)} · Neighbor win bonus +1</div>` : ''}
   ${fridayBanner}
   <div class="card today-scroll-card"><div class="card-lbl">Results</div>
     <div class="today-scroll-list">
@@ -4694,7 +4729,7 @@ function chainedExportImage(day=S.today) {
 }
 async function saveChainedPairs(pairs) {
   if (!IS_ADMIN || !currentUser || !S.today || S.today.wrapTime || (S.today.guesses||[]).some(g=>g.time) || (S.today.unit||'main')!=='main') return;
-  if (isStealTheDay(S.today)) {toast('Turn off Steal the Day before saving Chained Together pairs','err');return;}
+  if (isStealTheDay(S.today) || isCrownDay(S.today)) {toast('Turn off Steal the Day or Crown Day before saving Chained Together pairs','err');return;}
   const error=validateChainedPairs(pairs);
   if (error) {toast(error,'err');return;}
   if (!pairs.length) {toast('Create at least one pair','err');return;}
@@ -6832,7 +6867,7 @@ function readCrazyDayPenaltyInput(id) {
 }
 
 async function saveCrazyDaySettings() {
-  if (isStealTheDay(S.today)) {toast('Turn off Steal the Day before configuring Crazy Day','err');return;}
+  if (isStealTheDay(S.today) || isCrownDay(S.today)) {toast('Turn off Steal the Day or Crown Day before configuring Crazy Day','err');return;}
   if (
     !IS_ADMIN ||
     !S.today ||
@@ -8596,13 +8631,61 @@ function bindStealDaySettings() {
     if (button.id !== 'steal-day-switch') return;
     const day = S.today;
     if (!day || day.wrapTime || (day.guesses||[]).some(g => g.time) || (day.unit||'main')!=='main') return;
-    if (!isStealTheDay(day) && (day.crazyDay?.enabled || chainedPairs(day).length)) {
+    if (!isStealTheDay(day) && (day.crazyDay?.enabled || chainedPairs(day).length || isCrownDay(day))) {
       toast('Turn off Crazy Day and Chained Together before activating Steal the Day', 'err');return;
     }
     const previous=cloneState();
     day.stealTheDay = isStealTheDay(day) ? null : {enabled:true};
     if (!await saveS()) {restoreAfterFailedSave(previous);return;}
     toast(isStealTheDay(day)?'Steal the Day activated':'Steal the Day turned off','ok');
+    render();
+  });
+}
+
+let _crownDayPanelOpen = false;
+function renderCrownDaySetupCard(day=S.today) {
+  const enabled = isCrownDay(day);
+  const editable = !!(day && (day.unit || 'main') === 'main' && !day.wrapTime && !(day.guesses||[]).some(g => g.time));
+  const holder = enabled ? day.crownDay.holder : previousCrownWinner(day);
+  return `<div class="card crown-day-card${_crownDayPanelOpen?' expanded':''}">
+    <div class="crazy-day-top"><div class="crazy-day-title">
+      <strong>Crown Day · ${enabled?'ON':'OFF'}</strong>
+      <span>The previous Main Unit winner earns +1 if their own bet or a direct neighbor wins.</span>
+    </div><button class="crazy-day-toggle" id="crown-day-expand" type="button" aria-label="Configure Crown Day" aria-expanded="${_crownDayPanelOpen}"></button></div>
+    <div class="crown-day-options" ${_crownDayPanelOpen?'':'hidden'}>
+      <p class="mono dim">Crown Holder: <strong>${holder ? esc(holder) : 'No eligible previous-day winner'}</strong></p>
+      <p class="mono dim">If a neighboring bet wins, the actual winner receives normal points and the Crown Holder receives +1, even on an Exact Wrap.</p>
+      <p class="mono dim">If the Crown Holder wins with their own bet, they receive only their normal win points. The first and last bets have just one neighbor.</p>
+      ${!editable?'<p class="mono dim">Settings lock when bets are confirmed. Select an unplayed Main Unit.</p>':''}
+      <div class="crown-day-actions"><button type="button" class="btn ${enabled?'btn-s':'btn-p'}" id="crown-day-switch" ${editable && (enabled || holder)?'':'disabled'}>${enabled?'Turn Off':'Activate Crown Day'}</button></div>
+    </div>
+  </div>`;
+}
+function bindCrownDaySettings() {
+  const root = document.getElementById('tab-settings');
+  if (!root || root.dataset.crownBound) return;
+  root.dataset.crownBound = '1';
+  root.addEventListener('click', async event => {
+    const button = event.target.closest('button');
+    if (!button) return;
+    if (button.id === 'crown-day-expand') {
+      _crownDayPanelOpen = !_crownDayPanelOpen;
+      const card = root.querySelector('.crown-day-card');
+      if (card) card.outerHTML = renderCrownDaySetupCard(S.today);
+      return;
+    }
+    if (button.id !== 'crown-day-switch') return;
+    const day = S.today;
+    if (!day || day.wrapTime || (day.guesses||[]).some(g => g.time) || (day.unit||'main')!=='main') return;
+    if (!isCrownDay(day) && (day.crazyDay?.enabled || chainedPairs(day).length || isStealTheDay(day))) {
+      toast('Turn off other Extra Rules before activating Crown Day','err');return;
+    }
+    const holder = isCrownDay(day) ? null : previousCrownWinner(day);
+    if (!isCrownDay(day) && !holder) {toast('No eligible previous Main Unit winner','err');return;}
+    const previous = cloneState();
+    day.crownDay = isCrownDay(day) ? null : {enabled:true,holder};
+    if (!await saveS()) {restoreAfterFailedSave(previous);return;}
+    toast(isCrownDay(day)?'Crown Day activated':'Crown Day turned off','ok');
     render();
   });
 }
@@ -8676,6 +8759,7 @@ ${hasCurrentDay ? `
   ${renderCrazyDaySetupCard(S.today)}
   ${renderChainedSetupCard(S.today)}
   ${renderStealDaySetupCard(S.today)}
+  ${renderCrownDaySetupCard(S.today)}
 </div></div>`;
 }
 
@@ -9501,6 +9585,7 @@ async function createNewLiveUnit() {
     crazyDay: inheritedCrazyDay,
     chainedTogether: null,
     stealTheDay: null,
+    crownDay: null,
     estWrap: null,
     estWrapDate: null,
     betCloseAt: null,
@@ -9617,6 +9702,7 @@ function bindMain() {
   }));
   bindChainedSettings();
   bindStealDaySettings();
+  bindCrownDaySettings();
   document.getElementById('crazy-day-toggle-btn')?.addEventListener('click', async () => {
     const card = document.querySelector('.crazy-day-card');
     const next = !card?.classList.contains('expanded');
