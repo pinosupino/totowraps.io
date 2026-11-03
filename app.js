@@ -111,6 +111,8 @@ const CUSTOM_UI_ASSETS = {
 const _logoStartedAt = performance.now();
 let _lastConfettiWinner = null;
 let _boardView = 'list';
+let _statsView = 'pie';
+let _settingsView = 'players';
 let _openBoardPlayer = null;
 let _closenessPlayer = null;
 let _closenessOrder = 'accuracy';
@@ -386,8 +388,8 @@ document.addEventListener('resume', () => {
 scheduleVisibleInactivityRefresh();
 
 function getMainTabs() {
-  if (IS_ADMIN && currentUser) return ['today', 'board', 'history', 'stats', 'settings'];
-  return ['today', 'board', 'history'];
+  if (IS_ADMIN && currentUser) return ['today', 'board', 'history', 'stats', 'traffic', 'settings'];
+  return ['today', 'board', 'history', 'stats'];
 }
 
 function getSwipeSequence() {
@@ -405,7 +407,7 @@ function normalizeActiveTab() {
 }
 
 function getBoardViews() {
-  return ['list', 'pie', 'closeness'];
+  return ['list'];
 }
 
 function setMainTab(tab) {
@@ -1527,7 +1529,7 @@ async function exportProjectBackup() {
   }
 }
 
-const DISPLAY_TOTAL_DAYS = 38;
+const DISPLAY_TOTAL_DAYS = 39;
 
 function displayDayNumber(internalDayNumber) {
   const n = Number(internalDayNumber);
@@ -1551,7 +1553,7 @@ function getProjectGameDates() {
 
   (S.days || []).forEach(day => {
     const isoDate = displayToISO(day?.date);
-    if (isoDate) dates.add(isoDate);
+    if (isoDate && (day.unit || 'main') === 'main') dates.add(isoDate);
   });
 
   Object.values(
@@ -1560,7 +1562,7 @@ function getProjectGameDates() {
     const isoDate =
       displayToISO(day?.date);
 
-    if (isoDate) {
+    if (isoDate && (day?.unit || 'main') === 'main') {
       dates.add(isoDate);
     }
   });
@@ -3513,17 +3515,19 @@ function renderPlayerMain() {
 </div>
 <nav class="nav">
   <button class="nav-btn ${_tab==='today'?'on':''}" data-tab="today">Today</button>
-  <button class="nav-btn ${_tab==='board'?'on':''}" data-tab="board">Boards</button>
+  <button class="nav-btn ${_tab==='board'?'on':''}" data-tab="board">Board</button>
   <button class="nav-btn ${_tab==='history'?'on':''}" data-tab="history">History</button>
+  <button class="nav-btn ${_tab==='stats'?'on':''}" data-tab="stats">Stats</button>
   ${renderDesktopProjectProgress()}
 </nav>
 ${renderDesktopLiveBar()}
 
 <div class="tab-viewport">
-  <div class="tab-strip" style="--view-count:3">
+  <div class="tab-strip" style="--view-count:4">
     <section class="sec ${_tab==='today'?'on':''}" data-view="today">${renderPlayerToday()}</section>
     <section class="sec ${_tab==='board'?'on':''}" data-view="board">${renderBoard(_boardView)}</section>
     <section class="sec ${_tab==='history'?'on':''}" data-view="history">${renderHistory()}</section>
+    <section class="sec ${_tab==='stats'?'on':''}" data-view="stats">${renderGameStats()}</section>
   </div>
 </div>
 `;
@@ -3650,7 +3654,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
 	        <span class="winner-pts">${CUSTOM_UI_TEXT.wrapOutsideAllBets(esc(t.wrapTime))}</span>
       </${winnerCloseTag}>
       ${renderCrazyDayIndicator(t)}
-      ${canStartNextDay ? renderCrazyDaySetupCard(t) : ''}
+      
       ${fridayBanner}
       <div class="card today-scroll-card"><div class="card-lbl">Results</div>
         <div class="today-scroll-list">
@@ -4245,6 +4249,7 @@ function renderPlayerToday() {
 }
 
 function bindPlayerNav() {
+  bindStatsSubnav();
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       setMainTab(btn.dataset.tab);
@@ -4305,7 +4310,7 @@ function renderTrafficStats() {
 async function loadTrafficStats() {
   if (!IS_ADMIN || LOCAL_TEST_MODE) return;
   trafficLoading=true; trafficError='';
-  if (_tab==='stats') { const el=document.getElementById('tab-stats'); if(el) el.innerHTML=renderTrafficStats(); }
+  if (_tab==='traffic') { const el=document.getElementById('tab-traffic'); if(el) el.innerHTML=renderTrafficStats(); }
   try {
     // Wait for Firebase Authentication to be ready before reading admin-only data.
     await auth.authStateReady();
@@ -4328,7 +4333,7 @@ async function loadTrafficStats() {
     trafficError=`Unable to read traffic statistics (${code}). Firebase account: ${email}. ${code==='permission-denied'?'Check that this email is authorized in Firestore Rules.':(e?.message||'Please retry.')}`;
   }
   trafficLoading=false;
-  if (_tab==='stats') { const el=document.getElementById('tab-stats'); if(el) el.innerHTML=renderTrafficStats(); bindTrafficRefresh(); }
+  if (_tab==='traffic') { const el=document.getElementById('tab-traffic'); if(el) el.innerHTML=renderTrafficStats(); bindTrafficRefresh(); }
 }
 function bindTrafficRefresh() { document.getElementById('traffic-refresh')?.addEventListener('click',loadTrafficStats); }
 
@@ -4347,20 +4352,22 @@ function renderMain() {
 </div>
 <nav class="nav">
   <button class="nav-btn ${_tab==='today'?'on':''}" data-tab="today">Today</button>
-  <button class="nav-btn ${_tab==='board'?'on':''}" data-tab="board">Boards</button>
+  <button class="nav-btn ${_tab==='board'?'on':''}" data-tab="board">Board</button>
   <button class="nav-btn ${_tab==='history'?'on':''}" data-tab="history">History</button>
   <button class="nav-btn ${_tab==='stats'?'on':''}" data-tab="stats">Stats</button>
+  <button class="nav-btn ${_tab==='traffic'?'on':''}" data-tab="traffic">Traffic</button>
   <button class="nav-btn ${_tab==='settings'?'on':''}" data-tab="settings">Settings</button>
   ${renderDesktopProjectProgress()}
 </nav>
 ${renderDesktopLiveBar()}
 
 <div class="tab-viewport">
-  <div class="tab-strip" style="--view-count:5">
+  <div class="tab-strip" style="--view-count:6">
     <section class="sec ${_tab==='today'?'on':''}" id="tab-today" data-view="today">${renderToday()}</section>
     <section class="sec ${_tab==='board'?'on':''}" id="tab-board" data-view="board">${renderBoard(_boardView)}</section>
     <section class="sec ${_tab==='history'?'on':''}" id="tab-history" data-view="history">${renderHistory()}</section>
-    <section class="sec ${_tab==='stats'?'on':''}" id="tab-stats" data-view="stats">${renderTrafficStats()}</section>
+    <section class="sec ${_tab==='stats'?'on':''}" id="tab-stats" data-view="stats">${renderGameStats()}</section>
+    <section class="sec ${_tab==='traffic'?'on':''}" id="tab-traffic" data-view="traffic">${renderTrafficStats()}</section>
     <section class="sec ${_tab==='settings'?'on':''}" id="tab-settings" data-view="settings">${renderSettings()}</section>
   </div>
 </div>`;
@@ -4408,7 +4415,7 @@ function renderToday() {
     return `<div class="tab-page-frame"><div class="card">
       <div class="card-lbl">Start New Day</div>
       <button class="btn btn-p" id="new-day-btn">Start Today's Game</button>
-    </div>${renderCrazyDaySetupCard(null)}</div>`;
+    </div></div>`;
   }
 
   const clockCard = `
@@ -4439,7 +4446,7 @@ function renderToday() {
       ${renderCancelLiveUnitAction(t)}
       ${clockCard}
       ${renderCrazyDayIndicator(t)}
-      ${renderCrazyDaySetupCard(t)}
+      
       <div class="card today-scroll-card"><div class="card-lbl">${statusHeader}</div>
         <div class="today-scroll-list">${renderActiveTodayRows(t, sg, out, slices)}</div>
       </div>
@@ -4492,7 +4499,7 @@ function renderToday() {
       ${t.betCloseAt ? `<p class="mono dim center mt8">Time left: <span class="accent" data-bet-close-countdown>--</span></p>` : ''}
     </div>
     ${renderCrazyDayIndicator(t)}
-    ${renderCrazyDaySetupCard(t)}
+    
     <div class="card">
       <div class="card-lbl">Paste ${esc(unitLabel)} Guesses</div>
       <p class="mono dim" style="margin-bottom:10px">Format: Name - hh:mm (one per line).</p>
@@ -4585,14 +4592,12 @@ function setBoardView(v) {
 function openAccuracyGraphForPlayer(name) {
   if (!name) return;
   _closenessPlayer = name;
-  _boardView = 'closeness';
-  const scrollByInnerList = captureInnerScrollState();
-  const board = document.querySelector('.sec[data-view="board"]');
-  if (board) {
-    board.innerHTML = renderBoard(_boardView);
-    restoreInnerScrollState(scrollByInnerList);
+  setMainTab('stats');
+  const stats = document.querySelector('.sec[data-view="stats"]');
+  if (stats) {
+    stats.innerHTML = renderGameStats();
+    requestAnimationFrame(() => stats.querySelector('#game-stats-accuracy')?.scrollIntoView({block:'start',behavior:'smooth'}));
   }
-  setMainTab('board');
 }
 
 function contrastTextForHex(hex) {
@@ -4978,25 +4983,77 @@ function getPlayerMissedGameStreak(playerName) {
   return missed;
 }
 
-function renderBoard(view=_boardView) {
+// The closest non-winning occupied time slots directly before and after
+// the winning slot. Multiple players sharing a slot are counted separately.
+function getNearMissLeaderboard() {
+  const completed = getHistoryEntries().filter(day => day && day.wrapTime);
+  const minGames = Math.ceil(completed.length * 0.40);
+  const players = getSortedPlayerRoster().filter(p => p.active !== false);
+  const rows = players.map(player => {
+    const key = nameKey(player.name);
+    let played = 0, nearMisses = 0, wins = 0;
+    for (const day of completed) {
+      const guesses = (day.guesses || []).filter(g => g && g.time);
+      const own = guesses.find(g => nameKey(g.name) === key);
+      if (!own) continue;
+      played++;
+      if (didPlayerWinDay(player.name, day)) { wins++; continue; }
+      if (day.noWinner) continue;
+      const winningNames = (day.winners || []).map(w => nameKey(w.name));
+      if (!winningNames.length && day.winner) winningNames.push(nameKey(day.winner));
+      const winningTimes = guesses.filter(g => winningNames.includes(nameKey(g.name))).map(g => toSec(g.time));
+      if (!winningTimes.length) continue;
+      const slots = [...new Set(guesses.map(g => toSec(g.time)))].sort((a,b) => a-b);
+      const ownTime = toSec(own.time);
+      const adjacent = winningTimes.some(t => {
+        const idx = slots.indexOf(t);
+        return idx >= 0 && (slots[idx-1] === ownTime || slots[idx+1] === ownTime);
+      });
+      if (adjacent) nearMisses++;
+    }
+    return {name:player.name, played, nearMisses, wins};
+  }).filter(row => row.wins === 0 && row.played >= minGames && row.played > 0);
+  return {completed:completed.length, minGames, rows:rows.sort((a,b) => b.nearMisses-a.nearMisses || b.played-a.played || a.name.localeCompare(b.name))};
+}
+
+function renderNearMissLeaderboard() {
+  const {completed,minGames,rows} = getNearMissLeaderboard();
+  return `<div class="card board-fixed-card near-miss-card">
+    <div class="card-lbl">SO CLOSE</div>
+    <h3>Most near misses without a win</h3>
+    <p class="mono dim">Adjacent time slots to the daily winner · Minimum 40% of completed games (${minGames} of ${completed}) · Never won</p>
+    ${rows.length ? `<div class="near-miss-list">${rows.map((row,i)=>`<div class="near-miss-row"><span class="near-miss-rank">${i+1}</span><strong>${esc(row.name)}</strong><span class="mono dim">${row.played} played</span><span class="accent"><strong>${row.nearMisses}</strong> near misses</span></div>`).join('')}</div>` : '<div class="empty">No eligible players yet</div>'}
+  </div>`;
+}
+
+function renderGameStats() {
+  const pl = getSortedPlayerRoster().filter(p => p.active !== false);
+  const views = [['pie','Pie Chart'],['accuracy','Accuracy'],['near','Near Misses']];
+  const body = _statsView === 'accuracy'
+    ? `<div class="card board-fixed-card" id="game-stats-accuracy"><div class="card-lbl">ACCURACY</div>${pl.length ? renderBoardCloseness(pl) : '<div class="empty">No players yet</div>'}</div>`
+    : _statsView === 'near' ? renderNearMissLeaderboard()
+    : `<div class="card board-fixed-card"><div class="card-lbl">PIE CHART</div>${pl.length ? renderBoardPie(pl) : '<div class="empty">No players yet</div>'}</div>`;
+  return `<div class="game-stats-page">
+    <nav class="stats-subnav" aria-label="Statistics categories">${views.map(([key,label])=>`<button type="button" class="stats-subnav-btn${_statsView===key?' on':''}" data-stats-view="${key}" aria-pressed="${_statsView===key}">${label}</button>`).join('')}</nav>
+    <div class="stats-subview">${body}</div>
+  </div>`;
+}
+
+function bindStatsSubnav() {
+  document.querySelectorAll('[data-stats-view]').forEach(button => button.addEventListener('click', () => {
+    const next = button.dataset.statsView;
+    if (!['pie','accuracy','near'].includes(next) || next === _statsView) return;
+    _statsView = next;
+    const section = document.querySelector('[data-view="stats"]');
+    if (section) section.innerHTML = renderGameStats();
+    bindStatsSubnav();
+  }));
+}
+
+function renderBoard(view='list') {
   const pl = getSortedPlayerRoster();
   if (!pl.length) return '<div class="empty">No players yet</div>';
-  if (!getBoardViews().includes(view)) view = 'list';
-  const distanceToggle = getBoardViews().includes('closeness')
-    ? `<button class="board-toggle${view === 'closeness' ? ' on' : ''}" type="button" data-board-view="closeness">Accuracy</button>`
-    : '';
-  const toolbar = `
-    <div class="board-toolbar">
-      <button class="board-toggle${view === 'list' ? ' on' : ''}" type="button" data-board-view="list"${view === 'list' && IS_ADMIN ? ' data-standings-export' : ''}>Standings</button>
-      <button class="board-toggle${view === 'pie' ? ' on' : ''}" type="button" data-board-view="pie">Pie Chart</button>
-      ${distanceToggle}
-    </div>`;
-  if (view === 'closeness') {
-    return `<div class="card board-fixed-card">${toolbar}${renderBoardCloseness(pl)}</div>`;
-  }
-  if (view === 'pie') {
-    return `<div class="card board-fixed-card">${toolbar}${renderBoardPie(pl)}</div>`;
-  }
+  const toolbar = '';
   const standingsRows = getStandingsEntries().map((entry, i)=>{
   const { player: p, score, wins, rank } = entry;
   const openKey = `${i}:${p.name}`;
@@ -8266,7 +8323,9 @@ function renderSettings() {
   const pl = getAlphabeticalPlayerRoster();
   const hasCurrentDay =
     Object.keys(getLiveGames()).length > 0;
-  return `<div class="tab-page-frame"><div class="card"><div class="card-lbl">Editable Player Roster</div>
+  const nav = `<nav class="stats-subnav" aria-label="Admin settings"><button type="button" data-settings-view="players" class="stats-subnav-btn${_settingsView==='players'?' on':''}">General</button><button type="button" data-settings-view="extra" class="stats-subnav-btn${_settingsView==='extra'?' on':''}">Extra Rules</button></nav>`;
+  if (_settingsView === 'extra') return `<div class="tab-page-frame">${nav}<div class="extra-rules-page"><h3>Extra Rules</h3><p class="mono dim">Special day rules are configured for each Main Unit. Only Crazy Day is available for now.</p>${renderCrazyDaySetupCard(S.today)}</div></div>`;
+  return `<div class="tab-page-frame">${nav}<div class="card"><div class="card-lbl">Editable Player Roster</div>
 ${pl.map((p, idx)=> {
   const realIdx = S.playerRoster.findIndex(orig => orig.name === p.name);
   return `
@@ -9182,6 +9241,11 @@ async function createNewLiveUnit() {
 }
 
 function bindMain() {
+  bindStatsSubnav();
+  document.querySelectorAll('[data-settings-view]').forEach(button => button.addEventListener('click', () => {
+    _settingsView = button.dataset.settingsView === 'extra' ? 'extra' : 'players';
+    render();
+  }));
   bindTrafficRefresh();
   bindLiveUnitSwitcher();
   document
@@ -9219,7 +9283,7 @@ function bindMain() {
       window.dispatchEvent(new CustomEvent('totowrap-open-final-recap'));
     });
   });
-  document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>{setMainTab(btn.dataset.tab); if(btn.dataset.tab==='stats') loadTrafficStats();}));
+  document.querySelectorAll('.nav-btn').forEach(btn=>btn.addEventListener('click',()=>{setMainTab(btn.dataset.tab); if(btn.dataset.tab==='traffic') loadTrafficStats();}));
   document
     .getElementById('new-day-btn')
     ?.addEventListener(
