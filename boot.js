@@ -11,6 +11,36 @@
   const LAST_PHRASE_KEY = 'totowrap-last-boot-phrase';
   const PLAYER_NAMES_KEY = 'totowrap-boot-player-names';
   const CRAZY_DAY_KEY = 'totowrap-boot-crazy-day';
+  const SPECIAL_IMAGE_URL = 'imgs/whats-up-beautiful-ladies.png';
+  // Independent 10% chance on each loading-screen opening, per browser session.
+  // No visit counter or IP tracking is needed.
+  const specialImageOpening = Math.random() < 0.1;
+  let specialImageVisible = false;
+  function showSpecialImageLoader() {
+    if (!specialImageOpening || !loaderIsActive() || !bootContent) return false;
+    const picture = new Image();
+    picture.src = SPECIAL_IMAGE_URL;
+    picture.alt = 'WHAT’S UP BEAUTIFUL LADIEEEEEES!';
+    picture.style.cssText = 'display:block;max-width:min(88vw,640px);max-height:76vh;width:auto;height:auto;object-fit:contain;';
+    picture.onload = () => {
+      if (!loaderIsActive() || specialImageVisible) return;
+      specialImageVisible = true;
+      stopPhraseRotation();
+      const stage = bootContent.querySelector('.boot-logo-stage');
+      if (stage) stage.style.visibility = 'hidden';
+      phrase.style.visibility = 'hidden';
+      const crazy = bootContent.querySelector('[data-boot-crazy-day]');
+      if (crazy) crazy.style.visibility = 'hidden';
+      const container = document.createElement('div');
+      container.className = 'boot-special-image';
+      container.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;pointer-events:none;';
+      container.appendChild(picture);
+      bootContent.appendChild(container);
+    };
+    picture.onerror = () => { /* Missing image: retain the regular loading screen. */ };
+    return true;
+  }
+
   const PHRASE_VISIBLE_MS = 5000;
   const PHRASE_FADE_MS = 650;
   const PHRASE_CLEAN_MS = 500;
@@ -31,7 +61,6 @@
     'You miss 100% of the bets you don’t place.',
     '<span class="boot-phrase-right">"Questa <u>non</u> è una dittatura!"</span>',
     'I love the smell of TotoWrap in the morning',
-    'Facciamo un referendum?',
     'Che vita sprecata...',
     'Mancano 2 setup',
     'La Federazione ti vuole bene',
@@ -128,6 +157,7 @@
   }
 
   function showCrazyDayLoader(detail={}) {
+    if (specialImageVisible) return;
     if (!loaderIsActive() || !bootContent) return;
     stopPhraseRotation();
     regularLogoLayer?.classList.remove('is-visible');
@@ -192,6 +222,7 @@
   }
 
   function showRegularLoader() {
+    if (specialImageVisible) return;
     if (!loaderIsActive() || !bootContent?.classList.contains('is-crazy-day')) return;
     const crazy = bootContent.querySelector('[data-boot-crazy-day]');
     crazy?.classList.remove('is-visible');
@@ -264,4 +295,5 @@
   const cachedCrazyDay = getCachedCrazyDay();
   if (cachedCrazyDay) showCrazyDayLoader(cachedCrazyDay);
   else showNextPhrase();
+  showSpecialImageLoader();
 })();
