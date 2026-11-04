@@ -4167,7 +4167,6 @@ function renderActiveTodayRows(t, sg, out, slices) {
           ${g.time ? st.pill : ''}
         </div>
         ${bossTodayTag(g.name,t)}
-        ${bossTodayTag(g.name,t)}
         ${boundaryInfo ? `<div class="row-boundary">${boundaryInfo}</div>` : ''}
       </div>
 
