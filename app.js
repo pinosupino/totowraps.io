@@ -146,6 +146,7 @@ const BOOT_FADE_MS = 1500;
 const BOOT_RENDER_WAIT_TIMEOUT_MS = 5000;
 const BOOT_PLAYER_NAMES_STORAGE_KEY = 'totowrap-boot-player-names';
 const BOOT_CRAZY_DAY_STORAGE_KEY = 'totowrap-boot-crazy-day';
+const BOOT_CHAINED_DAY_STORAGE_KEY = 'totowrap-boot-chained-day';
 const BOOT_STARTED_AT = Date.now();
 let _bootHideQueued = false;
 const INNER_SCROLL_SELECTOR = '.today-scroll-list, .standings-scroll-list, .board-legend, .preview-card';
@@ -3640,7 +3641,25 @@ function formatSignedPoints(value) {
   return `${points > 0 ? '+' : ''}${points} ${countWord(points, 'point', 'points')}`;
 }
 
+function syncChainedDayBootLoader() {
+  const activeChainedDay = Object.values(getLiveGames()).some(day =>
+    day && !day.wrapTime && day.chainedTogether?.enabled === true
+  );
+  try {
+    if (activeChainedDay) localStorage.setItem(BOOT_CHAINED_DAY_STORAGE_KEY, 'true');
+    else localStorage.removeItem(BOOT_CHAINED_DAY_STORAGE_KEY);
+  } catch (_) {}
+  if (activeChainedDay) {
+    document.dispatchEvent(new CustomEvent('totowrap:chained-day-loader'));
+  }
+  return activeChainedDay;
+}
+
 function syncCrazyDayBootLoader() {
+  if (syncChainedDayBootLoader()) {
+    try { localStorage.removeItem(BOOT_CRAZY_DAY_STORAGE_KEY); } catch (_) {}
+    return;
+  }
   const activeCrazyDayGame =
     Object.values(getLiveGames()).find(
       day =>
@@ -4688,76 +4707,44 @@ function renderChainedTodayRows(day, completed=false) {
 function chainedExportImage(day=S.today) {
   const pairs = chainedPairs(day);
   if (!pairs.length) { toast('Save pairs before exporting', 'err'); return; }
-  // Match the site theme, including the theme attribute used by some layouts.
-  const root = document.documentElement, body = document.body;
-  const dark = root.classList.contains('dark-mode') || body.classList.contains('dark-mode') ||
-    root.classList.contains('dark') || body.classList.contains('dark') ||
-    root.dataset.theme === 'dark' || body.dataset.theme === 'dark' ||
-    (typeof localStorage !== 'undefined' && localStorage.getItem('theme') === 'dark');
-  const width = 1500, columns = 5, rows = Math.max(4, Math.ceil(pairs.length / columns));
-  const gap = 16, margin = 54, cellW = (width - margin * 2 - gap * (columns - 1)) / columns;
-  const cellH = 140, gridTop = 355, height = gridTop + rows * (cellH + gap) - gap + 106;
+  const dark = document.documentElement.classList.contains('dark-mode') || document.body.classList.contains('dark-mode');
+  const width = 1080, rowHeight = 114, height = 420 + pairs.length * rowHeight;
   const canvas = document.createElement('canvas');
   canvas.width = width; canvas.height = height;
   const ctx = canvas.getContext('2d');
-  const bg = dark ? '#1c1d20' : '#f5f5f5';
-  const panel = dark ? '#292b30' : '#ffffff';
-  const border = dark ? '#3d4046' : '#dedfe3';
-  const ink = dark ? '#f6f6f7' : '#202124';
-  const muted = dark ? '#aeb2bb' : '#686e77';
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, width, height);
-  const round = (x,y,w,h,r) => { ctx.beginPath(); ctx.roundRect(x,y,w,h,r); };
-  const center = (txt,y,size=30,color=ink,weight=700) => {
-    ctx.fillStyle=color; ctx.font=`${weight} ${size}px "Google Sans Flex",Arial,sans-serif`;
-    ctx.textAlign='center'; ctx.fillText(txt,width/2,y);
+  const bg = dark ? '#202226' : '#fffdd0', panel = dark ? '#303238' : '#ffffff';
+  const ink = dark ? '#f8f8f6' : '#202124', muted = dark ? '#b5b9c0' : '#656a70';
+  ctx.fillStyle = bg; ctx.fillRect(0,0,width,height);
+  const round = (x,y,w,h,r) => {ctx.beginPath();ctx.roundRect(x,y,w,h,r);};
+  const center = (txt,y,size=30,color=ink,weight=700) => {ctx.fillStyle=color;ctx.font=`${weight} ${size}px "Google Sans Flex",Arial,sans-serif`;ctx.textAlign='center';ctx.fillText(txt,width/2,y);};
+  const logo = new Image();
+  logo.onload = () => {
+    const maxW=420,maxH=120, scale=Math.min(maxW/logo.width,maxH/logo.height);
+    ctx.drawImage(logo,(width-logo.width*scale)/2,28,logo.width*scale,logo.height*scale);
+    finish();
   };
-  function fitName(name, maxWidth) {
-    let fontSize=27;
-    while (fontSize > 15) {
-      ctx.font=`700 ${fontSize}px "Google Sans Flex",Arial,sans-serif`;
-      if (ctx.measureText(name).width <= maxWidth) break;
-      fontSize--;
-    }
-    return fontSize;
-  }
+  logo.onerror = finish;
   function finish() {
-    center('CHAINED TOGETHER', 259, 57, ink, 800);
-    center(`${displayDayLabel(getInternalProjectDayNumberForDate(day.date))}  ·  PAIR REVEAL`, 310, 24, muted, 600);
+    center('CHAINED TOGETHER',205,56,ink,800);
+    center(`${displayDayLabel(getInternalProjectDayNumberForDate(day.date))}  ·  PAIR REVEAL`,254,23,muted,600);
     pairs.forEach((p,i) => {
-      const col=i%columns, row=Math.floor(i/columns);
-      const x=margin+col*(cellW+gap), y=gridTop+row*(cellH+gap);
-      ctx.fillStyle=panel; round(x,y,cellW,cellH,13); ctx.fill();
-      ctx.strokeStyle=border; ctx.lineWidth=1.5; ctx.stroke();
-      ctx.textAlign='center'; ctx.fillStyle=muted;
-      ctx.font='600 18px "Google Sans Flex",Arial,sans-serif';
-      ctx.fillText(String(i+1).padStart(2,'0'),x+cellW/2,y+29);
-      ctx.fillStyle=ink;
-      for (const [name,offset] of [[p[0],75],[p[1],115]]) {
-        ctx.font=`700 ${fitName(String(name),cellW-22)}px "Google Sans Flex",Arial,sans-serif`;
-        ctx.fillText(String(name),x+cellW/2,y+offset,cellW-22);
-      }
+      const y=290+i*rowHeight;
+      ctx.fillStyle=panel;round(54,y,width-108,96,16);ctx.fill();
+      ctx.textAlign='left';ctx.fillStyle=muted;ctx.font='600 22px "Google Sans Flex",Arial,sans-serif';ctx.fillText(String(i+1).padStart(2,'0'),84,y+58);
+      ctx.fillStyle=ink;ctx.font='700 31px "Google Sans Flex",Arial,sans-serif';
+      ctx.textAlign='right';ctx.fillText(p[0],502,y+60,360);
+      ctx.textAlign='center';ctx.fillText('↔',540,y+60);
+      ctx.textAlign='left';ctx.fillText(p[1],578,y+60,360);
     });
-    center('TWO PLAYERS · ONE BET',height-48,22,muted,700);
+    center('TWO PLAYERS · ONE BET',height-42,22,muted,700);
     canvas.toBlob(blob => {
-      if (!blob) { toast('Could not create image','err'); return; }
+      if (!blob) {toast('Could not create image','err');return;}
       const url=URL.createObjectURL(blob), a=document.createElement('a');
-      a.href=url; a.download=`TotoWrap_Chained_Together_${day.date||'today'}.png`; a.click();
+      a.href=url;a.download=`TotoWrap_Chained_Together_${day.date||'today'}.png`;a.click();
       setTimeout(()=>URL.revokeObjectURL(url),1000);
     },'image/png');
   }
-  const logo = new Image();
-  logo.onload = () => {
-    const maxW=470, maxH=170, scale=Math.min(maxW/logo.width,maxH/logo.height);
-    ctx.drawImage(logo,(width-logo.width*scale)/2,30,logo.width*scale,logo.height*scale);
-    finish();
-  };
-  // Resolve the asset relative to this module, independent of /admin/ URLs.
-  // If the logo is missing, still export the pair sheet instead of failing.
-  logo.onerror = () => {
-    console.warn('TotoWrap Upgraded logo unavailable; exporting without logo:', logo.src);
-    finish();
-  };
-  logo.src = new URL('./imgs/totoswrap.png', import.meta.url).href;
+  logo.src = IS_ADMIN && location.pathname.includes('/admin/') ? '../imgs/totowrap.png' : 'imgs/totowrap.png';
 }
 async function saveChainedPairs(pairs) {
   if (!IS_ADMIN || !currentUser || !S.today || S.today.wrapTime || (S.today.guesses||[]).some(g=>g.time) || (S.today.unit||'main')!=='main') return;

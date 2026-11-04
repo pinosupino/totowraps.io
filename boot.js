@@ -11,19 +11,21 @@
   const LAST_PHRASE_KEY = 'totowrap-last-boot-phrase';
   const PLAYER_NAMES_KEY = 'totowrap-boot-player-names';
   const CRAZY_DAY_KEY = 'totowrap-boot-crazy-day';
+  const CHAINED_DAY_KEY = 'totowrap-boot-chained-day';
+  const CHAINED_LOGO_URL = 'imgs/totowrap-chained-together.png';
   const SPECIAL_IMAGE_URL = 'imgs/whats-up-beautiful-ladies.png';
   // Independent 10% chance on each loading-screen opening, per browser session.
   // No visit counter or IP tracking is needed.
   const specialImageOpening = Math.random() < 0.1;
   let specialImageVisible = false;
   function showSpecialImageLoader() {
-    if (!specialImageOpening || !loaderIsActive() || !bootContent) return false;
+    if (!specialImageOpening || isChainedDayCached() || !loaderIsActive() || !bootContent) return false;
     const picture = new Image();
     picture.src = SPECIAL_IMAGE_URL;
     picture.alt = 'WHAT’S UP BEAUTIFUL LADIEEEEEES!';
     picture.style.cssText = 'display:block;max-width:min(88vw,640px);max-height:76vh;width:auto;height:auto;object-fit:contain;';
     picture.onload = () => {
-      if (!loaderIsActive() || specialImageVisible) return;
+      if (!loaderIsActive() || specialImageVisible || isChainedDayCached()) return;
       specialImageVisible = true;
       stopPhraseRotation();
       const stage = bootContent.querySelector('.boot-logo-stage');
@@ -156,8 +158,45 @@
     return Boolean(loader && !loader.classList.contains('done'));
   }
 
+  function isChainedDayCached() {
+    try { return localStorage.getItem(CHAINED_DAY_KEY) === 'true'; }
+    catch (_) { return false; }
+  }
+
+  function showChainedDayLoader() {
+    if (!loaderIsActive() || !bootContent) return;
+    stopPhraseRotation();
+    regularLogoLayer?.classList.remove('is-visible');
+    phrase.style.visibility = 'hidden';
+    const crazy = bootContent.querySelector('[data-boot-crazy-day]');
+    if (crazy) crazy.style.visibility = 'hidden';
+    const special = bootContent.querySelector('.boot-special-image');
+    if (special) special.style.visibility = 'hidden';
+    let chained = bootContent.querySelector('[data-boot-chained-day]');
+    if (!chained) {
+      chained = document.createElement('div');
+      chained.setAttribute('data-boot-chained-day', '');
+      chained.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;pointer-events:none;';
+      const image = document.createElement('img');
+      image.src = CHAINED_LOGO_URL;
+      image.alt = 'TotoWrap Upgraded - Chained Together';
+      image.style.cssText = 'display:block;width:auto;height:auto;max-width:min(88vw,800px);max-height:76vh;object-fit:contain;';
+      image.onerror = () => {
+        chained.remove();
+        phrase.style.visibility = '';
+        if (!bootContent.classList.contains('is-crazy-day')) {
+          regularLogoLayer?.classList.add('is-visible');
+          if (!phraseTimer) showNextPhrase();
+        }
+      };
+      chained.appendChild(image);
+      bootContent.appendChild(chained);
+    }
+    chained.style.visibility = 'visible';
+  }
+
   function showCrazyDayLoader(detail={}) {
-    if (specialImageVisible) return;
+    if (specialImageVisible || isChainedDayCached()) return;
     if (!loaderIsActive() || !bootContent) return;
     stopPhraseRotation();
     regularLogoLayer?.classList.remove('is-visible');
@@ -223,7 +262,14 @@
 
   function showRegularLoader() {
     if (specialImageVisible) return;
-    if (!loaderIsActive() || !bootContent?.classList.contains('is-crazy-day')) return;
+    if (!loaderIsActive() || !bootContent) return;
+    const chained = bootContent.querySelector('[data-boot-chained-day]');
+    if (chained) { chained.remove(); phrase.style.visibility = ''; }
+    if (!bootContent.classList.contains('is-crazy-day')) {
+      regularLogoLayer?.classList.add('is-visible');
+      if (!phraseTimer) showNextPhrase();
+      return;
+    }
     const crazy = bootContent.querySelector('[data-boot-crazy-day]');
     crazy?.classList.remove('is-visible');
     bootContent.classList.remove('is-crazy-day');
@@ -287,13 +333,14 @@
     }).observe(loader, { attributes: true, attributeFilter: ['class'] });
   }
 
+  document.addEventListener('totowrap:chained-day-loader', showChainedDayLoader);
   document.addEventListener('totowrap:crazy-day-loader', event => {
     showCrazyDayLoader(event.detail || {});
   });
   document.addEventListener('totowrap:regular-loader', showRegularLoader);
 
   const cachedCrazyDay = getCachedCrazyDay();
-  if (cachedCrazyDay) showCrazyDayLoader(cachedCrazyDay);
-  else showNextPhrase();
-  showSpecialImageLoader();
+  if (isChainedDayCached()) showChainedDayLoader();
+  else if (cachedCrazyDay) showCrazyDayLoader(cachedCrazyDay);
+  else { showNextPhrase(); showSpecialImageLoader(); }
 })();
