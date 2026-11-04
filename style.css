@@ -1740,3 +1740,9 @@ html.dark-mode .hdr-wrap-time.off {
   .today-adaptive-header .boss-time-value,
   .today-adaptive-header .boss-time-logo{transition:none!important;will-change:auto;}
 }
+
+/* Adaptive TODAY v6: preserve the original bet-list position on collapse.
+   A static spacer replaces the header height lost in compact mode. */
+.today-fixed-view:has(> .today-adaptive-header) > .today-adaptive-header.today-adaptive-compact{
+  margin-bottom:var(--today-header-space,0px);
+}

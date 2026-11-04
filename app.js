@@ -10052,7 +10052,22 @@ document.addEventListener('scroll', function(event) {
     // Separate enter/exit thresholds prevent the header oscillating around a boundary.
     if (!state.compact && y >= 185) state.compact = true;
     else if (state.compact && y <= 65) state.compact = false;
-    header.classList.toggle('today-adaptive-compact', state.compact);
-    // Keep the list in normal flow. No scroll-linked transforms or layout writes.
+    // Preserve the header's original space when it collapses. Otherwise the
+    // list jumps upward underneath the sticky counter and its first bets vanish.
+    if (!state.expandedHeight && !header.classList.contains('today-adaptive-compact')) {
+      state.expandedHeight = header.getBoundingClientRect().height;
+    }
+    const wasCompact = header.classList.contains('today-adaptive-compact');
+    if (wasCompact !== state.compact) {
+      header.classList.toggle('today-adaptive-compact', state.compact);
+      if (state.compact) {
+        const compactHeight = header.getBoundingClientRect().height;
+        header.style.setProperty('--today-header-space', Math.max(0, state.expandedHeight - compactHeight) + 'px');
+      } else {
+        header.style.removeProperty('--today-header-space');
+        state.expandedHeight = header.getBoundingClientRect().height;
+      }
+    }
+    // The reserved space is static until the next mode change, not scroll-linked.
   });
 }, true);
