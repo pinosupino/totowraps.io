@@ -148,6 +148,7 @@ const BOOT_PLAYER_NAMES_STORAGE_KEY = 'totowrap-boot-player-names';
 const BOOT_CRAZY_DAY_STORAGE_KEY = 'totowrap-boot-crazy-day';
 const BOOT_CHAINED_DAY_STORAGE_KEY = 'totowrap-boot-chained-day';
 const BOOT_STEAL_DAY_STORAGE_KEY = 'totowrap-boot-steal-day';
+const BOOT_CROWN_DAY_STORAGE_KEY = 'totowrap-boot-crown-day';
 const BOOT_STARTED_AT = Date.now();
 let _bootHideQueued = false;
 const INNER_SCROLL_SELECTOR = '.today-scroll-list, .standings-scroll-list, .board-legend, .preview-card';
@@ -3667,13 +3668,31 @@ function syncStealDayBootLoader() {
   if (activeStealDay) document.dispatchEvent(new CustomEvent('totowrap:steal-day-loader'));
   return activeStealDay;
 }
+function syncCrownDayBootLoader() {
+  const activeCrownDay = Object.values(getLiveGames()).some(day =>
+    day && !day.wrapTime && day.crownDay?.enabled === true
+  );
+  try {
+    if (activeCrownDay) localStorage.setItem(BOOT_CROWN_DAY_STORAGE_KEY, 'true');
+    else localStorage.removeItem(BOOT_CROWN_DAY_STORAGE_KEY);
+  } catch (_) {}
+  if (activeCrownDay) document.dispatchEvent(new CustomEvent('totowrap:crown-day-loader'));
+  return activeCrownDay;
+}
+
 function syncCrazyDayBootLoader() {
   if (syncChainedDayBootLoader()) {
     try { localStorage.removeItem(BOOT_STEAL_DAY_STORAGE_KEY); } catch (_) {}
+    try { localStorage.removeItem(BOOT_CROWN_DAY_STORAGE_KEY); } catch (_) {}
     try { localStorage.removeItem(BOOT_CRAZY_DAY_STORAGE_KEY); } catch (_) {}
     return;
   }
   if (syncStealDayBootLoader()) {
+    try { localStorage.removeItem(BOOT_CROWN_DAY_STORAGE_KEY); } catch (_) {}
+    try { localStorage.removeItem(BOOT_CRAZY_DAY_STORAGE_KEY); } catch (_) {}
+    return;
+  }
+  if (syncCrownDayBootLoader()) {
     try { localStorage.removeItem(BOOT_CRAZY_DAY_STORAGE_KEY); } catch (_) {}
     return;
   }

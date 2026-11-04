@@ -13,6 +13,8 @@
   const CRAZY_DAY_KEY = 'totowrap-boot-crazy-day';
   const CHAINED_DAY_KEY = 'totowrap-boot-chained-day';
   const STEAL_DAY_KEY = 'totowrap-boot-steal-day';
+  const CROWN_DAY_KEY = 'totowrap-boot-crown-day';
+  const CROWN_LOGO_URL = 'imgs/totowrap-crown-day.png';
   const STEAL_LOGO_URL = 'imgs/totowrap-steal-the-day.png';
   const CHAINED_LOGO_URL = 'imgs/totowrap-chained-together.png';
   const SPECIAL_IMAGE_URL = 'imgs/whats-up-beautiful-ladies.png';
@@ -21,13 +23,13 @@
   const specialImageOpening = Math.random() < 0.1;
   let specialImageVisible = false;
   function showSpecialImageLoader() {
-    if (!specialImageOpening || isChainedDayCached() || isStealDayCached() || !loaderIsActive() || !bootContent) return false;
+    if (!specialImageOpening || isChainedDayCached() || isStealDayCached() || isCrownDayCached() || !loaderIsActive() || !bootContent) return false;
     const picture = new Image();
     picture.src = SPECIAL_IMAGE_URL;
     picture.alt = 'WHAT’S UP BEAUTIFUL LADIEEEEEES!';
     picture.style.cssText = 'display:block;max-width:min(88vw,640px);max-height:76vh;width:auto;height:auto;object-fit:contain;';
     picture.onload = () => {
-      if (!loaderIsActive() || specialImageVisible || isChainedDayCached() || isStealDayCached()) return;
+      if (!loaderIsActive() || specialImageVisible || isChainedDayCached() || isStealDayCached() || isCrownDayCached()) return;
       specialImageVisible = true;
       stopPhraseRotation();
       const stage = bootContent.querySelector('.boot-logo-stage');
@@ -170,6 +172,45 @@
     catch (_) { return false; }
   }
 
+  function isCrownDayCached() {
+    try { return localStorage.getItem(CROWN_DAY_KEY) === 'true'; }
+    catch (_) { return false; }
+  }
+
+  function showCrownDayLoader() {
+    if (!loaderIsActive() || !bootContent) return;
+    stopPhraseRotation();
+    regularLogoLayer?.classList.remove('is-visible');
+    const stage = bootContent.querySelector('.boot-logo-stage');
+    if (stage) stage.style.visibility = 'hidden';
+    phrase.style.visibility = 'hidden';
+    for (const selector of ['[data-boot-crazy-day]', '[data-boot-chained-day]',
+                            '[data-boot-steal-day]', '.boot-special-image']) {
+      const other = bootContent.querySelector(selector);
+      if (other) other.style.visibility = 'hidden';
+    }
+    let crown = bootContent.querySelector('[data-boot-crown-day]');
+    if (!crown) {
+      crown = document.createElement('div');
+      crown.setAttribute('data-boot-crown-day', '');
+      crown.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;pointer-events:none;';
+      const img = document.createElement('img');
+      img.src = CROWN_LOGO_URL;
+      img.alt = 'TotoWrap Upgraded - Crown Day';
+      img.style.cssText = 'display:block;width:auto;height:auto;max-width:min(88vw,800px);max-height:76vh;object-fit:contain;';
+      img.onerror = () => {
+        crown.remove();
+        if (stage) stage.style.visibility = '';
+        phrase.style.visibility = '';
+        regularLogoLayer?.classList.add('is-visible');
+        if (!phraseTimer) showNextPhrase();
+      };
+      crown.appendChild(img);
+      bootContent.appendChild(crown);
+    }
+    crown.style.visibility = 'visible';
+  }
+
   function showStealDayLoader() {
     if (!loaderIsActive() || !bootContent) return;
     stopPhraseRotation();
@@ -240,7 +281,7 @@
   }
 
   function showCrazyDayLoader(detail={}) {
-    if (specialImageVisible || isChainedDayCached()) return;
+    if (specialImageVisible || isChainedDayCached() || isStealDayCached() || isCrownDayCached()) return;
     if (!loaderIsActive() || !bootContent) return;
     stopPhraseRotation();
     regularLogoLayer?.classList.remove('is-visible');
@@ -311,6 +352,8 @@
     if (chained) { chained.remove(); phrase.style.visibility = ''; }
     const steal = bootContent.querySelector('[data-boot-steal-day]');
     if (steal) { steal.remove(); phrase.style.visibility = ''; }
+    const crown = bootContent.querySelector('[data-boot-crown-day]');
+    if (crown) { crown.remove(); phrase.style.visibility = ''; }
     const stage = bootContent.querySelector('.boot-logo-stage');
     if (stage) stage.style.visibility = '';
     if (!bootContent.classList.contains('is-crazy-day')) {
@@ -383,6 +426,7 @@
 
   document.addEventListener('totowrap:chained-day-loader', showChainedDayLoader);
   document.addEventListener('totowrap:steal-day-loader', showStealDayLoader);
+  document.addEventListener('totowrap:crown-day-loader', showCrownDayLoader);
   document.addEventListener('totowrap:crazy-day-loader', event => {
     showCrazyDayLoader(event.detail || {});
   });
@@ -391,6 +435,7 @@
   const cachedCrazyDay = getCachedCrazyDay();
   if (isChainedDayCached()) showChainedDayLoader();
   else if (isStealDayCached()) showStealDayLoader();
+  else if (isCrownDayCached()) showCrownDayLoader();
   else if (cachedCrazyDay) showCrazyDayLoader(cachedCrazyDay);
   else { showNextPhrase(); showSpecialImageLoader(); }
 })();
