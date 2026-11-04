@@ -8700,7 +8700,7 @@ function bossBonuses(guesses, wrap, day) {
 }
 function bossTodayCard(day) {
   if (!bossConfig(day) || !bossParticipants(day).length) return '';
-  return `<div class="card boss-time-card"><div class="card-lbl">⚔ BOSS WRAP TIME</div>
+  return `<div class="card boss-time-card"><img class="boss-time-logo" src="imgs/totowrap-fight-the-boss.png" alt="TotoWrap Upgraded Fight the Boss" loading="lazy"><div class="card-lbl">⚔ BOSS WRAP TIME</div>
     <div class="boss-time-value mono" data-boss-time-value>${bossBetClosed(day) && isValidHM(bossConfig(day).time) ? esc(bossConfig(day).time) : '--:--'}</div>
     ${!bossBetClosed(day)?'<div class="mono dim boss-time-note">Revealed when betting closes</div>':''}
   </div>`;

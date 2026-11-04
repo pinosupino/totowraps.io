@@ -1589,3 +1589,7 @@ html.dark-mode .hdr-wrap-time.off {
 .boss-player-option small{opacity:.65}
 .boss-player-option input{accent-color:#8656d9}
 .boss-player-tag{color:#8656d9;font-size:.7rem;font-weight:700;margin-top:4px}
+
+/* Fight the Boss logo inside the TODAY Boss time pill */
+.boss-time-logo{display:block;width:min(100%,260px);height:auto;max-height:170px;object-fit:contain;margin:0 auto 12px;}
+@media(max-width:480px){.boss-time-logo{width:min(100%,210px);max-height:140px;}}
