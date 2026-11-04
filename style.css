@@ -1564,3 +1564,13 @@ html.dark-mode .hdr-wrap-time.off {
 .crown-day-options p {margin:0 0 10px;line-height:1.55;}
 .crown-day-actions {display:flex;gap:8px;flex-wrap:wrap;}
 .crown-day-indicator {padding:10px 14px;margin-bottom:12px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);font-size:12px;font-weight:700;letter-spacing:.04em;}
+
+/* Header logo: center against the entire viewport/header, not flex siblings. */
+.hdr > .logo-3d-container {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: 0;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
