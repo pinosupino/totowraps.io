@@ -4358,14 +4358,16 @@ function renderPlayerToday() {
   return `
   <div class="today-fixed-view">
   ${unitSwitcher}
-  <div class="card">
-    <div style="display: flex; align-items: center; justify-content: center;">
-      <div class="big-clock js-clock">--:--:--</div>
+  <div class="today-adaptive-header">
+    <div class="card">
+      <div style="display: flex; align-items: center; justify-content: center;">
+        <div class="big-clock js-clock">--:--:--</div>
+      </div>
+      <div class="big-clock-lbl">Live Time</div>
+      <div id="next-out-countdown" class="countdown-txt"></div>
     </div>
-    <div class="big-clock-lbl">Live Time</div>
-    <div id="next-out-countdown" class="countdown-txt"></div>
+    ${bossTodayCard(t)}
   </div>
-  ${bossTodayCard(t)}
   ${renderCrazyDayIndicator(t)}
   <div class="card today-scroll-card"><div class="card-lbl">${statusHeader}</div>
     <div class="today-scroll-list">${renderActiveTodayRows(t, sg, out, slices)}</div>
@@ -4568,8 +4570,7 @@ function renderToday() {
       <div class="today-fixed-view">
       ${unitSwitcher}
       ${renderCancelLiveUnitAction(t)}
-      ${clockCard}
-      ${bossTodayCard(t)}
+      <div class="today-adaptive-header">${clockCard}${bossTodayCard(t)}</div>
       ${renderCrazyDayIndicator(t)}
       
       <div class="card today-scroll-card"><div class="card-lbl">${statusHeader}</div>
@@ -10032,3 +10033,11 @@ if (LOCAL_TEST_MODE) {
 
 // Track public sessions without collecting IP addresses or personal identifiers.
 trackPublicVisit();
+
+// Adaptive TODAY: use the TODAY viewport scroll without changing clock or game logic.
+document.addEventListener('scroll', function(event) {
+  const panel = event.target;
+  if (!(panel instanceof Element) || !panel.matches('.today-fixed-view:has(> .today-adaptive-header)')) return;
+  const header = panel.querySelector(':scope > .today-adaptive-header');
+  if (header) header.classList.toggle('today-adaptive-compact', panel.scrollTop > 45);
+}, true);

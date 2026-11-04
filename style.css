@@ -1593,3 +1593,20 @@ html.dark-mode .hdr-wrap-time.off {
 /* Fight the Boss logo inside the TODAY Boss time pill */
 .boss-time-logo{display:block;width:min(100%,260px);height:auto;max-height:170px;object-fit:contain;margin:0 auto 12px;}
 @media(max-width:480px){.boss-time-logo{width:min(100%,210px);max-height:140px;}}
+
+/* Adaptive TODAY test: stacked clocks expand at top, shrink side by side on scroll. */
+.today-fixed-view:has(> .today-adaptive-header){overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;display:block;min-height:0;}
+.today-fixed-view:has(> .today-adaptive-header) > .today-scroll-card{display:block;overflow:visible;min-height:0;margin-bottom:0;}
+.today-fixed-view:has(> .today-adaptive-header) .today-scroll-list{overflow:visible;min-height:0;max-height:none;flex:none;mask-image:none;-webkit-mask-image:none;touch-action:auto;overscroll-behavior-y:auto;}
+.today-adaptive-header{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:minmax(0,1fr);gap:0;background:var(--bg);transition:grid-template-columns .22s ease,padding .22s ease;}
+.today-adaptive-header > .card{min-width:0;transition:padding .22s ease,margin .22s ease;}
+.today-adaptive-header.today-adaptive-compact{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:7px;padding:5px 0;background:var(--bg);}
+.today-adaptive-header.today-adaptive-compact > .card{margin-bottom:0;padding:9px 5px;}
+.today-adaptive-header.today-adaptive-compact .big-clock{font-size:clamp(1.1rem,4.3vw,1.9rem);white-space:nowrap;}
+.today-adaptive-header.today-adaptive-compact .big-clock-lbl,.today-adaptive-header.today-adaptive-compact #next-out-countdown,.today-adaptive-header.today-adaptive-compact .boss-time-logo,.today-adaptive-header.today-adaptive-compact .boss-time-note{display:none;}
+.today-adaptive-header.today-adaptive-compact .card-lbl{font-size:.53rem;letter-spacing:.04em;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.today-adaptive-header.today-adaptive-compact .boss-time-value{font-size:clamp(1.1rem,4.3vw,1.9rem);line-height:1.1;}
+.today-adaptive-header.today-adaptive-compact .boss-time-card{display:flex;flex-direction:column;align-items:center;justify-content:center;}
+@media(prefers-reduced-motion:reduce){.today-adaptive-header,.today-adaptive-header > .card{transition:none;}}
+
+.today-adaptive-header.today-adaptive-compact:not(:has(.boss-time-card)){grid-template-columns:minmax(0,1fr);}
