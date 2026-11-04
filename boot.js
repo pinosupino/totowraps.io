@@ -12,6 +12,8 @@
   const PLAYER_NAMES_KEY = 'totowrap-boot-player-names';
   const CRAZY_DAY_KEY = 'totowrap-boot-crazy-day';
   const CHAINED_DAY_KEY = 'totowrap-boot-chained-day';
+  const STEAL_DAY_KEY = 'totowrap-boot-steal-day';
+  const STEAL_LOGO_URL = 'imgs/totowrap-steal-the-day.png';
   const CHAINED_LOGO_URL = 'imgs/totowrap-chained-together.png';
   const SPECIAL_IMAGE_URL = 'imgs/whats-up-beautiful-ladies.png';
   // Independent 10% chance on each loading-screen opening, per browser session.
@@ -19,13 +21,13 @@
   const specialImageOpening = Math.random() < 0.1;
   let specialImageVisible = false;
   function showSpecialImageLoader() {
-    if (!specialImageOpening || isChainedDayCached() || !loaderIsActive() || !bootContent) return false;
+    if (!specialImageOpening || isChainedDayCached() || isStealDayCached() || !loaderIsActive() || !bootContent) return false;
     const picture = new Image();
     picture.src = SPECIAL_IMAGE_URL;
     picture.alt = 'WHAT’S UP BEAUTIFUL LADIEEEEEES!';
     picture.style.cssText = 'display:block;max-width:min(88vw,640px);max-height:76vh;width:auto;height:auto;object-fit:contain;';
     picture.onload = () => {
-      if (!loaderIsActive() || specialImageVisible || isChainedDayCached()) return;
+      if (!loaderIsActive() || specialImageVisible || isChainedDayCached() || isStealDayCached()) return;
       specialImageVisible = true;
       stopPhraseRotation();
       const stage = bootContent.querySelector('.boot-logo-stage');
@@ -163,6 +165,46 @@
     catch (_) { return false; }
   }
 
+  function isStealDayCached() {
+    try { return localStorage.getItem(STEAL_DAY_KEY) === 'true'; }
+    catch (_) { return false; }
+  }
+
+  function showStealDayLoader() {
+    if (!loaderIsActive() || !bootContent) return;
+    stopPhraseRotation();
+    regularLogoLayer?.classList.remove('is-visible');
+    const stage = bootContent.querySelector('.boot-logo-stage');
+    if (stage) stage.style.visibility = 'hidden';
+    phrase.style.visibility = 'hidden';
+    const crazy = bootContent.querySelector('[data-boot-crazy-day]');
+    if (crazy) crazy.style.visibility = 'hidden';
+    const chained = bootContent.querySelector('[data-boot-chained-day]');
+    if (chained) chained.style.visibility = 'hidden';
+    const special = bootContent.querySelector('.boot-special-image');
+    if (special) special.style.visibility = 'hidden';
+    let steal = bootContent.querySelector('[data-boot-steal-day]');
+    if (!steal) {
+      steal = document.createElement('div');
+      steal.setAttribute('data-boot-steal-day', '');
+      steal.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;pointer-events:none;';
+      const img = document.createElement('img');
+      img.src = STEAL_LOGO_URL;
+      img.alt = 'TotoWrap Upgraded - Steal the Day';
+      img.style.cssText = 'display:block;width:auto;height:auto;max-width:min(88vw,800px);max-height:76vh;object-fit:contain;';
+      img.onerror = () => {
+        steal.remove();
+        if (stage) stage.style.visibility = '';
+        phrase.style.visibility = '';
+        regularLogoLayer?.classList.add('is-visible');
+        if (!phraseTimer) showNextPhrase();
+      };
+      steal.appendChild(img);
+      bootContent.appendChild(steal);
+    }
+    steal.style.visibility = 'visible';
+  }
+
   function showChainedDayLoader() {
     if (!loaderIsActive() || !bootContent) return;
     stopPhraseRotation();
@@ -172,6 +214,8 @@
     if (crazy) crazy.style.visibility = 'hidden';
     const special = bootContent.querySelector('.boot-special-image');
     if (special) special.style.visibility = 'hidden';
+    const steal = bootContent.querySelector('[data-boot-steal-day]');
+    if (steal) steal.style.visibility = 'hidden';
     let chained = bootContent.querySelector('[data-boot-chained-day]');
     if (!chained) {
       chained = document.createElement('div');
@@ -265,6 +309,10 @@
     if (!loaderIsActive() || !bootContent) return;
     const chained = bootContent.querySelector('[data-boot-chained-day]');
     if (chained) { chained.remove(); phrase.style.visibility = ''; }
+    const steal = bootContent.querySelector('[data-boot-steal-day]');
+    if (steal) { steal.remove(); phrase.style.visibility = ''; }
+    const stage = bootContent.querySelector('.boot-logo-stage');
+    if (stage) stage.style.visibility = '';
     if (!bootContent.classList.contains('is-crazy-day')) {
       regularLogoLayer?.classList.add('is-visible');
       if (!phraseTimer) showNextPhrase();
@@ -334,6 +382,7 @@
   }
 
   document.addEventListener('totowrap:chained-day-loader', showChainedDayLoader);
+  document.addEventListener('totowrap:steal-day-loader', showStealDayLoader);
   document.addEventListener('totowrap:crazy-day-loader', event => {
     showCrazyDayLoader(event.detail || {});
   });
@@ -341,6 +390,7 @@
 
   const cachedCrazyDay = getCachedCrazyDay();
   if (isChainedDayCached()) showChainedDayLoader();
+  else if (isStealDayCached()) showStealDayLoader();
   else if (cachedCrazyDay) showCrazyDayLoader(cachedCrazyDay);
   else { showNextPhrase(); showSpecialImageLoader(); }
 })();
