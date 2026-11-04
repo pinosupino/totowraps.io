@@ -4160,13 +4160,12 @@ function renderActiveTodayRows(t, sg, out, slices) {
     const boundaryInfo = slice ? boundaryRangeWithDuration(slice) : '';
 
     return `
-    <div class="row${boundaryInfo ? ' row-with-boundary' : ''}${isOut ? ' territory-ended' : ''}">
+    <div class="row today-live-bet-row${boundaryInfo ? ' row-with-boundary' : ''}${isOut ? ' territory-ended' : ''}">
       <div class="row-name row-name-stack${activeNames.has(g.name) ? ' territory-active' : ''}" data-today-accuracy-player="${esc(g.name)}">
         <div class="row-name-main">
           <span id="name-span-${playerId}"><span class="today-live-name-text">${esc(g.name)}</span><span class="today-live-name-emoji"></span></span>
           ${g.time ? st.pill : ''}
         </div>
-        ${boundaryInfo ? `<div class="row-boundary">${boundaryInfo}</div>` : ''}
       </div>
 
       ${g.time ? `
@@ -4174,7 +4173,7 @@ function renderActiveTodayRows(t, sg, out, slices) {
           ${prob.text}
         </div>
 
-	        <div class="row-time today-bet-time-stack"><span>${esc(g.time)}</span>${bossTodayTag(g.name,t)}</div>
+	        <div class="row-time">${esc(g.time)}</div>
 
 	        ${!isOut && IS_ADMIN && S.today && !S.today.wrapTime
           ? `<button class="badge b-in current-bet-edit-action" id="st-${playerId}" type="button" data-current-bet-player="${esc(g.name)}" aria-label="Edit ${esc(g.name)} bet">IN</button>`
@@ -4182,6 +4181,8 @@ function renderActiveTodayRows(t, sg, out, slices) {
       ` : IS_ADMIN && S.today && !S.today.wrapTime
         ? `<button class="badge b-missing missing-bet-action" type="button" data-current-bet-player="${esc(g.name)}">${CUSTOM_UI_TEXT.forgotBet}</button>`
         : `<div class="badge b-missing">${CUSTOM_UI_TEXT.forgotBet}</div>`}
+      ${boundaryInfo ? `<div class="row-boundary today-bet-boundary">${boundaryInfo}</div>` : ''}
+      ${g.time ? bossTodayTag(g.name,t) : ''}
     </div>`;
   }).join('');
   if (chainedPairs(t).length) return renderChainedTodayRows(t) + renderAddableCurrentPlayerRows(t);
@@ -8706,7 +8707,7 @@ function bossTodayCard(day) {
 }
 function bossTodayTag(name, day) {
   return bossParticipants(day).some(n=>nameKey(n)===nameKey(name))
-    ? '<div class="boss-player-tag">⚔ This player is fighting the boss</div>' : '';
+    ? '<div class="boss-player-tag">This player is fighting THE BOSS</div>' : '';
 }
 function renderBossSetupCard(day=S.today) {
   const cfg=bossConfig(day), enabled=!!cfg;
@@ -10038,5 +10039,13 @@ document.addEventListener('scroll', function(event) {
   const panel = event.target;
   if (!(panel instanceof Element) || !panel.matches('.today-fixed-view:has(> .today-adaptive-header)')) return;
   const header = panel.querySelector(':scope > .today-adaptive-header');
-  if (header) header.classList.toggle('today-adaptive-compact', panel.scrollTop > 165);
+  if (!header) return;
+  // Keep the first bets in view while the header folds away. Only after
+  // the transition is complete does scrolling move through the bet list.
+  const scroll = Math.max(0, panel.scrollTop);
+  const begin = 165, finish = 315;
+  const progress = Math.max(0, Math.min(1, (scroll - begin) / (finish - begin)));
+  header.classList.toggle('today-adaptive-compact', scroll > begin);
+  header.style.setProperty('--today-collapse-progress', String(progress));
+  panel.style.setProperty('--today-scroll-hold', `${Math.min(scroll, finish)}px`);
 }, true);

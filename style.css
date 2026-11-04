@@ -1594,27 +1594,56 @@ html.dark-mode .hdr-wrap-time.off {
 .boss-time-logo{display:block;width:min(100%,260px);height:auto;max-height:170px;object-fit:contain;margin:0 auto 12px;}
 @media(max-width:480px){.boss-time-logo{width:min(100%,210px);max-height:140px;}}
 
-/* Adaptive TODAY test: stacked clocks expand at top, shrink side by side on scroll. */
-.today-fixed-view:has(> .today-adaptive-header){overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;display:block;min-height:0;}
-.today-fixed-view:has(> .today-adaptive-header) > .today-scroll-card{display:block;overflow:visible;min-height:0;margin-bottom:0;}
-.today-fixed-view:has(> .today-adaptive-header) .today-scroll-list{overflow:visible;min-height:0;max-height:none;flex:none;mask-image:none;-webkit-mask-image:none;touch-action:auto;overscroll-behavior-y:auto;}
-.today-adaptive-header{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:minmax(0,1fr);gap:0;background:var(--bg);transition:grid-template-columns .22s ease,padding .22s ease;}
-.today-adaptive-header > .card{min-width:0;transition:padding .22s ease,margin .22s ease;}
-.today-adaptive-header.today-adaptive-compact{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:7px;padding:5px 0;background:var(--bg);}
+
+/* Adaptive TODAY v3: hold the bets while the counter collapses. */
+.today-fixed-view:has(> .today-adaptive-header){
+  display:block;overflow-y:auto;overflow-x:hidden;min-height:0;
+  overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;
+  --today-scroll-hold:0px;
+}
+.today-fixed-view:has(> .today-adaptive-header) > .today-scroll-card{
+  display:block;overflow:visible;min-height:0;margin-bottom:0;
+  margin-top:var(--today-scroll-hold);
+}
+.today-fixed-view:has(> .today-adaptive-header) .today-scroll-list{
+  overflow:visible;max-height:none;min-height:0;flex:none;
+  mask-image:none;-webkit-mask-image:none;touch-action:auto;
+}
+.today-adaptive-header{
+  position:sticky;top:0;z-index:12;display:grid;
+  grid-template-columns:minmax(0,1fr);gap:0;
+  background:var(--bg);isolation:isolate;
+  transition:grid-template-columns .52s cubic-bezier(.22,1,.36,1),gap .52s cubic-bezier(.22,1,.36,1),padding .52s cubic-bezier(.22,1,.36,1);
+}
+.today-adaptive-header > .card{
+  min-width:0;transition:padding .52s cubic-bezier(.22,1,.36,1),margin .52s cubic-bezier(.22,1,.36,1);
+}
+.today-adaptive-header.today-adaptive-compact{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:7px;padding:5px 0;
+}
 .today-adaptive-header.today-adaptive-compact > .card{margin-bottom:0;padding:9px 5px;}
-.today-adaptive-header.today-adaptive-compact .big-clock{font-size:clamp(1.1rem,4.3vw,1.9rem);white-space:nowrap;}
-.today-adaptive-header.today-adaptive-compact .big-clock-lbl,.today-adaptive-header.today-adaptive-compact #next-out-countdown,.today-adaptive-header.today-adaptive-compact .boss-time-logo,.today-adaptive-header.today-adaptive-compact .boss-time-note{display:none;}
-.today-adaptive-header.today-adaptive-compact .card-lbl{font-size:.53rem;letter-spacing:.04em;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.today-adaptive-header.today-adaptive-compact .boss-time-value{font-size:clamp(1.1rem,4.3vw,1.9rem);line-height:1.1;}
-.today-adaptive-header.today-adaptive-compact .boss-time-card{display:flex;flex-direction:column;align-items:center;justify-content:center;}
-@media(prefers-reduced-motion:reduce){.today-adaptive-header,.today-adaptive-header > .card{transition:none;}}
-
-.today-adaptive-header.today-adaptive-compact:not(:has(.boss-time-card)){grid-template-columns:minmax(0,1fr);}
-
-/* Adaptive TODAY v2: later collapse and persistent faded Boss artwork. */
+.today-adaptive-header .big-clock,
+.today-adaptive-header .boss-time-value,
+.today-adaptive-header .boss-time-logo{
+  transition:font-size .52s cubic-bezier(.22,1,.36,1),max-height .52s cubic-bezier(.22,1,.36,1),opacity .4s ease;
+}
+.today-adaptive-header.today-adaptive-compact .big-clock{font-size:clamp(1rem,4vw,1.75rem);white-space:nowrap;}
+.today-adaptive-header.today-adaptive-compact .big-clock-lbl,
+.today-adaptive-header.today-adaptive-compact #next-out-countdown,
+.today-adaptive-header.today-adaptive-compact .boss-time-note{display:none;}
+.today-adaptive-header.today-adaptive-compact .boss-time-logo{max-height:0;opacity:0;margin:0;}
+.today-adaptive-header.today-adaptive-compact .card-lbl{
+  font-size:.53rem;letter-spacing:.04em;margin-bottom:4px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.today-adaptive-header.today-adaptive-compact .boss-time-value{
+  font-size:clamp(1rem,4vw,1.75rem);line-height:1.1;color:#8656d9;
+}
 .today-adaptive-header.today-adaptive-compact .boss-time-card{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
   position:relative;isolation:isolate;overflow:hidden;
-  background:color-mix(in srgb,#8656d9 15%,var(--card, var(--bg)));
+  background:color-mix(in srgb,#8656d9 15%,var(--surface-container));
   border-color:rgba(134,86,217,.65);
 }
 .today-adaptive-header.today-adaptive-compact .boss-time-card::before{
@@ -1623,9 +1652,35 @@ html.dark-mode .hdr-wrap-time.off {
   opacity:.16;pointer-events:none;
 }
 .today-adaptive-header.today-adaptive-compact .boss-time-card > *{position:relative;z-index:1;}
-.today-adaptive-header.today-adaptive-compact .boss-time-card .boss-time-value{color:#8656d9;}
-.today-bet-time-stack{display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:0;}
-.today-bet-time-stack .boss-player-tag{
-  font-size:clamp(.49rem,1.5vw,.57rem);line-height:1.2;font-weight:500;
-  margin:0;max-width:140px;white-space:normal;text-align:right;
+.today-adaptive-header.today-adaptive-compact:not(:has(.boss-time-card)){
+  grid-template-columns:minmax(0,1fr);
+}
+/* TODAY bet row: first line name/probability/time/status; subsequent lines full width. */
+.today-scroll-list .today-live-bet-row{
+  display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;
+  align-items:center;column-gap:clamp(5px,1.6vw,12px);row-gap:3px;
+  padding:10px 12px;
+}
+.today-scroll-list .today-live-bet-row > .row-name{
+  grid-column:1;grid-row:1;min-width:0;
+}
+.today-scroll-list .today-live-bet-row > .b-prob{grid-column:2;grid-row:1;min-width:0;}
+.today-scroll-list .today-live-bet-row > .row-time{grid-column:3;grid-row:1;white-space:nowrap;}
+.today-scroll-list .today-live-bet-row > .badge:not(.b-prob){grid-column:4;grid-row:1;}
+.today-scroll-list .today-live-bet-row > .today-bet-boundary{
+  grid-column:1/-1;grid-row:2;font-size:.68rem;line-height:1.35;
+}
+.today-scroll-list .today-live-bet-row > .boss-player-tag{
+  grid-column:1/-1;grid-row:3;font-size:.58rem;font-weight:500;
+  line-height:1.25;margin:1px 0 0;color:#8656d9;
+}
+@media(max-width:400px){
+  .today-scroll-list .today-live-bet-row{padding:9px 7px;column-gap:5px;}
+  .today-scroll-list .today-live-bet-row > .row-time{font-size:.8rem;}
+  .today-scroll-list .today-live-bet-row > .b-prob{font-size:.56rem;}
+}
+@media(prefers-reduced-motion:reduce){
+  .today-adaptive-header,.today-adaptive-header > .card,
+  .today-adaptive-header .big-clock,.today-adaptive-header .boss-time-value,
+  .today-adaptive-header .boss-time-logo{transition:none;}
 }
