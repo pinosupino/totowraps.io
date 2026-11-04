@@ -4751,8 +4751,13 @@ function chainedExportImage(day=S.today) {
     ctx.drawImage(logo,(width-logo.width*scale)/2,30,logo.width*scale,logo.height*scale);
     finish();
   };
-  logo.onerror = () => { toast('Upgraded logo could not be loaded','err'); };
-  logo.src = IS_ADMIN && location.pathname.includes('/admin/') ? '../imgs/totoswrap.png' : 'imgs/totoswrap.png';
+  // Resolve the asset relative to this module, independent of /admin/ URLs.
+  // If the logo is missing, still export the pair sheet instead of failing.
+  logo.onerror = () => {
+    console.warn('TotoWrap Upgraded logo unavailable; exporting without logo:', logo.src);
+    finish();
+  };
+  logo.src = new URL('./imgs/totoswrap.png', import.meta.url).href;
 }
 async function saveChainedPairs(pairs) {
   if (!IS_ADMIN || !currentUser || !S.today || S.today.wrapTime || (S.today.guesses||[]).some(g=>g.time) || (S.today.unit||'main')!=='main') return;
