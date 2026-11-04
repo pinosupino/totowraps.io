@@ -10053,7 +10053,6 @@ document.addEventListener('scroll', function(event) {
     if (!state.compact && y >= 185) state.compact = true;
     else if (state.compact && y <= 65) state.compact = false;
     header.classList.toggle('today-adaptive-compact', state.compact);
-    // Transform does not alter document flow or scrollHeight.
-    panel.style.setProperty('--today-bets-offset', `${Math.min(y, 270)}px`);
+    // Keep the list in normal flow. No scroll-linked transforms or layout writes.
   });
 }, true);

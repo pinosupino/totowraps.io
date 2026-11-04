@@ -1707,3 +1707,36 @@ html.dark-mode .hdr-wrap-time.off {
 @media(prefers-reduced-motion:reduce){
   .today-fixed-view:has(> .today-adaptive-header) > .today-scroll-card{will-change:auto;}
 }
+
+/* Adaptive TODAY v5: compositor-friendly transition, no scroll-linked bet transforms. */
+.today-fixed-view:has(> .today-adaptive-header){
+  --today-bets-offset:0px;
+  padding-bottom:16px;
+  overflow-anchor:none;
+}
+.today-fixed-view:has(> .today-adaptive-header) > .today-scroll-card{
+  transform:none!important;
+  will-change:auto!important;
+}
+.today-adaptive-header{
+  transition:none!important;
+  contain:layout style;
+}
+.today-adaptive-header > .card{
+  transition:opacity .22s ease,transform .22s ease!important;
+  will-change:opacity,transform;
+}
+.today-adaptive-header .big-clock,
+.today-adaptive-header .boss-time-value,
+.today-adaptive-header .boss-time-logo{
+  transition:opacity .22s ease!important;
+}
+.today-adaptive-header.today-adaptive-compact{
+  transition:none!important;
+}
+@media(prefers-reduced-motion:reduce){
+  .today-adaptive-header > .card,
+  .today-adaptive-header .big-clock,
+  .today-adaptive-header .boss-time-value,
+  .today-adaptive-header .boss-time-logo{transition:none!important;will-change:auto;}
+}
