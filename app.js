@@ -4166,7 +4166,6 @@ function renderActiveTodayRows(t, sg, out, slices) {
           <span id="name-span-${playerId}"><span class="today-live-name-text">${esc(g.name)}</span><span class="today-live-name-emoji"></span></span>
           ${g.time ? st.pill : ''}
         </div>
-        ${bossTodayTag(g.name,t)}
         ${boundaryInfo ? `<div class="row-boundary">${boundaryInfo}</div>` : ''}
       </div>
 
@@ -4175,7 +4174,7 @@ function renderActiveTodayRows(t, sg, out, slices) {
           ${prob.text}
         </div>
 
-	        <div class="row-time">${esc(g.time)}</div>
+	        <div class="row-time today-bet-time-stack"><span>${esc(g.time)}</span>${bossTodayTag(g.name,t)}</div>
 
 	        ${!isOut && IS_ADMIN && S.today && !S.today.wrapTime
           ? `<button class="badge b-in current-bet-edit-action" id="st-${playerId}" type="button" data-current-bet-player="${esc(g.name)}" aria-label="Edit ${esc(g.name)} bet">IN</button>`
@@ -10039,5 +10038,5 @@ document.addEventListener('scroll', function(event) {
   const panel = event.target;
   if (!(panel instanceof Element) || !panel.matches('.today-fixed-view:has(> .today-adaptive-header)')) return;
   const header = panel.querySelector(':scope > .today-adaptive-header');
-  if (header) header.classList.toggle('today-adaptive-compact', panel.scrollTop > 45);
+  if (header) header.classList.toggle('today-adaptive-compact', panel.scrollTop > 165);
 }, true);

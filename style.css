@@ -1610,3 +1610,22 @@ html.dark-mode .hdr-wrap-time.off {
 @media(prefers-reduced-motion:reduce){.today-adaptive-header,.today-adaptive-header > .card{transition:none;}}
 
 .today-adaptive-header.today-adaptive-compact:not(:has(.boss-time-card)){grid-template-columns:minmax(0,1fr);}
+
+/* Adaptive TODAY v2: later collapse and persistent faded Boss artwork. */
+.today-adaptive-header.today-adaptive-compact .boss-time-card{
+  position:relative;isolation:isolate;overflow:hidden;
+  background:color-mix(in srgb,#8656d9 15%,var(--card, var(--bg)));
+  border-color:rgba(134,86,217,.65);
+}
+.today-adaptive-header.today-adaptive-compact .boss-time-card::before{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:url('imgs/totowrap-fight-the-boss.png') center / auto 120% no-repeat;
+  opacity:.16;pointer-events:none;
+}
+.today-adaptive-header.today-adaptive-compact .boss-time-card > *{position:relative;z-index:1;}
+.today-adaptive-header.today-adaptive-compact .boss-time-card .boss-time-value{color:#8656d9;}
+.today-bet-time-stack{display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:0;}
+.today-bet-time-stack .boss-player-tag{
+  font-size:clamp(.49rem,1.5vw,.57rem);line-height:1.2;font-weight:500;
+  margin:0;max-width:140px;white-space:normal;text-align:right;
+}
