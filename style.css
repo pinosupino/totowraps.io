@@ -1574,3 +1574,18 @@ html.dark-mode .hdr-wrap-time.off {
   transform: translate(-50%, -50%);
   z-index: 1;
 }
+
+/* Fight the Boss · flat purple */
+.boss-setup-card,.boss-time-card{border-color:rgba(134,86,217,.42)}
+.boss-time-card{text-align:center}
+.boss-time-card .card-lbl{color:#8656d9}
+.boss-time-value{font-size:clamp(1.6rem,5vw,2.5rem);font-weight:800;letter-spacing:.03em}
+.boss-time-note{font-size:.75rem;margin-top:5px}
+.boss-setup-options{padding:12px 16px 16px}
+.boss-admin-fields{display:grid;gap:12px;margin-top:14px}
+.boss-admin-fields input[type=time]{max-width:180px;padding:9px;border:1px solid var(--border,#777);border-radius:8px;background:var(--card,#222);color:inherit}
+.boss-player-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:6px}
+.boss-player-option{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px;border:1px solid rgba(134,86,217,.28);border-radius:8px}
+.boss-player-option small{opacity:.65}
+.boss-player-option input{accent-color:#8656d9}
+.boss-player-tag{color:#8656d9;font-size:.7rem;font-weight:700;margin-top:4px}

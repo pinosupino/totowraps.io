@@ -2789,7 +2789,7 @@ function calcWinner(guesses, wrapHMSInput, day=S.today) {
 
       noWinner: true,
 
-      penalties: []
+      penalties: bossBonuses(guesses,wrapHMSInput,day)
 
     };
 
@@ -2817,11 +2817,12 @@ function calcWinner(guesses, wrapHMSInput, day=S.today) {
 
     noWinner: false,
 
-    penalties: isStealTheDay(day)
+    penalties: (isStealTheDay(day)
       ? stealDayVictims(guesses, winnerName, day, wrapHMSInput)
       : isCrownDay(day)
         ? crownDayBonus(guesses, winnerName, day, wrapHMSInput)
-        : calcCrazyDayPenalties(guesses, wrapHMSInput, day, false, winningSlice.names)
+        : calcCrazyDayPenalties(guesses, wrapHMSInput, day, false, winningSlice.names))
+      .concat(bossBonuses(guesses,wrapHMSInput,day))
 
   };
 
@@ -3039,6 +3040,10 @@ function updateBetCloseCountdown() {
       return;
     }
     el.textContent = diff <= 0 ? 'Betting closed' : formatBetCloseCountdown(diff);
+  });
+  document.querySelectorAll('[data-boss-time-value]').forEach(el => {
+    const day=S.today;
+    el.textContent = bossBetClosed(day) && isValidHM(bossConfig(day)?.time) ? bossConfig(day).time : '--:--';
   });
 }
 
@@ -3765,6 +3770,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
         <span class="winner-name" style="font-size: 1.35rem; color: var(--red); white-space: nowrap;">${CUSTOM_UI_TEXT.noWinnerBanner}</span>
 	        <span class="winner-pts">${CUSTOM_UI_TEXT.wrapOutsideAllBets(esc(t.wrapTime))}</span>
       </${winnerCloseTag}>
+      ${bossTodayCard(t)}
       ${renderCrazyDayIndicator(t)}
       ${isStealTheDay(t) ? '<div class="steal-day-indicator">STEAL THE DAY · Exclusive bets · Winner steals 2 points</div>' : ''}
       ${isCrownDay(t) ? `<div class="crown-day-indicator">👑 CROWN DAY · Crown Holder: ${esc(t.crownDay.holder)} · Neighbor win bonus +1</div>` : ''}
@@ -4160,6 +4166,8 @@ function renderActiveTodayRows(t, sg, out, slices) {
           <span id="name-span-${playerId}"><span class="today-live-name-text">${esc(g.name)}</span><span class="today-live-name-emoji"></span></span>
           ${g.time ? st.pill : ''}
         </div>
+        ${bossTodayTag(g.name,t)}
+        ${bossTodayTag(g.name,t)}
         ${boundaryInfo ? `<div class="row-boundary">${boundaryInfo}</div>` : ''}
       </div>
 
@@ -4335,6 +4343,7 @@ function renderPlayerToday() {
   <div class="tab-page-frame pregame-boundary-frame">
   ${unitSwitcher}
   ${renderBetClosePlayerCard(t)}
+  ${bossTodayCard(t)}
   ${renderCrazyDayIndicator(t)}
   ${renderMondayWaitingBanner(t)}
   <div class="card waiting-guesses-card">
@@ -4357,6 +4366,7 @@ function renderPlayerToday() {
     <div class="big-clock-lbl">Live Time</div>
     <div id="next-out-countdown" class="countdown-txt"></div>
   </div>
+  ${bossTodayCard(t)}
   ${renderCrazyDayIndicator(t)}
   <div class="card today-scroll-card"><div class="card-lbl">${statusHeader}</div>
     <div class="today-scroll-list">${renderActiveTodayRows(t, sg, out, slices)}</div>
@@ -4560,6 +4570,7 @@ function renderToday() {
       ${unitSwitcher}
       ${renderCancelLiveUnitAction(t)}
       ${clockCard}
+      ${bossTodayCard(t)}
       ${renderCrazyDayIndicator(t)}
       
       <div class="card today-scroll-card"><div class="card-lbl">${statusHeader}</div>
@@ -8652,6 +8663,111 @@ function renderHistory() {
   return `<div class="tab-page-frame">${historyRows}</div>`;
 }
 
+
+// Fight the Boss is an optional, one-use challenge per player per competition.
+let _bossPanelOpen = false;
+function bossConfig(day) {
+  return day?.fightTheBoss?.enabled ? day.fightTheBoss : null;
+}
+function bossParticipants(day) {
+  return Array.isArray(bossConfig(day)?.players) ? bossConfig(day).players : [];
+}
+function bossHasPlayed(name, excludeDay = null) {
+  const key = nameKey(name);
+  const days = [...getHistoryEntries(), ...Object.values(getLiveGames())];
+  return days.some(day => day && day !== excludeDay && day !== S.today &&
+    (day.wrapTime || (day.guesses || []).some(g => g.time)) &&
+    bossParticipants(day).some(n => nameKey(n) === key));
+}
+function bossBetClosed(day) {
+  if (day?.wrapTime) return true;
+  if (!day?.betCloseAt || !isValidHM(day.betCloseAt)) return false;
+  const remaining = betCloseDiffSec(day);
+  return remaining !== null && remaining <= 0;
+}
+function bossBonuses(guesses, wrap, day) {
+  const cfg = bossConfig(day);
+  if (!cfg || !isValidHM(cfg.time) || !wrap) return [];
+  const wrapSec = wrapTimelineSec(wrap, day);
+  const bossDistance = Math.abs(alignClockSecToReference(cfg.time, wrapSec) - wrapSec);
+  return bossParticipants(day).map(name => {
+    const guess = guesses.find(g => nameKey(g.name) === nameKey(name));
+    if (!guess?.time) return {name, points:-5, reason:'boss-loss'};
+    const distance = Math.abs(betTimelineSec(guess, wrapSec) - wrapSec);
+    return {name, points:distance < bossDistance ? 2 : -5,
+      reason:distance < bossDistance ? 'boss-win' : 'boss-loss'};
+  });
+}
+function bossTodayCard(day) {
+  if (!bossConfig(day) || !bossParticipants(day).length) return '';
+  return `<div class="card boss-time-card"><div class="card-lbl">⚔ BOSS WRAP TIME</div>
+    <div class="boss-time-value mono" data-boss-time-value>${bossBetClosed(day) && isValidHM(bossConfig(day).time) ? esc(bossConfig(day).time) : '--:--'}</div>
+    ${!bossBetClosed(day)?'<div class="mono dim boss-time-note">Revealed when betting closes</div>':''}
+  </div>`;
+}
+function bossTodayTag(name, day) {
+  return bossParticipants(day).some(n=>nameKey(n)===nameKey(name))
+    ? '<div class="boss-player-tag">⚔ This player is fighting the boss</div>' : '';
+}
+function renderBossSetupCard(day=S.today) {
+  const cfg=bossConfig(day), enabled=!!cfg;
+  const finished=!!day?.wrapTime;
+  const names=getAlphabeticalPlayerRoster().filter(p=>p.active!==false).map(p=>p.name);
+  const participants=bossParticipants(day);
+  return `<div class="card boss-setup-card${_bossPanelOpen?' expanded':''}">
+    <div class="crazy-day-top"><div class="crazy-day-title">
+      <strong>Fight the Boss · ${enabled?'ON':'OFF'}</strong>
+      <span>One challenge per competition. Beat the Boss: +2. Lose or tie: −5.</span>
+    </div><button class="crazy-day-toggle" id="boss-expand" type="button" aria-expanded="${_bossPanelOpen}" aria-label="Configure Fight the Boss"></button></div>
+    <div class="boss-setup-options" ${_bossPanelOpen?'':'hidden'}>
+      <p class="mono dim">Optional for each player. Challenges stack with normal day points. The Boss wins ties.</p>
+      <button type="button" class="btn ${enabled?'btn-s':'btn-p'}" id="boss-switch" ${!day||finished?'disabled':''}>${enabled?'Turn Off':'Activate Fight the Boss'}</button>
+      ${enabled?`<div class="boss-admin-fields">
+        <label for="boss-time-input">Secret Boss time</label>
+        <input type="time" id="boss-time-input" value="${esc(cfg.time||'')}" ${finished?'disabled':''}>
+        <p class="mono dim">The time appears in TODAY only after betting closes. Do not share the admin screen before then.</p>
+        <div class="boss-player-list">${names.map(name=>{
+          const checked=participants.some(n=>nameKey(n)===nameKey(name));
+          const used=bossHasPlayed(name,day);
+          return `<label class="boss-player-option"><span>${esc(name)} ${used?'<small>· Already challenged</small>':''}</span>
+          <input type="checkbox" data-boss-player="${esc(name)}" ${checked?'checked':''} ${used||finished?'disabled':''}></label>`;
+        }).join('')}</div>
+        <button type="button" class="btn btn-p" id="boss-save" ${finished?'disabled':''}>Save Boss Challenge</button>
+      </div>`:''}
+    </div></div>`;
+}
+function bindBossSettings() {
+  const root=document.getElementById('tab-settings');
+  if (!root || root.dataset.bossBound) return;
+  root.dataset.bossBound='1';
+  root.addEventListener('click',async e=>{
+    const btn=e.target.closest('button');
+    if (!btn) return;
+    if (btn.id==='boss-expand') {
+      _bossPanelOpen=!_bossPanelOpen;
+      const card=root.querySelector('.boss-setup-card');
+      if(card)card.outerHTML=renderBossSetupCard(S.today);
+      return;
+    }
+    if (btn.id!=='boss-switch' && btn.id!=='boss-save') return;
+    const day=S.today;
+    if (!day || day.wrapTime) return;
+    const previous=cloneState();
+    if(btn.id==='boss-switch') {
+      day.fightTheBoss=bossConfig(day)?null:{enabled:true,time:'',players:[]};
+    } else {
+      const time=root.querySelector('#boss-time-input')?.value || '';
+      const players=[...root.querySelectorAll('[data-boss-player]:checked')].map(el=>el.dataset.bossPlayer);
+      if(!isValidHM(time)){toast('Enter a valid Boss time','err');return;}
+      if(players.some(name=>bossHasPlayed(name,day))){toast('A player already used their Boss challenge','err');return;}
+      day.fightTheBoss={enabled:true,time,players};
+    }
+    if(!await saveS()){restoreAfterFailedSave(previous);return;}
+    toast('Fight the Boss settings saved','ok');
+    render();
+  });
+}
+
 let _stealDayPanelOpen = false;
 function renderStealDaySetupCard(day=S.today) {
   const enabled = isStealTheDay(day);
@@ -8815,6 +8931,7 @@ ${hasCurrentDay ? `
   ${renderChainedSetupCard(S.today)}
   ${renderStealDaySetupCard(S.today)}
   ${renderCrownDaySetupCard(S.today)}
+  ${renderBossSetupCard(S.today)}
 </div></div>`;
 }
 
@@ -9758,6 +9875,7 @@ function bindMain() {
   bindChainedSettings();
   bindStealDaySettings();
   bindCrownDaySettings();
+  bindBossSettings();
   document.getElementById('crazy-day-toggle-btn')?.addEventListener('click', async () => {
     const card = document.querySelector('.crazy-day-card');
     const next = !card?.classList.contains('expanded');
