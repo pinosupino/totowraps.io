@@ -1599,11 +1599,14 @@ html.dark-mode .hdr-wrap-time.off {
 .today-fixed-view:has(> .today-adaptive-header){
   display:block;overflow-y:auto;overflow-x:hidden;min-height:0;
   overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;
-  --today-scroll-hold:0px;
+  --today-bets-offset:0px;
+  overflow-anchor:none;
+  padding-bottom:270px;
 }
 .today-fixed-view:has(> .today-adaptive-header) > .today-scroll-card{
   display:block;overflow:visible;min-height:0;margin-bottom:0;
-  margin-top:var(--today-scroll-hold);
+  transform:translate3d(0,var(--today-bets-offset),0);
+  will-change:transform;
 }
 .today-fixed-view:has(> .today-adaptive-header) .today-scroll-list{
   overflow:visible;max-height:none;min-height:0;flex:none;
@@ -1683,4 +1686,24 @@ html.dark-mode .hdr-wrap-time.off {
   .today-adaptive-header,.today-adaptive-header > .card,
   .today-adaptive-header .big-clock,.today-adaptive-header .boss-time-value,
   .today-adaptive-header .boss-time-logo{transition:none;}
+}
+
+/* Adaptive TODAY v4: high-contrast Boss time, white fill and matching purple outline. */
+.today-adaptive-header .boss-time-value{
+  color:#fff;
+  -webkit-text-stroke:1.25px #8656d9;
+  paint-order:stroke fill;
+  text-shadow:1px 0 #8656d9,-1px 0 #8656d9,0 1px #8656d9,0 -1px #8656d9;
+}
+.today-adaptive-header.today-adaptive-compact .boss-time-card .boss-time-value{
+  color:#fff;
+  -webkit-text-stroke:1.25px #8656d9;
+  paint-order:stroke fill;
+}
+/* Keep sticky clock opaque over the list while preserving the purple Boss artwork. */
+.today-adaptive-header{backface-visibility:hidden;}
+.today-fixed-view:has(> .today-adaptive-header) > .today-scroll-card{position:relative;z-index:1;}
+.today-adaptive-header{z-index:12;}
+@media(prefers-reduced-motion:reduce){
+  .today-fixed-view:has(> .today-adaptive-header) > .today-scroll-card{will-change:auto;}
 }

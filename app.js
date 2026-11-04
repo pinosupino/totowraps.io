@@ -10034,18 +10034,26 @@ if (LOCAL_TEST_MODE) {
 // Track public sessions without collecting IP addresses or personal identifiers.
 trackPublicVisit();
 
-// Adaptive TODAY: use the TODAY viewport scroll without changing clock or game logic.
+// Adaptive TODAY v4: stable scroll with hysteresis and a paint-only bet hold.
+// Avoid changing layout margins on every scroll event (which caused feedback/jumps).
+const todayAdaptiveState = new WeakMap();
 document.addEventListener('scroll', function(event) {
   const panel = event.target;
-  if (!(panel instanceof Element) || !panel.matches('.today-fixed-view:has(> .today-adaptive-header)')) return;
+  if (!(panel instanceof Element) || !panel.classList.contains('today-fixed-view')) return;
   const header = panel.querySelector(':scope > .today-adaptive-header');
   if (!header) return;
-  // Keep the first bets in view while the header folds away. Only after
-  // the transition is complete does scrolling move through the bet list.
-  const scroll = Math.max(0, panel.scrollTop);
-  const begin = 165, finish = 315;
-  const progress = Math.max(0, Math.min(1, (scroll - begin) / (finish - begin)));
-  header.classList.toggle('today-adaptive-compact', scroll > begin);
-  header.style.setProperty('--today-collapse-progress', String(progress));
-  panel.style.setProperty('--today-scroll-hold', `${Math.min(scroll, finish)}px`);
+  let state = todayAdaptiveState.get(panel);
+  if (!state) { state = {compact:false, raf:0}; todayAdaptiveState.set(panel,state); }
+  if (state.raf) return;
+  state.raf = requestAnimationFrame(() => {
+    state.raf = 0;
+    if (!panel.isConnected) return;
+    const y = Math.max(0, panel.scrollTop);
+    // Separate enter/exit thresholds prevent the header oscillating around a boundary.
+    if (!state.compact && y >= 185) state.compact = true;
+    else if (state.compact && y <= 65) state.compact = false;
+    header.classList.toggle('today-adaptive-compact', state.compact);
+    // Transform does not alter document flow or scrollHeight.
+    panel.style.setProperty('--today-bets-offset', `${Math.min(y, 270)}px`);
+  });
 }, true);
