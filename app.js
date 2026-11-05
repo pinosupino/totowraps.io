@@ -75,7 +75,7 @@ const CUSTOM_UI_TEXT = {
     'PLAYERS PLAYING',
 
   beforeFirstTerritory: time =>
-    `Ouch!<br>Everyone will lose if we wrap before ${time}`,
+    `Ouch! <br>Everyone will lose if we wrap before ${time}`,
 
   nextElimination: (names, time) =>
     `Next elimination ${names} in ${time}`,

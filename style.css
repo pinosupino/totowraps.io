@@ -1746,3 +1746,41 @@ html.dark-mode .hdr-wrap-time.off {
 .today-fixed-view:has(> .today-adaptive-header) > .today-adaptive-header.today-adaptive-compact{
   margin-bottom:var(--today-header-space,0px);
 }
+
+/* Floating compact TODAY clock: no rectangular sticky backdrop. */
+.today-adaptive-header.today-adaptive-compact {
+  background: transparent !important;
+  isolation: auto;
+  padding: 6px 0 9px;
+}
+.today-adaptive-header.today-adaptive-compact > .card {
+  padding: 15px 18px 13px;
+  border-radius: 999px;
+  min-width: 0;
+}
+.today-adaptive-header.today-adaptive-compact .card-lbl {
+  font-size: .67rem;
+  letter-spacing: .065em;
+  margin-bottom: 6px;
+  text-align: left;
+}
+.today-adaptive-header.today-adaptive-compact .big-clock {
+  font-size: clamp(1.8rem, 7.6vw, 2.65rem);
+  line-height: 1.08;
+  font-variant-numeric: tabular-nums;
+}
+.today-adaptive-header.today-adaptive-compact #next-out-countdown {
+  display: block;
+  margin: 8px 0 0;
+  padding: 0;
+  font-size: clamp(.65rem, 2.55vw, .78rem);
+  line-height: 1.2;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  text-align: center;
+}
+.today-adaptive-header.today-adaptive-compact #next-out-countdown::-webkit-scrollbar { display: none; }
+.today-adaptive-header.today-adaptive-compact #next-out-countdown br { display: none; }
