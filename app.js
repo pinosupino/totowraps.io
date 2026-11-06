@@ -2684,26 +2684,29 @@ function validateStealBets(guesses, day=S.today) {
   if (!isStealTheDay(day)) return '';
   const bets = (guesses || []).filter(g => g?.time);
   if (bets.length < 3) return 'Steal the Day requires at least 3 valid bets.';
-  const seen = new Set();
-  for (const bet of bets) {
-    const key = `${bet.date || inferBetDate(bet.time, day)}|${normalizeHMInput(bet.time)}`;
-    if (seen.has(key)) return 'Steal the Day: shared betting times are not allowed.';
-    seen.add(key);
-  }
+  // Shared betting times are permitted, including on Steal the Day.
   return '';
 }
-function stealDayVictims(guesses, winnerName, day, wrapTime) {
+function stealDayVictims(guesses, winnerNames, day, wrapTime) {
   const reference = wrapTimelineSec(wrapTime, day);
-  const bets = (guesses || []).filter(g => g?.time)
+  const winnerKeys = new Set(winnerNames.map(nameKey));
+  const bets = (guesses || []).filter(g => g?.name && g?.time)
     .map(g => ({name:g.name, sec:betTimelineSec(g, reference)}))
     .sort((a,b) => a.sec-b.sec);
-  const index = bets.findIndex(g => nameKey(g.name) === nameKey(winnerName));
-  if (index < 0 || bets.length < 3) return [];
-  let neighbors;
-  if (index === 0) neighbors = bets.slice(1,3);
-  else if (index === bets.length-1) neighbors = bets.slice(-3,-1);
-  else neighbors = [bets[index-1],bets[index+1]];
-  return neighbors.map(g => ({name:g.name,points:-1,reason:'steal-the-day'}));
+  const winners = bets.filter(g => winnerKeys.has(nameKey(g.name)));
+  if (!winners.length) return [];
+  const winningSec = winners[0].sec;
+  const n = winners.length;
+  const before = bets.filter(g => g.sec < winningSec && !winnerKeys.has(nameKey(g.name))).reverse();
+  const after = bets.filter(g => g.sec > winningSec && !winnerKeys.has(nameKey(g.name)));
+  // Take N from each side. At the edges, use the other side for the shortfall.
+  const selected = [...before.slice(0,n), ...after.slice(0,n)];
+  let remaining = 2*n - selected.length;
+  if (remaining > 0) {
+    const extras = before.slice(n).concat(after.slice(n));
+    selected.push(...extras.slice(0,remaining));
+  }
+  return selected.map(g => ({name:g.name,points:-1,reason:'steal-the-day'}));
 }
 
 function getDayScoring(day=S.today) {
@@ -2818,7 +2821,7 @@ function calcWinner(guesses, wrapHMSInput, day=S.today) {
     noWinner: false,
 
     penalties: (isStealTheDay(day)
-      ? stealDayVictims(guesses, winnerName, day, wrapHMSInput)
+      ? stealDayVictims(guesses, winningSlice.names, day, wrapHMSInput)
       : isCrownDay(day)
         ? crownDayBonus(guesses, winnerName, day, wrapHMSInput)
         : calcCrazyDayPenalties(guesses, wrapHMSInput, day, false, winningSlice.names))
@@ -3772,7 +3775,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
       </${winnerCloseTag}>
       ${bossTodayCard(t)}
       ${renderCrazyDayIndicator(t)}
-      ${isStealTheDay(t) ? '<div class="steal-day-indicator">STEAL THE DAY · Exclusive bets · Winner steals 2 points</div>' : ''}
+      ${isStealTheDay(t) ? '<div class="steal-day-indicator">STEAL THE DAY · Shared bets allowed · Winner steals 2 points</div>' : ''}
       ${isCrownDay(t) ? `<div class="crown-day-indicator">👑 CROWN DAY · Crown Holder: ${esc(t.crownDay.holder)} · Neighbor win bonus +1</div>` : ''}
       
       ${fridayBanner}
@@ -6647,9 +6650,6 @@ async function updateCurrentPlayerBet(name, betTime, betDate='') {
 
 
 
-  if (isStealTheDay(S.today) && (S.today.guesses||[]).some(g => g !== existingGuess && g.time === normalizedBet && (g.date||'') === (normalizedDate||inferBetDate(normalizedBet,S.today)))) {
-    toast('Steal the Day: this time is already taken','err');return false;
-  }
   const prevS = cloneState();
   
   existingGuess.time = normalizedBet;
@@ -8792,7 +8792,7 @@ function renderStealDaySetupCard(day=S.today) {
   return `<div class="card steal-day-card${_stealDayPanelOpen?' expanded':''}">
     <div class="crazy-day-top"><div class="crazy-day-title">
       <strong>Steal the Day · ${enabled?'ON':'OFF'}</strong>
-      <span>Exclusive bets. The winner steals 1 point from each of two neighboring bets.</span>
+      <span>Shared bets allowed. Each winner gets +2; N winners steal from N bets on each side (spillover at the edges).</span>
     </div><button class="crazy-day-toggle" id="steal-day-expand" type="button" aria-label="Configure Steal the Day" aria-expanded="${_stealDayPanelOpen}"></button></div>
     <div class="steal-day-options" ${_stealDayPanelOpen?'':'hidden'}>
       <p class="mono dim">One unique time per player. At least three valid bets. No shared times.</p>
