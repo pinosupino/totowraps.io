@@ -7631,6 +7631,20 @@ function applyScoreDelta(name, delta) {
   }
 }
 
+// Steal the Day: charge only confirmed non-voters, once per game.
+function applyConfirmedStealNoBet(day, confirmedGuesses) {
+  if (!isStealTheDay(day) || day.stealNoBetApplied === true) return;
+  const betKeys = new Set((confirmedGuesses || [])
+    .filter(g => g && g.name && g.time)
+    .map(g => nameKey(g.name)));
+  const missing = (S.playerRoster || [])
+    .filter(p => p && p.name && p.active !== false && !betKeys.has(nameKey(p.name)))
+    .map(p => ({name:p.name, points:-1, reason:'steal-no-bet'}));
+  missing.forEach(p => applyScoreDelta(p.name, p.points));
+  day.stealNoBetPenalties = missing;
+  day.stealNoBetApplied = true;
+}
+
 function applyDayPenalties(day, direction) {
   (day?.penalties || []).forEach(penalty => {
     applyScoreDelta(penalty.name, direction * (Number(penalty.points) || 0));
@@ -7644,6 +7658,9 @@ function adjustCompletedDayScores(day, direction) {
     applyScoreDelta(name, direction * points);
   });
   applyDayPenalties(day, direction);
+  (day?.stealNoBetPenalties || []).forEach(p => {
+    applyScoreDelta(p.name, direction * (Number(p.points) || 0));
+  });
 }
 
 function completedDayOutcome(day) {
@@ -9300,6 +9317,7 @@ async function showPreview() {
 	      S.today.estWrap = finalWrap;
 	      S.today.estWrapDate = savedWrapDate;
 	      S.today.addedPlayers = newPlayers;
+          applyConfirmedStealNoBet(S.today, editedFullList);
 	      const saved = await saveS();
 		      if (!saved) { restoreAfterFailedSave(prevS); return; }
 	      toast('Game started!', 'ok');
