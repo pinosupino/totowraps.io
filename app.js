@@ -4747,11 +4747,14 @@ function renderChainedTodayRows(day, completed=false) {
   const winners = new Set((day.winners || []).map(w=>nameKey(w.name)));
   const now = gameNowSec(day);
   const out = !completed ? eliminated(guesses,now,day) : null;
+  const slices = !completed ? boundaries(guesses, day) : [];
   return groups.map(group => {
     const won = group.names.some(n => winners.has(nameKey(n)));
     const eliminatedAll = !completed && group.names.every(n => out.has(n));
     const status = completed ? (won ? 'WIN' : 'OUT') : (eliminatedAll ? 'OUT' : 'IN');
-    return `<div class="row chained-today-row${won?' golden-winner-row':''}"><div class="row-name chained-today-names">${group.names.map(n=>`<span>${esc(n)}</span>`).join('<span class="chained-link">↔</span>')}</div><div class="row-time">${group.time?esc(group.time):'--:--'}</div><div class="badge ${won?'b-win':status==='OUT'?'b-out':'b-in'}">${group.time?status:'NO BET'}</div></div>`;
+    const slice = group.time ? slices.find(s => group.names.some(n => s.names.some(sn => nameKey(sn) === nameKey(n)))) : null;
+    const boundaryInfo = slice ? boundaryRangeWithDuration(slice) : '';
+    return `<div class="row chained-today-row${boundaryInfo?' row-with-boundary':''}${won?' golden-winner-row':''}"><div class="row-name chained-today-names">${group.names.map(n=>`<span>${esc(n)}</span>`).join('<span class="chained-link">↔</span>')}</div><div class="row-time">${group.time?esc(group.time):'--:--'}</div><div class="badge ${won?'b-win':status==='OUT'?'b-out':'b-in'}">${group.time?status:'NO BET'}</div>${boundaryInfo ? `<div class="row-boundary today-bet-boundary">${boundaryInfo}</div>` : ''}</div>`;
   }).join('');
 }
 function chainedExportImage(day=S.today) {
