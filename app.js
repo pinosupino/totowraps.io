@@ -4758,43 +4758,67 @@ function chainedExportImage(day=S.today) {
   const pairs = chainedPairs(day);
   if (!pairs.length) { toast('Save pairs before exporting', 'err'); return; }
   const dark = document.documentElement.classList.contains('dark-mode') || document.body.classList.contains('dark-mode');
-  const width = 1080, rowHeight = 114, height = 420 + pairs.length * rowHeight;
+  // Fixed 5:4 image with adaptive columns for any number of pairs.
+  const width = 2000, height = 1600;
   const canvas = document.createElement('canvas');
   canvas.width = width; canvas.height = height;
   const ctx = canvas.getContext('2d');
-  const bg = dark ? '#202226' : '#fffdd0', panel = dark ? '#303238' : '#ffffff';
-  const ink = dark ? '#f8f8f6' : '#202124', muted = dark ? '#b5b9c0' : '#656a70';
-  ctx.fillStyle = bg; ctx.fillRect(0,0,width,height);
-  const round = (x,y,w,h,r) => {ctx.beginPath();ctx.roundRect(x,y,w,h,r);};
-  const center = (txt,y,size=30,color=ink,weight=700) => {ctx.fillStyle=color;ctx.font=`${weight} ${size}px "Google Sans Flex",Arial,sans-serif`;ctx.textAlign='center';ctx.fillText(txt,width/2,y);};
+  if (!ctx) { toast('Could not create image', 'err'); return; }
+  const bg = dark ? '#202226' : '#fffdd0';
+  const panel = dark ? '#303238' : '#ffffff';
+  const ink = dark ? '#f8f8f6' : '#202124';
+  const muted = dark ? '#b5b9c0' : '#656a70';
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+  const center = (txt, y, size, color=ink, weight=700) => {
+    ctx.fillStyle = color;
+    ctx.font = `${weight} ${size}px "Google Sans Flex",Arial,sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(txt, width/2, y);
+  };
+  function finish() {
+    center('CHAINED TOGETHER', 365, 83, ink, 800);
+    center(`${displayDayLabel(getInternalProjectDayNumberForDate(day.date))}  ·  PAIR REVEAL`, 425, 36, muted, 600);
+    const cols = pairs.length > 36 ? 4 : pairs.length > 18 ? 3 : pairs.length > 8 ? 2 : 1;
+    const rows = Math.ceil(pairs.length / cols);
+    const left = 72, right = 72, top = 478, bottom = 115, gapX = 20, gapY = 12;
+    const cardW = (width-left-right-(cols-1)*gapX)/cols;
+    const cardH = (height-top-bottom-(rows-1)*gapY)/rows;
+    const nameSize = Math.max(15, Math.min(37, cardH*.37, cardW/13));
+    pairs.forEach((pair, i) => {
+      const col = Math.floor(i/rows), row = i%rows;
+      const x = left+col*(cardW+gapX), y = top+row*(cardH+gapY);
+      ctx.fillStyle = panel;
+      ctx.beginPath();
+      ctx.roundRect(x, y, cardW, cardH, Math.min(18,cardH/4));
+      ctx.fill();
+      ctx.fillStyle = muted;
+      ctx.textAlign = 'left';
+      ctx.font = `700 ${Math.max(12,Math.min(22,cardH*.24))}px "Google Sans Flex",Arial,sans-serif`;
+      ctx.fillText(String(i+1).padStart(2,'0'), x+15, y+cardH/2+7);
+      ctx.fillStyle = ink;
+      ctx.textAlign = 'center';
+      ctx.font = `700 ${nameSize}px "Google Sans Flex",Arial,sans-serif`;
+      ctx.fillText(pair.join('  ↔  '), x+cardW/2+10, y+cardH/2+nameSize*.34, cardW-80);
+    });
+    center('TWO PLAYERS · ONE BET', height-45, 28, muted, 700);
+    canvas.toBlob(blob => {
+      if (!blob) { toast('Could not create image','err'); return; }
+      const url=URL.createObjectURL(blob), a=document.createElement('a');
+      a.href=url;
+      a.download=`TotoWrap_Chained_Together_${day.date||'today'}.png`;
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+    }, 'image/png');
+  }
   const logo = new Image();
   logo.onload = () => {
-    const maxW=420,maxH=120, scale=Math.min(maxW/logo.width,maxH/logo.height);
-    ctx.drawImage(logo,(width-logo.width*scale)/2,28,logo.width*scale,logo.height*scale);
+    const maxW=660,maxH=270,scale=Math.min(maxW/logo.width,maxH/logo.height);
+    ctx.drawImage(logo,(width-logo.width*scale)/2,35,logo.width*scale,logo.height*scale);
     finish();
   };
   logo.onerror = finish;
-  function finish() {
-    center('CHAINED TOGETHER',205,56,ink,800);
-    center(`${displayDayLabel(getInternalProjectDayNumberForDate(day.date))}  ·  PAIR REVEAL`,254,23,muted,600);
-    pairs.forEach((p,i) => {
-      const y=290+i*rowHeight;
-      ctx.fillStyle=panel;round(54,y,width-108,96,16);ctx.fill();
-      ctx.textAlign='left';ctx.fillStyle=muted;ctx.font='600 22px "Google Sans Flex",Arial,sans-serif';ctx.fillText(String(i+1).padStart(2,'0'),84,y+58);
-      ctx.fillStyle=ink;ctx.font='700 31px "Google Sans Flex",Arial,sans-serif';
-      ctx.textAlign='right';ctx.fillText(p[0],502,y+60,360);
-      ctx.textAlign='center';ctx.fillText('↔',540,y+60);
-      ctx.textAlign='left';ctx.fillText(p[1],578,y+60,360);
-    });
-    center('TWO PLAYERS · ONE BET',height-42,22,muted,700);
-    canvas.toBlob(blob => {
-      if (!blob) {toast('Could not create image','err');return;}
-      const url=URL.createObjectURL(blob), a=document.createElement('a');
-      a.href=url;a.download=`TotoWrap_Chained_Together_${day.date||'today'}.png`;a.click();
-      setTimeout(()=>URL.revokeObjectURL(url),1000);
-    },'image/png');
-  }
-  logo.src = IS_ADMIN && location.pathname.includes('/admin/') ? '../imgs/totowrap.png' : 'imgs/totowrap.png';
+  logo.src = IS_ADMIN && location.pathname.includes('/admin/') ? '../imgs/totoswrap.png' : 'imgs/totoswrap.png';
 }
 async function saveChainedPairs(pairs) {
   if (!IS_ADMIN || !currentUser || !S.today || S.today.wrapTime || (S.today.guesses||[]).some(g=>g.time) || (S.today.unit||'main')!=='main') return;
