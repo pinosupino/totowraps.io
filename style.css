@@ -1814,9 +1814,8 @@ html.dark-mode .hdr-wrap-time.off {
 }
 .today-fixed-view:has(> .today-adaptive-header) > .today-scroll-card { z-index: 1; }
 
-/* Chained Together TODAY: shared winning range, same formatting as regular bets. */
-.today-scroll-list .chained-today-row {display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;column-gap:clamp(5px,1.6vw,12px);row-gap:3px;}
-.today-scroll-list .chained-today-row > .chained-today-names {grid-column:1;grid-row:1;}
-.today-scroll-list .chained-today-row > .row-time {grid-column:2;grid-row:1;}
-.today-scroll-list .chained-today-row > .badge {grid-column:3;grid-row:1;}
-.today-scroll-list .chained-today-row > .today-bet-boundary {grid-column:1/-1;grid-row:2;font-size:.68rem;line-height:1.35;}
+/* Restore normal scrolling to relocated STATS panels and accuracy legend. */
+.sec[data-view="stats"] .board-fixed-card { height:auto; min-height:0; overflow:visible; }
+.sec[data-view="stats"] .board-fixed-card .closeness-wrap { flex:none; min-height:0; overflow:visible; gap:12px; }
+.sec[data-view="stats"] .board-fixed-card .board-legend { flex:none; min-height:0; max-height:none; overflow:visible; margin-top:0; padding-top:0; padding-bottom:0; mask-image:none; -webkit-mask-image:none; }
+.sec[data-view="stats"] .game-stats-page { min-height:0; }
