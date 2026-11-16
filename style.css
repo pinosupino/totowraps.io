@@ -1826,3 +1826,21 @@ html.dark-mode .hdr-wrap-time.off {
 .today-scroll-list .chained-today-row > .row-time {grid-column:2;grid-row:1;}
 .today-scroll-list .chained-today-row > .badge {grid-column:3;grid-row:1;}
 .today-scroll-list .chained-today-row > .today-bet-boundary {grid-column:1/-1;grid-row:2;font-size:.68rem;line-height:1.35;}
+
+/* First Take of the Day: independent morning round */
+.fto-section-host,.fto-history-host{width:100%;min-width:0;flex-shrink:0;margin-bottom:12px}
+.fto-card{display:flex;flex-direction:column;gap:10px;max-height:45vh;overflow:auto;overscroll-behavior:contain}
+.fto-heading,.fto-bet-row,.fto-history-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.fto-status{font:600 .7rem/1.2 inherit;letter-spacing:.07em;opacity:.75}
+.fto-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fto-controls input{max-width:110px}
+.fto-card textarea{width:100%;min-height:90px;resize:vertical;background:var(--card-bg,transparent);color:inherit;border:1px solid var(--border, #8885);border-radius:8px;padding:10px;font:inherit}
+.fto-bets{max-height:180px;overflow:auto;border-top:1px solid #8883}
+.fto-bet-row,.fto-history-row{padding:7px 0;border-bottom:1px solid #8882;font-size:.85rem}
+.fto-bet-row strong{margin-left:auto;font-variant-numeric:tabular-nums}
+.fto-result{min-width:45px;text-align:right;color:var(--green,#36a678);font-weight:700}
+.fto-actual{font-size:1rem}
+.fto-actual strong{font-size:1.4rem}
+.fto-stats-row{display:grid;grid-template-columns:minmax(90px,2fr) repeat(4,minmax(0,1fr));gap:8px;padding:10px 0;border-bottom:1px solid #8882;font-size:.8rem}
+.fto-stats-row span{font-variant-numeric:tabular-nums}
+@media(max-width:540px){.fto-stats-row{grid-template-columns:minmax(100px,1.4fr) repeat(2,minmax(0,1fr));row-gap:4px}.fto-stats-row span:nth-last-child(-n+2){font-size:.7rem;opacity:.8}.fto-card{max-height:40vh}}

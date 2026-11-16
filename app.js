@@ -3399,6 +3399,7 @@ function render() {
     renderPlayer(app);
   }
   syncTabUI(false);
+  mountFTOSections();
   restoreUIState(uiState);
   if (location.hash.startsWith('#history-')) {
     setTimeout(openHistoryHash, 0);
@@ -5275,10 +5276,140 @@ function renderBoardCloseness(pl) {
   </div>`;
 }
 
+
+// First Take of the Day is an independent morning game. Its points are
+// derived from saved results, never added directly to the mutable wrap scores.
+function ftoStore() {
+  if (!S.ftoDays || typeof S.ftoDays !== 'object' || Array.isArray(S.ftoDays)) S.ftoDays = {};
+  return S.ftoDays;
+}
+function ftoDate(day=S.today) { return displayToISO(day?.date) || localDateISO(); }
+function ftoGame(date=ftoDate()) { return ftoStore()[date] || null; }
+function ftoWinners(game) {
+  if (!game?.result || !isValidHM(game.result)) return [];
+  const bets = (game.bets || []).filter(b => isValidHM(b.time));
+  if (!bets.length) return [];
+  const target=toSec(game.result);
+  const distances=bets.map(b=>({name:b.name, distance:Math.abs(toSec(b.time)-target)}));
+  const min=Math.min(...distances.map(b=>b.distance));
+  return distances.filter(b=>b.distance===min).map(b=>b.name);
+}
+function ftoPointsFor(name) {
+  return Object.values(ftoStore()).reduce((n,g)=>n+(ftoWinners(g).some(w=>nameKey(w)===nameKey(name))?1:0),0);
+}
+function ftoClosed(game, date) {
+  if (!game) return false;
+  if (game.result) return true;
+  if (!isValidHM(game.closeAt)) return false;
+  const today=localDateISO();
+  return date<today || (date===today && nowSec()>=toSec(game.closeAt));
+}
+function ftoRows(game) {
+  const winners=new Set(ftoWinners(game).map(nameKey));
+  return [...(game?.bets||[])].sort((a,b)=>a.time.localeCompare(b.time))
+    .map(b=>`<div class="fto-bet-row"><span>${esc(b.name)}</span><strong>${esc(b.time)}</strong>${game.result?`<span class="fto-result">${winners.has(nameKey(b.name))?'+1 PT':''}</span>`:''}</div>`).join('');
+}
+function renderFTOCard(date=ftoDate(), admin=false) {
+  const g=ftoGame(date);
+  const closed=ftoClosed(g,date);
+  const isAdmin=admin && IS_ADMIN && !!currentUser;
+  const status=g?.result?'COMPLETE':closed?'CLOSED':g?'OPEN':'NOT ACTIVE';
+  const rows=g?.bets?.length?`<div class="fto-bets">${ftoRows(g)}</div>`:'<p class="mono dim">No predictions yet</p>';
+  return `<div class="card fto-card">
+    <div class="fto-heading"><div class="card-lbl">FIRST TAKE OF THE DAY</div><span class="fto-status">${status}</span></div>
+    ${g?`<p class="mono dim">Betting closes at ${esc(g.closeAt||'--:--')} · ${g.bets?.length||0} predictions</p>`:'<p class="mono dim">Morning prediction game</p>'}
+    ${g?.result?`<div class="fto-actual">First take <strong>${esc(g.result)}</strong></div><p class="mono dim">Winner: ${ftoWinners(g).map(esc).join(', ')||'None'} · 1 point each</p>`:''}
+    ${isAdmin && !g?.result?`
+      <div class="fto-controls">
+        <label class="mono dim" for="fto-close">Betting closes</label>
+        <input id="fto-close" class="admin-time-input" inputmode="numeric" placeholder="HH:MM" value="${esc(g?.closeAt||'')}">
+        <button class="btn btn-p" data-fto-action="close" data-fto-date="${esc(date)}">${g?'Update closing time':'Activate First Take of the Day'}</button>
+      </div>
+      ${g?`<label class="mono dim" for="fto-import">Predictions (Name HH:MM, one per line)</label>
+      <textarea id="fto-import" rows="4" placeholder="Greta 08:42&#10;Giulia 08:47"></textarea>
+      <button class="btn" data-fto-action="import" data-fto-date="${esc(date)}">Import predictions</button>
+      <div class="fto-controls"><label class="mono dim" for="fto-result">Actual first take</label>
+      <input id="fto-result" class="admin-time-input" inputmode="numeric" placeholder="HH:MM">
+      <button class="btn btn-p" data-fto-action="result" data-fto-date="${esc(date)}">Confirm first take</button></div>`:''}
+    `:''}
+    ${g?rows:''}
+  </div>`;
+}
+function renderFTOStats() {
+  const games=Object.entries(ftoStore()).filter(([,g])=>g?.result);
+  const names=getSortedPlayerRoster().filter(p=>p.active!==false);
+  return `<div class="card fto-stats-card"><div class="card-lbl">FIRST TAKE OF THE DAY</div>
+  <p class="mono dim">${games.length} completed days · 1 point per winning prediction, including exact guesses</p>
+  ${names.map(p=>{
+    const bets=games.filter(([,g])=>(g.bets||[]).some(b=>nameKey(b.name)===nameKey(p.name)));
+    const errors=bets.map(([,g])=>Math.abs(toSec(g.bets.find(b=>nameKey(b.name)===nameKey(p.name)).time)-toSec(g.result))/60);
+    const avg=errors.length?(errors.reduce((a,b)=>a+b,0)/errors.length).toFixed(1):'—';
+    const exact=errors.filter(e=>e===0).length;
+    return `<div class="fto-stats-row"><strong>${esc(p.name)}</strong><span>${bets.length} played</span><span>${ftoPointsFor(p.name)} wins</span><span>${avg} min avg.</span><span>${exact} exact</span></div>`;
+  }).join('')||'<div class="empty">No players yet</div>'}</div>`;
+}
+function mountFTOSections() {
+  if (!S.today) return;
+  document.querySelectorAll('.sec[data-view="today"]').forEach(sec=>{
+    if (sec.querySelector('.fto-card')) return;
+    const host=document.createElement('div');
+    host.className='fto-section-host';
+    host.innerHTML=renderFTOCard(ftoDate(),IS_ADMIN);
+    sec.prepend(host);
+  });
+  document.querySelectorAll('.sec[data-view="history"]').forEach(sec=>{
+    const games=Object.entries(ftoStore()).filter(([,g])=>g?.result).sort((a,b)=>b[0].localeCompare(a[0]));
+    if (!games.length) return;
+    const host=document.createElement('div');host.className='fto-history-host';
+    host.innerHTML=`<div class="card"><div class="card-lbl">FIRST TAKE OF THE DAY · HISTORY</div>${games.map(([date,g])=>`<div class="fto-history-row"><strong>${esc(date)}</strong><span>${esc(g.result)}</span><span>${ftoWinners(g).map(esc).join(', ')||'No winner'}</span></div>`).join('')}</div>`;
+    sec.prepend(host);
+  });
+}
+document.addEventListener('click',async event=>{
+  const button=event.target.closest('[data-fto-action]');
+  if (!button || !IS_ADMIN || !currentUser || !S.today) return;
+  const action=button.dataset.ftoAction;
+  const date=button.dataset.ftoDate;
+  if (date!==ftoDate()) return;
+  const store=ftoStore();
+  const game=store[date];
+  if (action==='close') {
+    if (game?.result) return;
+    const value=document.getElementById('fto-close')?.value.trim().replace('.',':');
+    if (!isValidHM(value)) return toast('Enter a valid HH:MM closing time','err');
+    if (date===localDateISO() && toSec(value)<=nowSec() && !game) return toast('Closing time must be in the future','err');
+    store[date]={...(game||{}),closeAt:value,bets:game?.bets||[]};
+  } else if (action==='import') {
+    if (!game || game.result) return toast('First Take of the Day result is already confirmed','err');
+    const lines=(document.getElementById('fto-import')?.value||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+    const parsed=[];
+    for(const line of lines) {
+      const match=line.match(/^(.+?)\s+(\d{1,2})[:.](\d{2})$/);
+      if(!match) return toast(`Invalid prediction: ${line}`,'err');
+      const name=match[1].trim(),time=match[2].padStart(2,'0')+':'+match[3];
+      if(!isValidHM(time)) return toast(`Invalid time: ${line}`,'err');
+      if(!S.playerRoster.some(p=>nameKey(p.name)===nameKey(name))) return toast(`Unknown player: ${name}`,'err');
+      if(parsed.some(p=>nameKey(p.name)===nameKey(name))) return toast(`Duplicate player: ${name}`,'err');
+      parsed.push({name,time});
+    }
+    if (!parsed.length) return toast('Paste at least one prediction','err');
+    store[date]={...game,bets:parsed};
+  } else if(action==='result') {
+    if (!game) return;
+    const value=document.getElementById('fto-result')?.value.trim().replace('.',':');
+    if(!isValidHM(value)) return toast('Enter a valid first take time','err');
+    if(!ftoClosed(game,date)) return toast('Wait until betting closes','err');
+    if(!game.bets?.length) return toast('Import predictions first','err');
+    if(!confirm(`Confirm first take at ${value}? This awards 1 point to each closest prediction.`)) return;
+    store[date]={...game,result:value};
+  } else return;
+  if(await saveS()) render();
+});
+
 function getStandingsEntries() {
   const standingsPlayers = getSortedPlayerRoster().map(player => ({
     player,
-    score: Number(S.scores[player.name]) || 0,
+    score: (Number(S.scores[player.name]) || 0) + ftoPointsFor(player.name),
     wins: getBoardPlayerStats(player.name).wins
   })).sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
@@ -5366,9 +5497,11 @@ function renderNearMissLeaderboard() {
 
 function renderGameStats() {
   const pl = getSortedPlayerRoster().filter(p => p.active !== false);
-  const options = [['pie','PIE CHART'],['accuracy','ACCURACY'],['near','NEAR MISSES']];
+  const options = [['pie','PIE CHART'],['accuracy','ACCURACY'],['near','NEAR MISSES'],['fto','FIRST TAKE OF THE DAY']];
   let content;
-  if (_statsView === 'accuracy') {
+  if (_statsView === 'fto') {
+    content = renderFTOStats();
+  } else if (_statsView === 'accuracy') {
     content = `<div class="card board-fixed-card" id="game-stats-accuracy"><div class="card-lbl">ACCURACY</div>${pl.length ? renderBoardCloseness(pl) : '<div class="empty">No players yet</div>'}</div>`;
   } else if (_statsView === 'near') {
     content = renderNearMissLeaderboard();
@@ -5389,7 +5522,7 @@ document.addEventListener('click', event => {
   const button = event.target.closest('[data-stats-view]');
   if (!button) return;
   const view = button.dataset.statsView;
-  if (!['pie','accuracy','near'].includes(view) || view === _statsView) return;
+  if (!['pie','accuracy','near','fto'].includes(view) || view === _statsView) return;
   _statsView = view;
   document.querySelectorAll('.sec[data-view="stats"]').forEach(section => {
     section.innerHTML = renderGameStats();
