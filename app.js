@@ -5351,7 +5351,11 @@ function renderFTOStats() {
 function mountFTOSections() {
   if (!S.today) return;
   document.querySelectorAll('.sec[data-view="today"]').forEach(sec=>{
-    if (sec.querySelector('.fto-card')) return;
+    const game = ftoGame(ftoDate());
+    const visible = !!game || (IS_ADMIN && !!currentUser);
+    const existing = sec.querySelector('.fto-section-host');
+    if (!visible) { existing?.remove(); return; }
+    if (existing) existing.remove();
     const host=document.createElement('div');
     host.className='fto-section-host';
     host.innerHTML=renderFTOCard(ftoDate(),IS_ADMIN);
