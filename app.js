@@ -5438,6 +5438,19 @@ function renderFTOStats() {
 }
 .today-native-tabs-layout > [data-today-panel][hidden]{display:none!important}
 `;
+  style.textContent += `
+/* Keep the large time display visible while the predictions scroll. */
+.today-native-tabs-layout > .today-fixed-view > .today-adaptive-header{
+ position:sticky!important;top:64px!important;z-index:12;
+ background:var(--bg,#1b1b1d);padding-bottom:6px;
+}
+.today-native-tabs-layout > .fto-section-host .fto-clock-wrap{
+ position:sticky!important;top:64px!important;z-index:12;
+ background:var(--card,#2b2b2e);padding:8px 0 12px!important;
+}
+/* Allow sticky elements to anchor to TODAY's scroll viewport. */
+.today-native-tabs-layout > .fto-section-host .fto-card{overflow:visible!important}
+`; 
   document.head.appendChild(style);
 })();
 // Keep the selected TODAY mode when navigating away and back.
