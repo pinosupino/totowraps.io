@@ -5342,7 +5342,7 @@ function renderFTOCard(date=ftoDate(), admin=false) {
     <div class="fto-heading"><div class="card-lbl">FIRST TAKE OF THE DAY</div><span class="fto-status">${status}</span></div>
     ${g?`<p class="mono dim">Betting closes at ${esc(ftoFormatTime(g.closeAt||'--:--'))} · ${g.bets?.length||0} predictions</p>`:'<p class="mono dim">Morning prediction game</p>'}
     ${isAdmin && !g?.result?`<div class="fto-controls"><label class="mono dim" for="fto-close">Betting closes</label><input id="fto-close" class="admin-time-input" inputmode="numeric" placeholder="HH:MM:SS" value="${esc(g?.closeAt||'')}"><button class="btn btn-p" data-fto-action="close" data-fto-date="${esc(date)}">${g?'Update closing time':'Activate First Take of the Day'}</button></div>`:''}
-    ${g?`<button type="button" class="big-clock fto-time-pill ${isAdmin&&!g.result?'admin-clock-trigger':''}" ${isAdmin&&!g.result?'data-fto-action="pill" data-fto-date="'+esc(date)+'"':''} title="${isAdmin&&!g.result?'Tap to set first take':''}">${esc(g.result?ftoFormatTime(g.result):'--:--:--')}</button><div class="big-clock-lbl">${g.result?'First Take of the Day':'First Take of the Day · '+(isAdmin?'Tap to Record':'Awaiting Result')}</div>`:''}
+    ${g?`<div class="fto-clock-wrap"><button type="button" class="big-clock fto-time-pill ${isAdmin&&!g.result?'admin-clock-trigger':''}" ${isAdmin&&!g.result?'data-fto-action="pill" data-fto-date="'+esc(date)+'"':''} title="${isAdmin&&!g.result?'Tap to set first take':''}">${esc(g.result?ftoFormatTime(g.result):'--:--:--')}</button></div>`:''}
     ${g?rows:''}
     ${isAdmin && g && !g.result?`<div class="fto-import-panel"><label class="mono dim" for="fto-import">Predictions · Name HH:MM or HH:MM:SS (one per line)</label><textarea id="fto-import" rows="4" placeholder="Greta 08:42:15&#10;Giulia 08:47"></textarea><button class="btn" data-fto-action="import" data-fto-date="${esc(date)}">Import / Replace Predictions</button></div>`:''}
   </div>`;
@@ -5377,6 +5377,11 @@ function renderFTOStats() {
 .today-mode-pill.is-active{color:#fff!important;background:#26734a!important;border-color:#26734a!important;opacity:1}
 [data-theme="light"] .today-mode-pill:not(.is-active),body.light .today-mode-pill:not(.is-active){color:#202820!important;background:#f1f3f1!important;border-color:#9ba69d!important}
 [data-theme="dark"] .today-mode-pill:not(.is-active),body.dark .today-mode-pill:not(.is-active){color:#f2f5f3!important;background:#343a37!important;border-color:#89958e!important}
+/* Match WRAP clock: no browser button background, border or clipping. */
+.fto-card .fto-clock-wrap{display:flex;align-items:center;justify-content:center;min-width:0;width:100%;padding:0;margin:10px 0 14px;overflow:visible}
+.fto-card button.fto-time-pill{appearance:none!important;-webkit-appearance:none!important;display:block!important;box-sizing:border-box!important;width:auto!important;max-width:100%!important;min-width:0!important;margin:0 auto!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;background-color:transparent!important;box-shadow:none!important;outline-offset:3px!important;color:var(--accent)!important;text-align:center!important;font-size:clamp(1.65rem,8.5vw,4.4rem)!important;line-height:1.05!important;letter-spacing:0!important;white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important}
+.fto-card button.fto-time-pill:not(.admin-clock-trigger){cursor:default!important}
+
 .fto-card .fto-time-pill{box-shadow:none!important}
 .fto-card .big-clock-lbl{display:none!important}
 .fto-history-day{border-top:1px solid var(--border,rgba(128,128,128,.25));margin-top:8px}
