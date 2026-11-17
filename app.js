@@ -5348,17 +5348,21 @@ function renderFTOCard(date=ftoDate(), admin=false) {
   </div>`;
 }
 function renderFTOStats() {
-  const games=Object.entries(ftoStore()).filter(([,g])=>g?.result);
-  const names=getSortedPlayerRoster().filter(p=>p.active!==false);
-  return `<div class="card fto-stats-card"><div class="card-lbl">FIRST TAKE OF THE DAY</div>
-  <p class="mono dim">${games.length} completed days · 1 point per winning prediction, including exact guesses</p>
-  ${names.map(p=>{
-    const bets=games.filter(([,g])=>(g.bets||[]).some(b=>nameKey(b.name)===nameKey(p.name)));
-    const errors=bets.map(([,g])=>Math.abs(toSec(g.bets.find(b=>nameKey(b.name)===nameKey(p.name)).time)-toSec(g.result))/60);
-    const avg=errors.length?(errors.reduce((a,b)=>a+b,0)/errors.length).toFixed(1):'—';
-    const exact=errors.filter(e=>e===0).length;
-    return `<div class="fto-stats-row"><strong>${esc(p.name)}</strong><span>${bets.length} played</span><span>${ftoPointsFor(p.name)} wins</span><span>${avg} min avg.</span><span>${exact} exact</span></div>`;
-  }).join('')||'<div class="empty">No players yet</div>'}</div>`;
+  const games=Object.values(ftoStore()).filter(g=>g?.result && isValidHM(g.result));
+  const rows=getSortedPlayerRoster().filter(p=>p.active!==false).map(p=>{
+    const played=games.map(g=>({g,bet:(g.bets||[]).find(b=>nameKey(b.name)===nameKey(p.name))})).filter(x=>x.bet);
+    const errors=played.map(({g,bet})=>Math.abs(toSec(bet.time)-toSec(g.result)));
+    const nearMisses=played.filter(({g,bet})=>{
+      if(ftoWinners(g).some(n=>nameKey(n)===nameKey(p.name))) return false;
+      const slots=[...new Set((g.bets||[]).map(b=>toSec(b.time)))].sort((a,b)=>a-b);
+      const winningSlots=new Set((g.bets||[]).filter(b=>ftoWinners(g).some(n=>nameKey(n)===nameKey(b.name))).map(b=>toSec(b.time)));
+      const i=slots.indexOf(toSec(bet.time));
+      return (i>0 && winningSlots.has(slots[i-1])) || (i<slots.length-1 && winningSlots.has(slots[i+1]));
+    }).length;
+    const avg=errors.length?Math.round(errors.reduce((a,b)=>a+b,0)/errors.length):null;
+    return {name:p.name,nearMisses,avg,played:played.length};
+  }).filter(r=>r.played).sort((a,b)=>b.nearMisses-a.nearMisses || (a.avg??Infinity)-(b.avg??Infinity) || a.name.localeCompare(b.name));
+  return `<div class="card board-fixed-card near-miss-card fto-stats-card"><div class="card-lbl">FIRST TAKE OF THE DAY</div><h3>Near misses & average accuracy</h3><p class="mono dim">Near miss: a prediction in the adjacent time slot to a winning prediction. Average distance from the actual first take.</p><div class="near-miss-list">${rows.map((r,i)=>`<div class="near-miss-row"><span class="near-miss-rank">${i+1}</span><strong>${esc(r.name)}</strong><span class="mono dim">${r.nearMisses} near misses</span><span class="accent"><strong>${r.avg===null?'—':ftoRangeLabel(r.avg)}</strong> avg. distance</span></div>`).join('')||'<div class="empty">No completed FTO predictions yet</div>'}</div></div>`;
 }
 // Inject the layout CSS from app.js so this can be installed as a single-file update.
 (function installTodayModeStyles(){
@@ -5367,6 +5371,26 @@ function renderFTOStats() {
   style.id='today-mode-styles';
   style.textContent='/* TODAY full-width WRAP / FTO selector */\n.today-mode-layout{width:100%;min-width:0;display:flex;flex-direction:column;gap:12px}\n.today-mode-tabs{display:flex;gap:8px;width:100%;align-items:center}\n.today-mode-pill{flex:1;min-width:0;appearance:none;border:1px solid var(--border,rgba(127,127,127,.3));border-radius:999px;background:transparent;color:inherit;font:inherit;font-weight:700;letter-spacing:.05em;padding:11px 16px;cursor:pointer;transition:background .15s,border-color .15s}\n.today-mode-pill.is-active{background:var(--accent,#5b9e73);border-color:var(--accent,#5b9e73);color:#fff}\n.today-mode-pill:focus-visible{outline:2px solid currentColor;outline-offset:2px}\n.today-mode-layout>[data-today-panel]{width:100%;min-width:0}\n.today-mode-layout>[data-today-panel][hidden]{display:none!important}\n.today-mode-layout .fto-card{max-height:none;overflow:visible;width:100%}\n.today-mode-layout .fto-bets{max-height:none}\n';
   style.textContent += '\n.fto-card .fto-time-pill{display:block;margin:12px auto 4px;cursor:default;max-width:100%;font-variant-numeric:tabular-nums}\n.fto-card .fto-time-pill.admin-clock-trigger{cursor:pointer}\n.fto-card .big-clock-lbl{text-align:center;margin-bottom:12px}\n.fto-card .fto-bet-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border,rgba(127,127,127,.18))}\n.fto-card .fto-bet-name{display:flex;flex-direction:column;min-width:0;gap:3px}\n.fto-card .fto-bet-range{font-size:.75em;opacity:.7;font-variant-numeric:tabular-nums}\n.fto-card .fto-bet-time{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}\n.fto-card .fto-winning-row{background:rgba(54,170,105,.13);border-radius:8px}\n.fto-card .fto-result{font-size:.75em;font-weight:700}\n';
+  style.textContent += `
+/* FTO tabs: readable in both themes, including dark mode */
+.today-mode-pill{color:var(--fg,var(--text,#e6e6e6))!important;background:var(--card,var(--surface,rgba(128,128,128,.14)))!important;border:1px solid currentColor!important;opacity:.85}
+.today-mode-pill.is-active{color:#fff!important;background:#26734a!important;border-color:#26734a!important;opacity:1}
+[data-theme="light"] .today-mode-pill:not(.is-active),body.light .today-mode-pill:not(.is-active){color:#202820!important;background:#f1f3f1!important;border-color:#9ba69d!important}
+[data-theme="dark"] .today-mode-pill:not(.is-active),body.dark .today-mode-pill:not(.is-active){color:#f2f5f3!important;background:#343a37!important;border-color:#89958e!important}
+.fto-card .fto-time-pill{box-shadow:none!important}
+.fto-card .big-clock-lbl{display:none!important}
+.fto-history-day{border-top:1px solid var(--border,rgba(128,128,128,.25));margin-top:8px}
+.fto-history-summary{cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:14px 2px;list-style:revert}
+.fto-history-summary strong{margin-right:auto}
+.fto-history-summary span{overflow-wrap:anywhere}
+.fto-history-bets{width:100%;max-height:none!important;overflow:visible!important;padding-bottom:12px}
+.fto-history-bets .fto-bet-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border,rgba(128,128,128,.2))}
+.fto-history-bets .fto-bet-name{display:flex;flex-direction:column;min-width:0;gap:3px}
+.fto-history-bets .fto-bet-range{font-size:.75em;opacity:.75}
+.fto-history-bets .fto-bet-time{font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.fto-history-bets .fto-winning-row{background:rgba(54,170,105,.13);border-radius:8px}
+.fto-history-bets .fto-result{font-size:.75em;font-weight:700}
+`; 
   document.head.appendChild(style);
 })();
 // Keep the selected TODAY mode when navigating away and back.
@@ -5405,7 +5429,7 @@ function mountFTOSections() {
     const games=Object.entries(ftoStore()).filter(([,g])=>g?.result).sort((a,b)=>b[0].localeCompare(a[0]));
     if(!games.length) return;
     const host=document.createElement('div');host.className='fto-history-host';
-    host.innerHTML=`<div class="card"><div class="card-lbl">FIRST TAKE OF THE DAY · HISTORY</div>${games.map(([date,g])=>`<div class="fto-history-row"><strong>${esc(date)}</strong><span>${esc(g.result)}</span><span>${ftoWinners(g).map(esc).join(', ')||'No winner'}</span></div>`).join('')}</div>`;
+    host.innerHTML=`<div class="card"><div class="card-lbl">FIRST TAKE OF THE DAY · HISTORY</div>${games.map(([date,g])=>`<details class="fto-history-day"><summary class="fto-history-summary"><strong>${esc(date)}</strong><span class="mono">${esc(ftoFormatTime(g.result))}</span><span>${ftoWinners(g).map(esc).join(', ')||'No winner'}</span><span class="mono dim">${(g.bets||[]).length} bets</span></summary><div class="fto-history-bets">${ftoRows(g)}</div></details>`).join('')}</div>`;
     sec.prepend(host);
   });
 }
