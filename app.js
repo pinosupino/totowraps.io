@@ -5369,7 +5369,7 @@ function renderFTOStats() {
   if(document.getElementById('today-mode-styles')) return;
   const style=document.createElement('style');
   style.id='today-mode-styles';
-  style.textContent='/* TODAY full-width WRAP / FTO selector */\n.today-mode-layout{width:100%;min-width:0;display:flex;flex-direction:column;gap:12px}\n.today-mode-tabs{display:flex;gap:8px;width:100%;align-items:center}\n.today-mode-pill{flex:1;min-width:0;appearance:none;border:1px solid var(--border,rgba(127,127,127,.3));border-radius:999px;background:transparent;color:inherit;font:inherit;font-weight:700;letter-spacing:.05em;padding:11px 16px;cursor:pointer;transition:background .15s,border-color .15s}\n.today-mode-pill.is-active{background:var(--accent,#5b9e73);border-color:var(--accent,#5b9e73);color:#fff}\n.today-mode-pill:focus-visible{outline:2px solid currentColor;outline-offset:2px}\n.today-mode-layout>[data-today-panel]{width:100%;min-width:0}\n.today-mode-layout>[data-today-panel][hidden]{display:none!important}\n.today-mode-layout .fto-card{max-height:none;overflow:visible;width:100%}\n.today-mode-layout .fto-bets{max-height:none}\n.sec[data-view="today"]:has(> .today-mode-layout){min-height:0;overflow:hidden}\n.sec[data-view="today"] > .today-mode-layout{height:100%;min-height:0;max-height:100%;overflow:hidden;gap:8px}\n.today-mode-layout > .today-mode-tabs{flex:0 0 auto}\n.today-mode-layout > .today-wrap-panel{flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column}\n.today-mode-layout > .today-wrap-panel > .today-fixed-view{flex:1 1 auto;min-height:0;height:100%;overflow:hidden}\n.today-mode-layout .today-fixed-view .today-scroll-card{flex:1 1 auto;min-height:0;overflow:hidden}\n.today-mode-layout .today-fixed-view .today-scroll-list{flex:1 1 auto;min-height:0;overflow-y:auto!important;-webkit-overflow-scrolling:touch;touch-action:pan-y}\n.today-mode-layout > .fto-section-host[data-today-panel="fto"]{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}\n';
+  style.textContent='/* TODAY full-width WRAP / FTO selector */\n.today-mode-layout{width:100%;min-width:0;display:flex;flex-direction:column;gap:12px}\n.today-mode-tabs{display:flex;gap:8px;width:100%;align-items:center}\n.today-mode-pill{flex:1;min-width:0;appearance:none;border:1px solid var(--border,rgba(127,127,127,.3));border-radius:999px;background:transparent;color:inherit;font:inherit;font-weight:700;letter-spacing:.05em;padding:11px 16px;cursor:pointer;transition:background .15s,border-color .15s}\n.today-mode-pill.is-active{background:var(--accent,#5b9e73);border-color:var(--accent,#5b9e73);color:#fff}\n.today-mode-pill:focus-visible{outline:2px solid currentColor;outline-offset:2px}\n.today-mode-layout>[data-today-panel]{width:100%;min-width:0}\n.today-mode-layout>[data-today-panel][hidden]{display:none!important}\n.today-mode-layout .fto-card{max-height:none;overflow:visible;width:100%}\n.today-mode-layout .fto-bets{max-height:none}\n';
   style.textContent += '\n.fto-card .fto-time-pill{display:block;margin:12px auto 4px;cursor:default;max-width:100%;font-variant-numeric:tabular-nums}\n.fto-card .fto-time-pill.admin-clock-trigger{cursor:pointer}\n.fto-card .big-clock-lbl{text-align:center;margin-bottom:12px}\n.fto-card .fto-bet-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border,rgba(127,127,127,.18))}\n.fto-card .fto-bet-name{display:flex;flex-direction:column;min-width:0;gap:3px}\n.fto-card .fto-bet-range{font-size:.75em;opacity:.7;font-variant-numeric:tabular-nums}\n.fto-card .fto-bet-time{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}\n.fto-card .fto-winning-row{background:rgba(54,170,105,.13);border-radius:8px}\n.fto-card .fto-result{font-size:.75em;font-weight:700}\n';
   style.textContent += `
 /* FTO tabs: readable in both themes, including dark mode */
@@ -5396,6 +5396,15 @@ function renderFTOStats() {
 .fto-history-bets .fto-winning-row{background:rgba(54,170,105,.13);border-radius:8px}
 .fto-history-bets .fto-result{font-size:.75em;font-weight:700}
 `; 
+  style.textContent += `
+/* Native WRAP scrolling: keep the original .today-fixed-view as a direct child. */
+.sec[data-view="today"].today-native-tabs-layout{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.today-native-tabs-layout > .today-native-tabs{flex:0 0 auto;width:100%;margin-bottom:8px}
+.today-native-tabs-layout > .today-fixed-view{flex:1 1 auto;min-height:0;height:auto;overflow:hidden}
+.today-native-tabs-layout > .today-fixed-view .today-scroll-list{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.today-native-tabs-layout > .fto-section-host{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.today-native-tabs-layout > [data-today-panel][hidden]{display:none!important}
+`; 
   document.head.appendChild(style);
 })();
 // Keep the selected TODAY mode when navigating away and back.
@@ -5417,13 +5426,15 @@ function mountFTOSections() {
       tabs.setAttribute('role','tablist');
       tabs.setAttribute('aria-label','Today game');
       tabs.innerHTML=`<button type="button" class="today-mode-pill" data-today-mode="wrap" role="tab">WRAP</button><button type="button" class="today-mode-pill" data-today-mode="fto" role="tab">FTO</button>`;
-      const wrap=document.createElement('div');
-      wrap.className='today-wrap-panel';
-      while(sec.firstChild) wrap.appendChild(sec.firstChild);
-      wrap.setAttribute('data-today-panel','wrap');
+      // Preserve the original WRAP DOM and its native scroll container.
+      // Only add tabs and the FTO sibling; never wrap or move WRAP nodes.
+      tabs.classList.add('today-native-tabs');
+      const wrapNodes=[...sec.children];
+      wrapNodes.forEach(node=>node.setAttribute('data-today-panel','wrap'));
       host.setAttribute('data-today-panel','fto');
-      layout.append(tabs,wrap,host);
-      sec.appendChild(layout);
+      sec.prepend(tabs);
+      sec.appendChild(host);
+      sec.classList.add('today-native-tabs-layout');
       setTodayGameMode(sec,_todayGameMode);
     } else {
       // Inactive FTO is visible only to admins, without changing the original WRAP layout.
@@ -5439,7 +5450,7 @@ function mountFTOSections() {
   });
 }
 function setTodayGameMode(sec, mode) {
-  if(!sec?.querySelector('.today-mode-layout')) return;
+  if(!sec?.querySelector('.today-native-tabs')) return;
   _todayGameMode=mode==='fto'?'fto':'wrap';
   sec.querySelectorAll('[data-today-mode]').forEach(btn=>{
     const selected=btn.dataset.todayMode===_todayGameMode;
@@ -5447,7 +5458,7 @@ function setTodayGameMode(sec, mode) {
     btn.setAttribute('aria-selected',String(selected));
     btn.tabIndex=selected?0:-1;
   });
-  sec.querySelectorAll('[data-today-panel]').forEach(panel=>{
+  sec.querySelectorAll(':scope > [data-today-panel]').forEach(panel=>{
     panel.hidden=panel.dataset.todayPanel!==_todayGameMode;
   });
 }
