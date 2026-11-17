@@ -5369,7 +5369,24 @@ function renderFTOStats() {
   if(document.getElementById('today-mode-styles')) return;
   const style=document.createElement('style');
   style.id='today-mode-styles';
-  style.textContent='/* TODAY full-width WRAP / FTO selector */\n.today-mode-layout{width:100%;min-width:0;display:flex;flex-direction:column;gap:12px}\n.today-mode-tabs{display:flex;gap:8px;width:100%;align-items:center}\n.today-mode-pill{flex:1;min-width:0;appearance:none;border:1px solid var(--border,rgba(127,127,127,.3));border-radius:999px;background:transparent;color:inherit;font:inherit;font-weight:700;letter-spacing:.05em;padding:11px 16px;cursor:pointer;transition:background .15s,border-color .15s}\n.today-mode-pill.is-active{background:var(--accent,#5b9e73);border-color:var(--accent,#5b9e73);color:#fff}\n.today-mode-pill:focus-visible{outline:2px solid currentColor;outline-offset:2px}\n.today-mode-layout>[data-today-panel]{width:100%;min-width:0}\n.today-mode-layout>[data-today-panel][hidden]{display:none!important}\n.today-mode-layout .fto-card{max-height:none;overflow:visible;width:100%}\n.today-mode-layout .fto-bets{max-height:none}\n';
+  style.textContent='/* TODAY full-width WRAP / FTO selector */\n.today-mode-layout{width:100%;min-width:0;display:flex;flex-direction:column;gap:12px}\n.today-mode-tabs{display:flex;gap:8px;width:100%;align-items:center}\n.today-mode-pill{flex:1;min-width:0;appearance:none;border:1px solid var(--border,rgba(127,127,127,.3));border-radius:999px;background:transparent;color:inherit;font:inherit;font-weight:700;letter-spacing:.05em;padding:11px 16px;cursor:pointer;transition:background .15s,border-color .15s}\n.today-mode-pill.is-active{background:var(--accent,#5b9e73);border-color:var(--accent,#5b9e73);color:#fff}\n.today-mode-pill:focus-visible{outline:2px solid currentColor;outline-offset:2px}\n.today-mode-layout>[data-today-panel]{width:100%;min-width:0}\n.today-mode-layout>[data-today-panel][hidden]{display:none!important}\n.today-mode-layout .fto-card{max-height:none;overflow:visible;width:100%}\n.today-mode-layout .fto-bets{max-height:none}
+/* Restore the WRAP scroll viewport inside the tabbed TODAY layout. */
+.sec[data-view="today"] > .today-mode-layout{
+  height:100%; max-height:100%; min-height:0; overflow:hidden;
+}
+.today-mode-layout > .today-mode-tabs{flex:0 0 auto}
+.today-mode-layout > .today-wrap-panel{
+  flex:1 1 auto; min-height:0; height:auto; overflow:hidden;
+  display:flex; flex-direction:column;
+}
+.today-mode-layout > .today-wrap-panel > .today-fixed-view{
+  flex:1 1 auto; height:100%; min-height:0; min-width:0;
+}
+.today-mode-layout > .fto-section-host[data-today-panel="fto"]{
+  flex:1 1 auto; min-height:0; overflow-y:auto;
+  -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain;
+}
+\n';
   style.textContent += '\n.fto-card .fto-time-pill{display:block;margin:12px auto 4px;cursor:default;max-width:100%;font-variant-numeric:tabular-nums}\n.fto-card .fto-time-pill.admin-clock-trigger{cursor:pointer}\n.fto-card .big-clock-lbl{text-align:center;margin-bottom:12px}\n.fto-card .fto-bet-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border,rgba(127,127,127,.18))}\n.fto-card .fto-bet-name{display:flex;flex-direction:column;min-width:0;gap:3px}\n.fto-card .fto-bet-range{font-size:.75em;opacity:.7;font-variant-numeric:tabular-nums}\n.fto-card .fto-bet-time{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}\n.fto-card .fto-winning-row{background:rgba(54,170,105,.13);border-radius:8px}\n.fto-card .fto-result{font-size:.75em;font-weight:700}\n';
   style.textContent += `
 /* FTO tabs: readable in both themes, including dark mode */
