@@ -5405,6 +5405,39 @@ function renderFTOStats() {
 .today-native-tabs-layout > .fto-section-host{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 .today-native-tabs-layout > [data-today-panel][hidden]{display:none!important}
 `; 
+  style.textContent += `
+/* TODAY tabs: use one reliable native vertical scroll viewport for either game. */
+.sec[data-view="today"].today-native-tabs-layout{
+ display:block!important;overflow-y:auto!important;overflow-x:hidden!important;
+ height:100%!important;min-height:0!important;max-height:100%!important;
+ -webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior-y:contain;
+}
+.today-native-tabs-layout > .today-native-tabs{
+ position:sticky;top:0;z-index:15;display:flex;flex:0 0 auto;
+ background:var(--bg);padding:4px 0 10px;margin:0 0 8px;
+}
+.today-native-tabs-layout > .today-fixed-view{
+ display:flex!important;flex-direction:column;height:auto!important;
+ min-height:0!important;max-height:none!important;overflow:visible!important;
+}
+.today-native-tabs-layout > .today-fixed-view .today-scroll-card{
+ flex:none!important;height:auto!important;max-height:none!important;
+ min-height:0!important;overflow:visible!important;
+}
+.today-native-tabs-layout > .today-fixed-view .today-scroll-list{
+ flex:none!important;height:auto!important;max-height:none!important;
+ overflow:visible!important;-webkit-mask-image:none!important;mask-image:none!important;
+}
+.today-native-tabs-layout > .fto-section-host{
+ display:block!important;flex:none!important;height:auto!important;
+ min-height:calc(100% - 86px)!important;max-height:none!important;overflow:visible!important;
+}
+.today-native-tabs-layout > .fto-section-host .fto-card,
+.today-native-tabs-layout > .fto-section-host .fto-bets{
+ max-height:none!important;height:auto!important;overflow:visible!important;
+}
+.today-native-tabs-layout > [data-today-panel][hidden]{display:none!important}
+`;
   document.head.appendChild(style);
 })();
 // Keep the selected TODAY mode when navigating away and back.
