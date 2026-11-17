@@ -5285,14 +5285,27 @@ function ftoStore() {
 }
 function ftoDate(day=S.today) { return displayToISO(day?.date) || localDateISO(); }
 function ftoGame(date=ftoDate()) { return ftoStore()[date] || null; }
+function ftoTerritories(game) {
+  const bets=[...(game?.bets||[])].filter(b=>isValidHM(b.time)).sort((a,b)=>toSec(a.time)-toSec(b.time));
+  const groups=[];
+  for(const bet of bets) {
+    const sec=toSec(bet.time);
+    if(groups.length && groups[groups.length-1].sec===sec) groups[groups.length-1].names.push(bet.name);
+    else groups.push({sec,names:[bet.name]});
+  }
+  return groups.map((g,i)=>({names:g.names,
+    start:i===0?g.sec-1800:Math.floor((groups[i-1].sec+g.sec)/2)+1,
+    end:i===groups.length-1?g.sec+1800:Math.floor((g.sec+groups[i+1].sec)/2)}));
+}
 function ftoWinners(game) {
-  if (!game?.result || !isValidHM(game.result)) return [];
-  const bets = (game.bets || []).filter(b => isValidHM(b.time));
-  if (!bets.length) return [];
-  const target=toSec(game.result);
-  const distances=bets.map(b=>({name:b.name, distance:Math.abs(toSec(b.time)-target)}));
-  const min=Math.min(...distances.map(b=>b.distance));
-  return distances.filter(b=>b.distance===min).map(b=>b.name);
+  if(!game?.result || !isValidHM(game.result)) return [];
+  const actual=toSec(game.result);
+  const territory=ftoTerritories(game).find(r=>actual>=r.start && actual<=r.end);
+  return territory?.names||[];
+}
+function ftoRangeLabel(sec) {
+  const normalized=((Math.floor(sec/60)%1440)+1440)%1440;
+  return `${String(Math.floor(normalized/60)).padStart(2,'0')}:${String(normalized%60).padStart(2,'0')}`;
 }
 function ftoPointsFor(name) {
   return Object.values(ftoStore()).reduce((n,g)=>n+(ftoWinners(g).some(w=>nameKey(w)===nameKey(name))?1:0),0);
@@ -5306,12 +5319,15 @@ function ftoClosed(game, date) {
 }
 function ftoRows(game) {
   const winners=new Set(ftoWinners(game).map(nameKey));
-  return [...(game?.bets||[])].sort((a,b)=>a.time.localeCompare(b.time))
-    .map(b=>`<div class="fto-bet-row"><span>${esc(b.name)}</span><strong>${esc(b.time)}</strong>${game.result?`<span class="fto-result">${winners.has(nameKey(b.name))?'+1 PT':''}</span>`:''}</div>`).join('');
+  const territories=ftoTerritories(game);
+  return [...(game?.bets||[])].sort((a,b)=>a.time.localeCompare(b.time)).map(b=>{
+    const territory=territories.find(t=>t.names.some(n=>nameKey(n)===nameKey(b.name)));
+    const range=territory?`${ftoRangeLabel(territory.start)} – ${ftoRangeLabel(territory.end)}`:'';
+    return `<div class="fto-bet-row"><div class="fto-bet-name"><strong>${esc(b.name)}</strong>${range?`<span class="fto-bet-range">${esc(range)}</span>`:''}</div><span class="fto-bet-time">${esc(b.time)}</span>${game.result?`<span class="fto-result">${winners.has(nameKey(b.name))?'+1 PT':''}</span>`:''}</div>`;
+  }).join('');
 }
 function renderFTOCard(date=ftoDate(), admin=false) {
-  const g=ftoGame(date);
-  const closed=ftoClosed(g,date);
+  const g=ftoGame(date), closed=ftoClosed(g,date);
   const isAdmin=admin && IS_ADMIN && !!currentUser;
   const status=g?.result?'COMPLETE':closed?'CLOSED':g?'OPEN':'NOT ACTIVE';
   const rows=g?.bets?.length?`<div class="fto-bets">${ftoRows(g)}</div>`:'<p class="mono dim">No predictions yet</p>';
@@ -5319,20 +5335,10 @@ function renderFTOCard(date=ftoDate(), admin=false) {
     <div class="fto-heading"><div class="card-lbl">FIRST TAKE OF THE DAY</div><span class="fto-status">${status}</span></div>
     ${g?`<p class="mono dim">Betting closes at ${esc(g.closeAt||'--:--')} · ${g.bets?.length||0} predictions</p>`:'<p class="mono dim">Morning prediction game</p>'}
     ${g?.result?`<div class="fto-actual">First take <strong>${esc(g.result)}</strong></div><p class="mono dim">Winner: ${ftoWinners(g).map(esc).join(', ')||'None'} · 1 point each</p>`:''}
-    ${isAdmin && !g?.result?`
-      <div class="fto-controls">
-        <label class="mono dim" for="fto-close">Betting closes</label>
-        <input id="fto-close" class="admin-time-input" inputmode="numeric" placeholder="HH:MM" value="${esc(g?.closeAt||'')}">
-        <button class="btn btn-p" data-fto-action="close" data-fto-date="${esc(date)}">${g?'Update closing time':'Activate First Take of the Day'}</button>
-      </div>
-      ${g?`<label class="mono dim" for="fto-import">Predictions (Name HH:MM, one per line)</label>
-      <textarea id="fto-import" rows="4" placeholder="Greta 08:42&#10;Giulia 08:47"></textarea>
-      <button class="btn" data-fto-action="import" data-fto-date="${esc(date)}">Import predictions</button>
-      <div class="fto-controls"><label class="mono dim" for="fto-result">Actual first take</label>
-      <input id="fto-result" class="admin-time-input" inputmode="numeric" placeholder="HH:MM">
-      <button class="btn btn-p" data-fto-action="result" data-fto-date="${esc(date)}">Confirm first take</button></div>`:''}
-    `:''}
+    ${isAdmin && !g?.result?`<div class="fto-controls"><label class="mono dim" for="fto-close">Betting closes</label><input id="fto-close" class="admin-time-input" inputmode="numeric" placeholder="HH:MM" value="${esc(g?.closeAt||'')}"><button class="btn btn-p" data-fto-action="close" data-fto-date="${esc(date)}">${g?'Update closing time':'Activate First Take of the Day'}</button></div>`:''}
+    ${g?`<button type="button" class="fto-time-pill ${isAdmin&&!g.result?'fto-time-pill-admin':''}" ${isAdmin&&!g.result?'data-fto-action="pill" data-fto-date="'+esc(date)+'"':''} ${isAdmin&&!g.result?'title="Tap to record first take"':''}>${esc(g.result||'--:--')}<small>${g.result?'FIRST TAKE':'FIRST TAKE · '+(isAdmin?'TAP TO RECORD':'AWAITING')}</small></button>`:''}
     ${g?rows:''}
+    ${isAdmin && g && !g.result?`<div class="fto-import-panel"><label class="mono dim" for="fto-import">Predictions (Name HH:MM, one per line)</label><textarea id="fto-import" rows="4" placeholder="Greta 08:42&#10;Giulia 08:47"></textarea><button class="btn" data-fto-action="import" data-fto-date="${esc(date)}">Import predictions</button></div>`:''}
   </div>`;
 }
 function renderFTOStats() {
@@ -5348,27 +5354,74 @@ function renderFTOStats() {
     return `<div class="fto-stats-row"><strong>${esc(p.name)}</strong><span>${bets.length} played</span><span>${ftoPointsFor(p.name)} wins</span><span>${avg} min avg.</span><span>${exact} exact</span></div>`;
   }).join('')||'<div class="empty">No players yet</div>'}</div>`;
 }
+// Inject the layout CSS from app.js so this can be installed as a single-file update.
+(function installTodayModeStyles(){
+  if(document.getElementById('today-mode-styles')) return;
+  const style=document.createElement('style');
+  style.id='today-mode-styles';
+  style.textContent='/* TODAY full-width WRAP / FTO selector */\n.today-mode-layout{width:100%;min-width:0;display:flex;flex-direction:column;gap:12px}\n.today-mode-tabs{display:flex;gap:8px;width:100%;align-items:center}\n.today-mode-pill{flex:1;min-width:0;appearance:none;border:1px solid var(--border,rgba(127,127,127,.3));border-radius:999px;background:transparent;color:inherit;font:inherit;font-weight:700;letter-spacing:.05em;padding:11px 16px;cursor:pointer;transition:background .15s,border-color .15s}\n.today-mode-pill.is-active{background:var(--accent,#5b9e73);border-color:var(--accent,#5b9e73);color:#fff}\n.today-mode-pill:focus-visible{outline:2px solid currentColor;outline-offset:2px}\n.today-mode-layout>[data-today-panel]{width:100%;min-width:0}\n.today-mode-layout>[data-today-panel][hidden]{display:none!important}\n.today-mode-layout .fto-card{max-height:none;overflow:visible;width:100%}\n.today-mode-layout .fto-bets{max-height:none}\n';
+  document.head.appendChild(style);
+})();
+// Keep the selected TODAY mode when navigating away and back.
+let _todayGameMode = 'wrap';
 function mountFTOSections() {
-  if (!S.today) return;
+  if(!S.today) return;
   document.querySelectorAll('.sec[data-view="today"]').forEach(sec=>{
-    const game = ftoGame(ftoDate());
-    const visible = !!game || (IS_ADMIN && !!currentUser);
-    const existing = sec.querySelector('.fto-section-host');
-    if (!visible) { existing?.remove(); return; }
-    if (existing) existing.remove();
+    const game=ftoGame(ftoDate());
+    const admin=IS_ADMIN && !!currentUser;
+    if(!game && !admin) return;
     const host=document.createElement('div');
     host.className='fto-section-host';
     host.innerHTML=renderFTOCard(ftoDate(),IS_ADMIN);
-    sec.prepend(host);
+    if(game) {
+      const layout=document.createElement('div');
+      layout.className='today-mode-layout';
+      const tabs=document.createElement('div');
+      tabs.className='today-mode-tabs';
+      tabs.setAttribute('role','tablist');
+      tabs.setAttribute('aria-label','Today game');
+      tabs.innerHTML=`<button type="button" class="today-mode-pill" data-today-mode="wrap" role="tab">WRAP</button><button type="button" class="today-mode-pill" data-today-mode="fto" role="tab">FTO</button>`;
+      const wrap=document.createElement('div');
+      wrap.className='today-wrap-panel';
+      while(sec.firstChild) wrap.appendChild(sec.firstChild);
+      wrap.setAttribute('data-today-panel','wrap');
+      host.setAttribute('data-today-panel','fto');
+      layout.append(tabs,wrap,host);
+      sec.appendChild(layout);
+      setTodayGameMode(sec,_todayGameMode);
+    } else {
+      // Inactive FTO is visible only to admins, without changing the original WRAP layout.
+      sec.appendChild(host);
+    }
   });
   document.querySelectorAll('.sec[data-view="history"]').forEach(sec=>{
     const games=Object.entries(ftoStore()).filter(([,g])=>g?.result).sort((a,b)=>b[0].localeCompare(a[0]));
-    if (!games.length) return;
+    if(!games.length) return;
     const host=document.createElement('div');host.className='fto-history-host';
     host.innerHTML=`<div class="card"><div class="card-lbl">FIRST TAKE OF THE DAY · HISTORY</div>${games.map(([date,g])=>`<div class="fto-history-row"><strong>${esc(date)}</strong><span>${esc(g.result)}</span><span>${ftoWinners(g).map(esc).join(', ')||'No winner'}</span></div>`).join('')}</div>`;
     sec.prepend(host);
   });
 }
+function setTodayGameMode(sec, mode) {
+  if(!sec?.querySelector('.today-mode-layout')) return;
+  _todayGameMode=mode==='fto'?'fto':'wrap';
+  sec.querySelectorAll('[data-today-mode]').forEach(btn=>{
+    const selected=btn.dataset.todayMode===_todayGameMode;
+    btn.classList.toggle('is-active',selected);
+    btn.setAttribute('aria-selected',String(selected));
+    btn.tabIndex=selected?0:-1;
+  });
+  sec.querySelectorAll('[data-today-panel]').forEach(panel=>{
+    panel.hidden=panel.dataset.todayPanel!==_todayGameMode;
+  });
+}
+document.addEventListener('click',event=>{
+  const pill=event.target.closest('[data-today-mode]');
+  if(!pill) return;
+  const sec=pill.closest('.sec[data-view="today"]');
+  if(!sec) return;
+  setTodayGameMode(sec,pill.dataset.todayMode);
+});
 document.addEventListener('click',async event=>{
   const button=event.target.closest('[data-fto-action]');
   if (!button || !IS_ADMIN || !currentUser || !S.today) return;
@@ -5377,7 +5430,17 @@ document.addEventListener('click',async event=>{
   if (date!==ftoDate()) return;
   const store=ftoStore();
   const game=store[date];
-  if (action==='close') {
+  if (action==='pill') {
+    if(!game || game.result) return;
+    const value=prompt('First Take of the Day · actual first take (HH:MM)');
+    if(value===null) return;
+    const normalized=value.trim().replace('.',':');
+    if(!isValidHM(normalized)) return toast('Enter a valid HH:MM first take','err');
+    if(!ftoClosed(game,date)) return toast('Wait until betting closes','err');
+    if(!game.bets?.length) return toast('Import predictions first','err');
+    if(!confirm(`Confirm first take at ${normalized}? This awards 1 point to the winner(s) within the winning range.`)) return;
+    store[date]={...game,result:normalized};
+  } else if (action==='close') {
     if (game?.result) return;
     const value=document.getElementById('fto-close')?.value.trim().replace('.',':');
     if (!isValidHM(value)) return toast('Enter a valid HH:MM closing time','err');
