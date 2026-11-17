@@ -5303,9 +5303,15 @@ function ftoWinners(game) {
   const territory=ftoTerritories(game).find(r=>actual>=r.start && actual<=r.end);
   return territory?.names||[];
 }
-function ftoRangeLabel(sec) {
-  const normalized=((Math.floor(sec/60)%1440)+1440)%1440;
-  return `${String(Math.floor(normalized/60)).padStart(2,'0')}:${String(normalized%60).padStart(2,'0')}`;
+function ftoRangeLabel(sec) { return secToClock(Math.round(sec)); }
+function ftoNormalizeTime(value) {
+  const raw=String(value||'').trim().replace(/\./g,':');
+  return normalizeHMValue(raw) || normalizeHMSValue(raw) || normalizeHMInput(raw);
+}
+function ftoFormatTime(value) {
+  const normalized=ftoNormalizeTime(value);
+  if(!isValidHM(normalized)) return value;
+  return normalized.length===5?normalized+':00':normalized;
 }
 function ftoPointsFor(name) {
   return Object.values(ftoStore()).reduce((n,g)=>n+(ftoWinners(g).some(w=>nameKey(w)===nameKey(name))?1:0),0);
@@ -5320,10 +5326,11 @@ function ftoClosed(game, date) {
 function ftoRows(game) {
   const winners=new Set(ftoWinners(game).map(nameKey));
   const territories=ftoTerritories(game);
-  return [...(game?.bets||[])].sort((a,b)=>a.time.localeCompare(b.time)).map(b=>{
+  return [...(game?.bets||[])].sort((a,b)=>toSec(a.time)-toSec(b.time)).map(b=>{
     const territory=territories.find(t=>t.names.some(n=>nameKey(n)===nameKey(b.name)));
     const range=territory?`${ftoRangeLabel(territory.start)} – ${ftoRangeLabel(territory.end)}`:'';
-    return `<div class="fto-bet-row"><div class="fto-bet-name"><strong>${esc(b.name)}</strong>${range?`<span class="fto-bet-range">${esc(range)}</span>`:''}</div><span class="fto-bet-time">${esc(b.time)}</span>${game.result?`<span class="fto-result">${winners.has(nameKey(b.name))?'+1 PT':''}</span>`:''}</div>`;
+    const won=game.result && winners.has(nameKey(b.name));
+    return `<div class="fto-bet-row${won?' fto-winning-row':''}"><div class="fto-bet-name"><strong>${esc(b.name)}</strong>${range?`<span class="fto-bet-range">${esc(range)}</span>`:''}</div><span class="fto-bet-time">${esc(ftoFormatTime(b.time))}</span>${game.result?`<span class="fto-result">${won?'+1 PT':''}</span>`:''}</div>`;
   }).join('');
 }
 function renderFTOCard(date=ftoDate(), admin=false) {
@@ -5333,12 +5340,11 @@ function renderFTOCard(date=ftoDate(), admin=false) {
   const rows=g?.bets?.length?`<div class="fto-bets">${ftoRows(g)}</div>`:'<p class="mono dim">No predictions yet</p>';
   return `<div class="card fto-card">
     <div class="fto-heading"><div class="card-lbl">FIRST TAKE OF THE DAY</div><span class="fto-status">${status}</span></div>
-    ${g?`<p class="mono dim">Betting closes at ${esc(g.closeAt||'--:--')} · ${g.bets?.length||0} predictions</p>`:'<p class="mono dim">Morning prediction game</p>'}
-    ${g?.result?`<div class="fto-actual">First take <strong>${esc(g.result)}</strong></div><p class="mono dim">Winner: ${ftoWinners(g).map(esc).join(', ')||'None'} · 1 point each</p>`:''}
-    ${isAdmin && !g?.result?`<div class="fto-controls"><label class="mono dim" for="fto-close">Betting closes</label><input id="fto-close" class="admin-time-input" inputmode="numeric" placeholder="HH:MM" value="${esc(g?.closeAt||'')}"><button class="btn btn-p" data-fto-action="close" data-fto-date="${esc(date)}">${g?'Update closing time':'Activate First Take of the Day'}</button></div>`:''}
-    ${g?`<button type="button" class="fto-time-pill ${isAdmin&&!g.result?'fto-time-pill-admin':''}" ${isAdmin&&!g.result?'data-fto-action="pill" data-fto-date="'+esc(date)+'"':''} ${isAdmin&&!g.result?'title="Tap to record first take"':''}>${esc(g.result||'--:--')}<small>${g.result?'FIRST TAKE':'FIRST TAKE · '+(isAdmin?'TAP TO RECORD':'AWAITING')}</small></button>`:''}
+    ${g?`<p class="mono dim">Betting closes at ${esc(ftoFormatTime(g.closeAt||'--:--'))} · ${g.bets?.length||0} predictions</p>`:'<p class="mono dim">Morning prediction game</p>'}
+    ${isAdmin && !g?.result?`<div class="fto-controls"><label class="mono dim" for="fto-close">Betting closes</label><input id="fto-close" class="admin-time-input" inputmode="numeric" placeholder="HH:MM:SS" value="${esc(g?.closeAt||'')}"><button class="btn btn-p" data-fto-action="close" data-fto-date="${esc(date)}">${g?'Update closing time':'Activate First Take of the Day'}</button></div>`:''}
+    ${g?`<button type="button" class="big-clock fto-time-pill ${isAdmin&&!g.result?'admin-clock-trigger':''}" ${isAdmin&&!g.result?'data-fto-action="pill" data-fto-date="'+esc(date)+'"':''} title="${isAdmin&&!g.result?'Tap to set first take':''}">${esc(g.result?ftoFormatTime(g.result):'--:--:--')}</button><div class="big-clock-lbl">${g.result?'First Take of the Day':'First Take of the Day · '+(isAdmin?'Tap to Record':'Awaiting Result')}</div>`:''}
     ${g?rows:''}
-    ${isAdmin && g && !g.result?`<div class="fto-import-panel"><label class="mono dim" for="fto-import">Predictions (Name HH:MM, one per line)</label><textarea id="fto-import" rows="4" placeholder="Greta 08:42&#10;Giulia 08:47"></textarea><button class="btn" data-fto-action="import" data-fto-date="${esc(date)}">Import predictions</button></div>`:''}
+    ${isAdmin && g && !g.result?`<div class="fto-import-panel"><label class="mono dim" for="fto-import">Predictions · Name HH:MM or HH:MM:SS (one per line)</label><textarea id="fto-import" rows="4" placeholder="Greta 08:42:15&#10;Giulia 08:47"></textarea><button class="btn" data-fto-action="import" data-fto-date="${esc(date)}">Import / Replace Predictions</button></div>`:''}
   </div>`;
 }
 function renderFTOStats() {
@@ -5360,6 +5366,7 @@ function renderFTOStats() {
   const style=document.createElement('style');
   style.id='today-mode-styles';
   style.textContent='/* TODAY full-width WRAP / FTO selector */\n.today-mode-layout{width:100%;min-width:0;display:flex;flex-direction:column;gap:12px}\n.today-mode-tabs{display:flex;gap:8px;width:100%;align-items:center}\n.today-mode-pill{flex:1;min-width:0;appearance:none;border:1px solid var(--border,rgba(127,127,127,.3));border-radius:999px;background:transparent;color:inherit;font:inherit;font-weight:700;letter-spacing:.05em;padding:11px 16px;cursor:pointer;transition:background .15s,border-color .15s}\n.today-mode-pill.is-active{background:var(--accent,#5b9e73);border-color:var(--accent,#5b9e73);color:#fff}\n.today-mode-pill:focus-visible{outline:2px solid currentColor;outline-offset:2px}\n.today-mode-layout>[data-today-panel]{width:100%;min-width:0}\n.today-mode-layout>[data-today-panel][hidden]{display:none!important}\n.today-mode-layout .fto-card{max-height:none;overflow:visible;width:100%}\n.today-mode-layout .fto-bets{max-height:none}\n';
+  style.textContent += '\n.fto-card .fto-time-pill{display:block;margin:12px auto 4px;cursor:default;max-width:100%;font-variant-numeric:tabular-nums}\n.fto-card .fto-time-pill.admin-clock-trigger{cursor:pointer}\n.fto-card .big-clock-lbl{text-align:center;margin-bottom:12px}\n.fto-card .fto-bet-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border,rgba(127,127,127,.18))}\n.fto-card .fto-bet-name{display:flex;flex-direction:column;min-width:0;gap:3px}\n.fto-card .fto-bet-range{font-size:.75em;opacity:.7;font-variant-numeric:tabular-nums}\n.fto-card .fto-bet-time{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}\n.fto-card .fto-winning-row{background:rgba(54,170,105,.13);border-radius:8px}\n.fto-card .fto-result{font-size:.75em;font-weight:700}\n';
   document.head.appendChild(style);
 })();
 // Keep the selected TODAY mode when navigating away and back.
@@ -5434,7 +5441,7 @@ document.addEventListener('click',async event=>{
     if(!game || game.result) return;
     const value=prompt('First Take of the Day · actual first take (HH:MM)');
     if(value===null) return;
-    const normalized=value.trim().replace('.',':');
+    const normalized=ftoFormatTime(value);
     if(!isValidHM(normalized)) return toast('Enter a valid HH:MM first take','err');
     if(!ftoClosed(game,date)) return toast('Wait until betting closes','err');
     if(!game.bets?.length) return toast('Import predictions first','err');
@@ -5442,7 +5449,7 @@ document.addEventListener('click',async event=>{
     store[date]={...game,result:normalized};
   } else if (action==='close') {
     if (game?.result) return;
-    const value=document.getElementById('fto-close')?.value.trim().replace('.',':');
+    const value=ftoFormatTime(document.getElementById('fto-close')?.value);
     if (!isValidHM(value)) return toast('Enter a valid HH:MM closing time','err');
     if (date===localDateISO() && toSec(value)<=nowSec() && !game) return toast('Closing time must be in the future','err');
     store[date]={...(game||{}),closeAt:value,bets:game?.bets||[]};
@@ -5451,9 +5458,9 @@ document.addEventListener('click',async event=>{
     const lines=(document.getElementById('fto-import')?.value||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
     const parsed=[];
     for(const line of lines) {
-      const match=line.match(/^(.+?)\s+(\d{1,2})[:.](\d{2})$/);
+      const match=line.match(/^(.+?)\s+(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?$/);
       if(!match) return toast(`Invalid prediction: ${line}`,'err');
-      const name=match[1].trim(),time=match[2].padStart(2,'0')+':'+match[3];
+      const name=match[1].trim(),time=ftoFormatTime(match[2].padStart(2,'0')+':'+match[3]+(match[4]?':'+match[4]:''));
       if(!isValidHM(time)) return toast(`Invalid time: ${line}`,'err');
       if(!S.playerRoster.some(p=>nameKey(p.name)===nameKey(name))) return toast(`Unknown player: ${name}`,'err');
       if(parsed.some(p=>nameKey(p.name)===nameKey(name))) return toast(`Duplicate player: ${name}`,'err');
@@ -5463,7 +5470,7 @@ document.addEventListener('click',async event=>{
     store[date]={...game,bets:parsed};
   } else if(action==='result') {
     if (!game) return;
-    const value=document.getElementById('fto-result')?.value.trim().replace('.',':');
+    const value=ftoFormatTime(document.getElementById('fto-result')?.value);
     if(!isValidHM(value)) return toast('Enter a valid first take time','err');
     if(!ftoClosed(game,date)) return toast('Wait until betting closes','err');
     if(!game.bets?.length) return toast('Import predictions first','err');
@@ -5602,6 +5609,7 @@ function renderBoard(view='list') {
   const toolbar = '';
   const standingsRows = getStandingsEntries().map((entry, i)=>{
   const { player: p, score, wins, rank } = entry;
+  const ftoWins=ftoPointsFor(p.name);
   const openKey = `${i}:${p.name}`;
   const isOpen = _openBoardPlayer === openKey;
   const medalRankClass = [1, 2, 3].includes(rank) ? ` board-rank-${rank}` : '';
@@ -5611,7 +5619,7 @@ function renderBoard(view='list') {
     <div class="board-row">
       <div class="board-rank${medalRankClass}">${rank}</div>
       <button class="board-player-name" type="button" data-board-player="${esc(openKey)}" title="${esc(p.name)}"><span class="board-player-name-text">${esc(p.name)}</span>${danger ? `<span class="danger-label" title="${missedDays} consecutive shooting days without a bet"><span aria-hidden="true">⚠️</span> ${missedDays}</span>` : ''}</button>
-      <div class="board-player-wins">${wins} ${countWord(wins, 'game', 'games')} won</div>
+      <div class="board-player-wins">${wins} Wrap${ftoWins?` · ${ftoWins} FTO`:``}</div>
       <div class="board-player-points accent"><strong>${score}</strong><span class="mono dim">${countWord(score, 'pt', 'pts')}</span></div>
     </div>
     ${isOpen ? renderBoardPlayerStats(p.name) : ''}
