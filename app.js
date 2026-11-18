@@ -2643,6 +2643,9 @@ function previousCrownWinner(day=S.today) {
     entry?.wrapTime && (entry.unit || 'main') === 'main' &&
     displayToISO(entry.date) < date
   );
+  // Prefer the most recent eligible completed Main Unit day by its shoot date.
+  // getHistoryEntries() can contain archived and live days with different wrap timestamps.
+  entries.sort((a,b) => displayToISO(a.date).localeCompare(displayToISO(b.date)));
   const previous = entries[entries.length - 1];
   if (!previous || previous.noWinner) return null;
   const names = Array.isArray(previous.winners) && previous.winners.length
@@ -2652,7 +2655,7 @@ function previousCrownWinner(day=S.today) {
 }
 function crownDayBonus(guesses, winnerName, day, wrapTime) {
   if (!isCrownDay(day) || !winnerName) return [];
-  const holder = day.crownDay.holder;
+  const holder = day.wrapTime ? day.crownDay.holder : (previousCrownWinner(day) || day.crownDay.holder);
   if (!holder || nameKey(holder) === nameKey(winnerName)) return [];
   const reference = wrapTimelineSec(wrapTime, day);
   const bets = (guesses || []).filter(g => g?.name && g?.time)
@@ -3765,7 +3768,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
       ${bossTodayCard(t)}
       ${renderCrazyDayIndicator(t)}
       ${isStealTheDay(t) ? '<div class="steal-day-indicator">STEAL THE DAY · Shared bets allowed · Winner steals 2 points</div>' : ''}
-      ${isCrownDay(t) ? `<div class="crown-day-indicator">👑 CROWN DAY · Crown Holder: ${esc(t.crownDay.holder)} · Neighbor win bonus +1</div>` : ''}
+      ${isCrownDay(t) ? `<div class="crown-day-indicator">👑 CROWN DAY · Crown Holder: ${esc(t.wrapTime ? t.crownDay.holder : (previousCrownWinner(t) || t.crownDay.holder))} · Neighbor win bonus +1</div>` : ''}
       
       ${fridayBanner}
       <div class="card today-scroll-card"><div class="card-lbl">Results</div>
@@ -3803,7 +3806,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
 	    <span class="winner-pts">+${t.points} ${countWord(t.points, 'pt', 'pts')} · Wrap at ${esc(t.wrapTime)}</span>
   </${winnerCloseTag}>
   ${renderCrazyDayIndicator(t)}
-  ${isCrownDay(t) ? `<div class="crown-day-indicator">👑 CROWN DAY · Crown Holder: ${esc(t.crownDay.holder)} · Neighbor win bonus +1</div>` : ''}
+  ${isCrownDay(t) ? `<div class="crown-day-indicator">👑 CROWN DAY · Crown Holder: ${esc(t.wrapTime ? t.crownDay.holder : (previousCrownWinner(t) || t.crownDay.holder))} · Neighbor win bonus +1</div>` : ''}
   ${fridayBanner}
   <div class="card today-scroll-card"><div class="card-lbl">Results</div>
     <div class="today-scroll-list">
@@ -9214,7 +9217,9 @@ let _crownDayPanelOpen = false;
 function renderCrownDaySetupCard(day=S.today) {
   const enabled = isCrownDay(day);
   const editable = !!(day && (day.unit || 'main') === 'main' && !day.wrapTime && !(day.guesses||[]).some(g => g.time));
-  const holder = enabled ? day.crownDay.holder : previousCrownWinner(day);
+  const holder = enabled && day.wrapTime
+    ? day.crownDay.holder
+    : (previousCrownWinner(day) || (enabled ? day.crownDay.holder : null));
   return `<div class="card crown-day-card${_crownDayPanelOpen?' expanded':''}">
     <div class="crazy-day-top"><div class="crazy-day-title">
       <strong>Crown Day · ${enabled?'ON':'OFF'}</strong>
