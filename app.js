@@ -5395,16 +5395,7 @@ function renderFTOStats() {
 .fto-history-bets .fto-bet-time{font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
 .fto-history-bets .fto-winning-row{background:rgba(54,170,105,.13);border-radius:8px}
 .fto-history-bets .fto-result{font-size:.75em;font-weight:700}
-`; 
-  style.textContent += `
-/* Native WRAP scrolling: keep the original .today-fixed-view as a direct child. */
-.sec[data-view="today"].today-native-tabs-layout{display:flex;flex-direction:column;min-height:0;overflow:hidden}
-.today-native-tabs-layout > .today-native-tabs{flex:0 0 auto;width:100%;margin-bottom:8px}
-.today-native-tabs-layout > .today-fixed-view{flex:1 1 auto;min-height:0;height:auto;overflow:hidden}
-.today-native-tabs-layout > .today-fixed-view .today-scroll-list{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
-.today-native-tabs-layout > .fto-section-host{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
-.today-native-tabs-layout > [data-today-panel][hidden]{display:none!important}
-`; 
+`;
   style.textContent += `
 /* TODAY tabs: use one reliable native vertical scroll viewport for either game. */
 .sec[data-view="today"].today-native-tabs-layout{
@@ -5487,13 +5478,7 @@ function mountFTOSections() {
       sec.appendChild(host);
     }
   });
-  document.querySelectorAll('.sec[data-view="history"]').forEach(sec=>{
-    const games=Object.entries(ftoStore()).filter(([,g])=>g?.result).sort((a,b)=>b[0].localeCompare(a[0]));
-    if(!games.length) return;
-    const host=document.createElement('div');host.className='fto-history-host';
-    host.innerHTML=`<div class="card"><div class="card-lbl">FIRST TAKE OF THE DAY · HISTORY</div>${games.map(([date,g])=>`<details class="fto-history-day"><summary class="fto-history-summary"><strong>${esc(date)}</strong><span class="mono">${esc(ftoFormatTime(g.result))}</span><span>${ftoWinners(g).map(esc).join(', ')||'No winner'}</span><span class="mono dim">${(g.bets||[]).length} bets</span></summary><div class="fto-history-bets">${ftoRows(g)}</div></details>`).join('')}</div>`;
-    sec.prepend(host);
-  });
+
 }
 function setTodayGameMode(sec, mode) {
   if(!sec?.querySelector('.today-native-tabs')) return;
@@ -8833,9 +8818,9 @@ function formatHistoryMobileUnitLabel(unit) {
 
 function renderHistory() {
   const all = getHistoryEntries();
-  if (!all.length) return '<div class="tab-page-frame"><div class="empty">No completed days yet</div></div>';
+  if (!all.length && !Object.values(ftoStore()).some(g => g?.result)) return '<div class="tab-page-frame"><div class="empty">No completed days yet</div></div>';
 
-  const historyRows = [...all].reverse().map((d, i) => {
+  const wrapRows = [...all].reverse().map((d, i) => {
     const num = all.length - i;
     const historyIndex = all.length - i - 1;
     const sg = sortedGuesses(d.guesses, d);
@@ -8976,7 +8961,60 @@ function renderHistory() {
         }).join('')}
       </div>
     </div>`;
-  }).join('');
+  }).map((html, i) => ({
+    date: displayToISO([...all].reverse()[i].date),
+    kind: 'wrap', html
+  }));
+
+  const ftoRowsForHistory = Object.entries(ftoStore())
+    .filter(([, game]) => game?.result)
+    .map(([date, game]) => {
+      const winners = ftoWinners(game);
+      const winnerKeys = new Set(winners.map(nameKey));
+      const winnerBet = (game.bets || []).find(b => winnerKeys.has(nameKey(b.name)))?.time;
+      const dayNumber = getInternalProjectDayNumberForDate(date);
+      const dayLabel = dayNumber === null ? 'History Day' : displayDayLabel(dayNumber);
+      const winnerMarkup = winners.length
+        ? winners.map(name => `<span>${esc(name)}</span>`).join('')
+        : 'No Winner';
+      const sortedBets = [...(game.bets || [])].sort((a,b) => toSec(a.time) - toSec(b.time));
+      const territories = ftoTerritories(game);
+      const rows = sortedBets.map(bet => {
+        const winner = winnerKeys.has(nameKey(bet.name));
+        const range = territories.find(t => t.names.some(n => nameKey(n) === nameKey(bet.name)));
+        const rangeText = range ? `${ftoRangeLabel(range.start)} → ${ftoRangeLabel(range.end)}` : '';
+        return `<div class="row${range ? ' row-with-boundary' : ''}${winner ? ' golden-winner-row' : ''}">
+          <div class="row-name row-name-stack${winner ? ' history-winner-name' : ''}">
+            <div class="row-name-main"><span>${esc(bet.name)}</span></div>
+            ${rangeText ? `<div class="row-boundary">${esc(rangeText)}</div>` : ''}
+          </div>
+          <div class="row-time">${esc(ftoFormatTime(bet.time))}</div>
+          <div class="badge ${winner ? 'b-win' : 'b-out'}">${winner ? '+1' : '—'}</div>
+        </div>`;
+      }).join('');
+      const html = `<div class="card hist-row" data-history-row data-history-date="${esc(date)}" data-history-fto="true">
+        <div class="hist-summary">
+          <div class="hist-main-info">
+            <span class="hist-day-tag">${esc(dayLabel)} · FTO</span>
+            <span class="${winners.length ? 'hist-title accent' : 'hist-title red'}">${winnerMarkup}</span>
+            ${winnerBet ? `<span class="hist-bet mono dim" style="font-size:0.75rem">(${esc(ftoFormatTime(winnerBet))})</span>` : ''}
+          </div>
+          <div class="hist-meta">
+            <span class="accent mono hist-wrap-time">${esc(ftoFormatTime(game.result))}</span>
+            <span class="dim mono hist-points">+${winners.length ? 1 : 0}pt</span>
+            <span class="hist-arrow">▶</span>
+          </div>
+        </div>
+        <div class="hist-details" data-history-details>
+          <div class="hist-details-head"><div class="card-lbl">${esc(dayLabel)} · FIRST TAKE OF THE DAY · LEADERBOARD</div></div>
+          ${rows}
+        </div>
+      </div>`;
+      return {date, kind:'fto', html};
+    });
+  const historyRows = [...wrapRows, ...ftoRowsForHistory]
+    .sort((a,b) => b.date.localeCompare(a.date) || (a.kind === 'wrap' ? -1 : 1))
+    .map(row => row.html).join('');
   return `<div class="tab-page-frame">${historyRows}</div>`;
 }
 
