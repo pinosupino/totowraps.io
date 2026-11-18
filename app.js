@@ -5341,7 +5341,7 @@ function renderFTOCard(date=ftoDate(), admin=false) {
   return `<div class="card fto-card">
     <div class="fto-heading"><div class="card-lbl">FIRST TAKE OF THE DAY</div><span class="fto-status">${status}</span></div>
     ${g?`<p class="mono dim">Betting closes at ${esc(ftoFormatTime(g.closeAt||'--:--'))} · ${g.bets?.length||0} predictions</p>`:'<p class="mono dim">Morning prediction game</p>'}
-    ${isAdmin && !g?.result?`<div class="fto-controls"><label class="mono dim" for="fto-close">Betting closes</label><input id="fto-close" class="admin-time-input" inputmode="numeric" placeholder="HH:MM:SS" value="${esc(g?.closeAt||'')}"><button class="btn btn-p" data-fto-action="close" data-fto-date="${esc(date)}">${g?'Update closing time':'Activate First Take of the Day'}</button></div>`:''}
+    ${isAdmin && !g?.result?`<div class="fto-controls"><label class="mono dim" for="fto-close">Betting closes</label><input id="fto-close" class="fto-close-input" type="text" inputmode="numeric" maxlength="8" aria-label="FTO betting closing time" placeholder="HH:MM:SS" value="${esc(g?.closeAt||'')}"><button class="btn btn-p" data-fto-action="close" data-fto-date="${esc(date)}">${g?'Update closing time':'Activate First Take of the Day'}</button></div>`:''}
     ${g?`<div class="fto-clock-wrap"><button type="button" class="big-clock fto-time-pill ${isAdmin&&!g.result?'admin-clock-trigger':''}" ${isAdmin&&!g.result?'data-fto-action="pill" data-fto-date="'+esc(date)+'"':''} title="${isAdmin&&!g.result?'Tap to set first take':''}">${esc(g.result?ftoFormatTime(g.result):'--:--:--')}</button></div>`:''}
     ${g?rows:''}
     ${isAdmin && g && !g.result?`<div class="fto-import-panel"><label class="mono dim" for="fto-import">Predictions · Name HH:MM or HH:MM:SS (one per line)</label><textarea id="fto-import" rows="4" placeholder="Greta 08:42:15&#10;Giulia 08:47"></textarea><button class="btn" data-fto-action="import" data-fto-date="${esc(date)}">Import / Replace Predictions</button></div>`:''}
@@ -5442,6 +5442,7 @@ function renderFTOStats() {
 /* Allow sticky elements to anchor to TODAY's scroll viewport. */
 .today-native-tabs-layout > .fto-section-host .fto-card{overflow:visible!important}
 `; 
+  style.textContent += '\n/* Neutral TODAY mode pills, consistent with the current theme. */\n.today-mode-tabs{gap:12px!important}\n.today-mode-pill,\n[data-theme="light"] .today-mode-pill,\n[data-theme="dark"] .today-mode-pill,\nbody.light .today-mode-pill,body.dark .today-mode-pill{\n background:var(--bg3,var(--bg4,transparent))!important;\n color:var(--text,inherit)!important;\n border:1px solid var(--border,rgba(128,128,128,.45))!important;\n opacity:1!important;\n}\n.today-mode-pill.is-active,\n[data-theme="light"] .today-mode-pill.is-active,\n[data-theme="dark"] .today-mode-pill.is-active,\nbody.light .today-mode-pill.is-active,body.dark .today-mode-pill.is-active{\n background:var(--text,#eee)!important;\n color:var(--bg,#171717)!important;\n border-color:var(--text,#eee)!important;\n}\n.fto-card .fto-controls{\n display:grid!important;grid-template-columns:minmax(0,1fr) minmax(132px,auto);\n column-gap:12px!important;row-gap:14px!important;align-items:center!important;\n}\n.fto-card .fto-controls label{white-space:nowrap;min-width:0}\n.fto-card .fto-close-input{\n box-sizing:border-box!important;display:block!important;width:100%!important;\n min-width:132px!important;max-width:none!important;height:42px!important;\n padding:8px 12px!important;border:1px solid var(--border,rgba(128,128,128,.45))!important;\n border-radius:8px!important;background:transparent!important;box-shadow:none!important;\n color:var(--text,inherit)!important;font:inherit!important;font-size:1rem!important;\n letter-spacing:0!important;text-align:center!important;font-variant-numeric:tabular-nums;\n}\n.fto-card .fto-controls [data-fto-action="close"]{grid-column:1/-1;width:100%;margin:0}\n@media(max-width:370px){\n .fto-card .fto-controls{grid-template-columns:1fr!important}\n .fto-card .fto-close-input{min-width:0!important}\n}\n';
   document.head.appendChild(style);
 })();
 // Keep the selected TODAY mode when navigating away and back.
@@ -5501,6 +5502,42 @@ document.addEventListener('click',event=>{
   setTodayGameMode(sec,pill.dataset.todayMode);
 });
 document.addEventListener('click',async event=>{
+  const manual=event.target.closest('[data-fto-manual]');
+  if(manual){
+    if(!IS_ADMIN || !currentUser || manual.dataset.ftoManual!==ftoDate()) return;
+    openAdminDialog({
+      title:'Insert First Take Manually',
+      copy:'Enter the actual first take time, including seconds.',
+      showClose:false,
+      focusSelector:'#admin-fto-result-input',
+      body:`<div class="admin-dialog-input-wrap">
+        <label class="inp-lbl" for="admin-fto-result-input">First Take Time (HH:MM:SS)</label>
+        <input class="admin-dialog-wrap-input" type="text" id="admin-fto-result-input" placeholder="hh:mm:ss" inputmode="numeric" maxlength="8">
+      </div>
+      <div class="admin-dialog-split">
+        <button class="admin-dialog-action undo" type="button" data-admin-dialog-close>Cancel</button>
+        <button class="admin-dialog-action approve" type="button" data-fto-confirm-manual="${esc(ftoDate())}">Confirm</button>
+      </div>`
+    });
+    return;
+  }
+  const nowButton=event.target.closest('[data-fto-confirm-now]');
+  const manualButton=event.target.closest('[data-fto-confirm-manual]');
+  const button=nowButton||manualButton;
+  if(!button || !IS_ADMIN || !currentUser) return;
+  const date=nowButton?.dataset.ftoConfirmNow||manualButton?.dataset.ftoConfirmManual;
+  if(date!==ftoDate()) return;
+  const store=ftoStore(), game=store[date];
+  if(!game || game.result || !ftoClosed(game,date) || !game.bets?.length) return;
+  const value=nowButton?.dataset.ftoValue||document.getElementById('admin-fto-result-input')?.value;
+  const normalized=ftoFormatTime(value);
+  if(!isValidHM(normalized)) return toast('Enter a valid HH:MM:SS time','err');
+  if(!confirm(`Confirm first take at ${normalized}? This awards 1 point to the winner(s).`)) return;
+  store[date]={...game,result:normalized};
+  closeAdminDialog();
+  if(await saveS()) render();
+});
+document.addEventListener('click',async event=>{
   const button=event.target.closest('[data-fto-action]');
   if (!button || !IS_ADMIN || !currentUser || !S.today) return;
   const action=button.dataset.ftoAction;
@@ -5510,14 +5547,19 @@ document.addEventListener('click',async event=>{
   const game=store[date];
   if (action==='pill') {
     if(!game || game.result) return;
-    const value=prompt('First Take of the Day · actual first take (HH:MM)');
-    if(value===null) return;
-    const normalized=ftoFormatTime(value);
-    if(!isValidHM(normalized)) return toast('Enter a valid HH:MM first take','err');
     if(!ftoClosed(game,date)) return toast('Wait until betting closes','err');
     if(!game.bets?.length) return toast('Import predictions first','err');
-    if(!confirm(`Confirm first take at ${normalized}? This awards 1 point to the winner(s) within the winning range.`)) return;
-    store[date]={...game,result:normalized};
+    const current=nowHMS();
+    openAdminDialog({
+      title:'Set First Take of the Day',
+      showClose:false,
+      body:`<div class="admin-dialog-actions">
+        <button class="admin-dialog-action approve" type="button" data-fto-confirm-now="${esc(date)}" data-fto-value="${esc(current)}">Approve — ${esc(current)}</button>
+        <button class="admin-dialog-action edit" type="button" data-fto-manual="${esc(date)}">Set first take manually</button>
+        <button class="admin-dialog-action undo" type="button" data-admin-dialog-close>Cancel</button>
+      </div>`
+    });
+    return;
   } else if (action==='close') {
     if (game?.result) return;
     const value=ftoFormatTime(document.getElementById('fto-close')?.value);
