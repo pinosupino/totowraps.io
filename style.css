@@ -1844,3 +1844,34 @@ html.dark-mode .hdr-wrap-time.off {
 .fto-stats-row{display:grid;grid-template-columns:minmax(90px,2fr) repeat(4,minmax(0,1fr));gap:8px;padding:10px 0;border-bottom:1px solid #8882;font-size:.8rem}
 .fto-stats-row span{font-variant-numeric:tabular-nums}
 @media(max-width:540px){.fto-stats-row{grid-template-columns:minmax(100px,1.4fr) repeat(2,minmax(0,1fr));row-gap:4px}.fto-stats-row span:nth-last-child(-n+2){font-size:.7rem;opacity:.8}.fto-card{max-height:40vh}}
+
+
+/* FTO history: match the compact WRAP history geometry, including HH:MM:SS. */
+.hist-row-fto .hist-day-tag{flex:0 0 auto;width:auto;display:inline-flex;gap:4px;align-items:baseline}
+.hist-row-fto .fto-history-tag{font-size:.65rem;letter-spacing:0;font-weight:800}
+.hist-row-fto .hist-main-info{gap:6px;min-width:0}
+.hist-row-fto .hist-title{overflow:hidden;text-overflow:ellipsis;flex:0 1 auto}
+.hist-row-fto .hist-bet{flex:0 1 auto;overflow:hidden;text-overflow:ellipsis}
+.hist-row-fto .hist-meta{grid-template-columns:minmax(0,auto) 30px 8px;gap:5px}
+.hist-row-fto .hist-wrap-time{font-size:.78rem;white-space:nowrap}
+.hist-row-fto .hist-details .row{gap:7px;min-width:0;align-items:center}
+.hist-row-fto .hist-details .row-name{flex:1 1 auto;min-width:0}
+.hist-row-fto .hist-details .row-name-main{font-size:inherit}
+.hist-row-fto .hist-details .row-boundary{font-size:.68rem}
+.hist-row-fto .hist-details .row-time{flex:0 0 auto;width:auto;min-width:0;font-size:.76rem;white-space:nowrap;font-variant-numeric:tabular-nums}
+.hist-row-fto .hist-details .badge:not(.b-prob){flex:0 0 32px;min-width:32px;max-width:32px;padding-left:3px;padding-right:3px;text-align:center}
+@media(max-width:480px){
+ .hist-row-fto .hist-summary{gap:5px;padding:11px 10px}
+ .hist-row-fto .hist-day-tag{font-size:.64rem}
+ .hist-row-fto .fto-history-tag{font-size:.6rem}
+ .hist-row-fto .hist-title{font-size:.86rem}
+ .hist-row-fto .hist-bet{font-size:.62rem!important}
+ .hist-row-fto .hist-meta{gap:3px;grid-template-columns:auto 25px 8px}
+ .hist-row-fto .hist-wrap-time{font-size:.7rem}
+ .hist-row-fto .hist-points{font-size:.53rem}
+ .hist-row-fto .hist-details .row{gap:5px;padding:8px 6px}
+ .hist-row-fto .hist-details .row-name-main{font-size:.82rem}
+ .hist-row-fto .hist-details .row-boundary{font-size:.6rem}
+ .hist-row-fto .hist-details .row-time{font-size:.67rem}
+ .hist-row-fto .hist-details .badge:not(.b-prob){flex-basis:25px;min-width:25px;max-width:25px;font-size:.6rem}
+}

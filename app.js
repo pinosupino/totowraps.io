@@ -8992,10 +8992,10 @@ function renderHistory() {
           <div class="badge ${winner ? 'b-win' : 'b-out'}">${winner ? '+1' : '—'}</div>
         </div>`;
       }).join('');
-      const html = `<div class="card hist-row" data-history-row data-history-date="${esc(date)}" data-history-fto="true">
+      const html = `<div class="card hist-row hist-row-fto" data-history-row data-history-date="${esc(date)}" data-history-fto="true">
         <div class="hist-summary">
           <div class="hist-main-info">
-            <span class="hist-day-tag">${esc(dayLabel)} · FTO</span>
+            <span class="hist-day-tag">${esc(dayLabel)} <span class="fto-history-tag">FTO</span></span>
             <span class="${winners.length ? 'hist-title accent' : 'hist-title red'}">${winnerMarkup}</span>
             ${winnerBet ? `<span class="hist-bet mono dim" style="font-size:0.75rem">(${esc(ftoFormatTime(winnerBet))})</span>` : ''}
           </div>
