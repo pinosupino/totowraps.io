@@ -1926,3 +1926,49 @@ html.dark-mode .hdr-wrap-time.off {
  .hist-row-fto .hist-wrap-time{font-size:inherit}
  .hist-row-fto .hist-points{font-size:inherit}
 }
+
+/* FTO history: fixed, non-overlapping geometry matching the standard WRAP row.
+   Explicit values replace older FTO overrides, including their mobile rules. */
+.hist-row.hist-row-fto .hist-summary {
+  display:grid; grid-template-columns:minmax(0,1fr) auto;
+  align-items:center; gap:10px; padding:11px 16px;
+  min-width:0; box-sizing:border-box;
+}
+.hist-row.hist-row-fto .hist-main-info {
+  display:grid; grid-template-columns:45px minmax(0,max-content) minmax(0,1fr);
+  align-items:center; column-gap:6px; min-width:0;
+  overflow:hidden; white-space:nowrap; line-height:1;
+}
+.hist-row.hist-row-fto .hist-day-tag {
+  display:flex; flex-direction:column; align-items:flex-start;
+  justify-content:center; width:45px; min-width:0; flex:none;
+  font-size:.7rem; line-height:1.05; gap:3px;
+}
+.hist-row.hist-row-fto .fto-history-tag {
+  display:block; font-size:.62rem; line-height:1; margin:0;
+}
+.hist-row.hist-row-fto .hist-title {
+  display:block; min-width:0; max-width:100%; overflow:hidden;
+  text-overflow:ellipsis; font-size:inherit; flex:none;
+}
+.hist-row.hist-row-fto .hist-bet {
+  display:block; min-width:0; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap; font-size:.75rem!important; flex:none;
+}
+.hist-row.hist-row-fto .hist-meta {
+  display:grid; grid-template-columns:58px 32px 8px;
+  align-items:center; gap:5px; min-width:0;
+  font-size:.8rem; white-space:nowrap;
+}
+.hist-row.hist-row-fto .hist-wrap-time {
+  grid-column:1; font-size:inherit; white-space:nowrap;
+}
+.hist-row.hist-row-fto .hist-points {
+  grid-column:2; font-size:.58rem; white-space:nowrap;
+}
+.hist-row.hist-row-fto .hist-arrow {grid-column:3}
+@media(max-width:480px){
+ .hist-row.hist-row-fto .hist-summary{padding:11px 10px;gap:5px}
+ .hist-row.hist-row-fto .hist-main-info{grid-template-columns:45px minmax(0,max-content) minmax(0,1fr);gap:6px}
+ .hist-row.hist-row-fto .hist-meta{grid-template-columns:58px 32px 8px;gap:5px}
+}
