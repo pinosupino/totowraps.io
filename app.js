@@ -5286,7 +5286,7 @@ function ftoStore() {
 function ftoDate(day=S.today) { return displayToISO(day?.date) || localDateISO(); }
 function ftoGame(date=ftoDate()) { return ftoStore()[date] || null; }
 function ftoTerritories(game) {
-  const bets=[...(game?.bets||[])].filter(b=>isValidHM(b.time)).sort((a,b)=>toSec(a.time)-toSec(b.time));
+  const bets=[...(game?.bets||[])].filter(b=>isValidHMS(b.time)).sort((a,b)=>toSec(a.time)-toSec(b.time));
   const groups=[];
   for(const bet of bets) {
     const sec=toSec(bet.time);
@@ -5298,7 +5298,7 @@ function ftoTerritories(game) {
     end:i===groups.length-1?g.sec+1800:Math.floor((g.sec+groups[i+1].sec)/2)}));
 }
 function ftoWinners(game) {
-  if(!game?.result || !isValidHM(game.result)) return [];
+  if(!game?.result || !isValidHMS(game.result)) return [];
   const actual=toSec(game.result);
   const territory=ftoTerritories(game).find(r=>actual>=r.start && actual<=r.end);
   return territory?.names||[];
