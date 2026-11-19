@@ -3843,6 +3843,27 @@ function renderCompletedToday(t, canStartNextDay=false) {
   </div>`;
 }
 
+function getShareFTOInfo(day) {
+  const date = day?.wrapDate || day?.date;
+  const entry = date && S.ftoDays?.[date];
+  if (!entry?.result || !Array.isArray(entry.bets)) return null;
+  const toSeconds = value => {
+    const m = String(value || '').match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    return m ? Number(m[1])*3600 + Number(m[2])*60 + Number(m[3] || 0) : null;
+  };
+  const actual = toSeconds(entry.result);
+  if (actual === null) return null;
+  const valid = entry.bets.filter(b => b?.name && toSeconds(b.time) !== null);
+  const ranked = valid.map(b => ({...b, gap: Math.abs(toSeconds(b.time) - actual)})).sort((a,b)=>a.gap-b.gap);
+  const best = ranked[0]?.gap;
+  const earliest = Math.min(...valid.map(b => toSeconds(b.time)));
+  const latest = Math.max(...valid.map(b => toSeconds(b.time)));
+  const noWinner = !valid.length || actual < earliest-1800 || actual > latest+1800;
+  const winners = noWinner ? [] : ranked.filter(b => b.gap === best);
+  return { result: entry.result, name: winners.length ? formatNames(winners.map(b=>b.name)) : 'No Winner',
+    bet: winners.length ? winners[0].time : '--:--', noWinner: !winners.length };
+}
+
 function getShareResultInfo(day, dayNumber=null) {
   const winnerNames = day?.winners ? day.winners.map(w => w.name).filter(Boolean) : (day?.winner ? [day.winner] : []);
   const noWinner = Boolean(day?.noWinner || !winnerNames.length);
@@ -3859,6 +3880,7 @@ function getShareResultInfo(day, dayNumber=null) {
     getInternalProjectDayNumber();
 
   return {
+    fto: getShareFTOInfo(day),
     noWinner,
     estWrap: day?.estWrap || '--:--',
     dayLabel: dayNum ? displayDayLabel(dayNum) : 'Day —',
@@ -3879,6 +3901,7 @@ function renderShareResultCard(info) {
       <div class="result-share-brand"><img src="${CUSTOM_UI_ASSETS.logoSecondary}" alt="TotoWrap Upgraded"></div>
       <div class="result-share-meta"><span>${esc(info.dayLabel)}</span><span>-</span><span>Estimated Wrap ${esc(info.estWrap)}</span></div>
     </div>
+    ${info.fto ? `<div class="result-share-fto"><div class="result-share-kicker">FIRST TAKE OF THE DAY</div><div class="result-share-fto-line"><strong>${esc(info.fto.name)}</strong><span>${esc(info.fto.result)}</span></div><div class="result-share-fto-bet">Winning bet · ${esc(info.fto.bet)}</div></div>` : ''}
     <div class="result-share-main">
       <div class="result-share-winner">
         <div class="result-share-kicker">${esc(info.kicker)}</div>
@@ -4017,6 +4040,52 @@ async function renderShareResultBlob() {
   ctx.moveTo(80, 168);
   ctx.lineTo(1000, 168);
   ctx.stroke();
+
+  if (info.fto) {
+    // Compact first take card, followed by the larger original WRAP card.
+    const f = info.fto;
+    canvasRoundRect(ctx, 80, 208, 920, 220, 20);
+    ctx.fillStyle = surface; ctx.fill();
+    ctx.strokeStyle = `rgba(${neutralRgb},.35)`; ctx.lineWidth = 2; ctx.stroke();
+    ctx.textAlign = 'left'; ctx.fillStyle = neutral;
+    ctx.font = "bold 24px 'Google Sans Flex', sans-serif";
+    ctx.fillText('FIRST TAKE OF THE DAY', 112, 253);
+    ctx.fillStyle = f.noWinner ? red : textColor;
+    drawShareText(ctx, f.name, 112, 332, 580, 62, 30);
+    ctx.textAlign = 'right'; ctx.fillStyle = darkShare ? textColor : themeVar('--green','#2E7D32');
+    ctx.font = "bold 56px 'Google Sans Flex', sans-serif";
+    ctx.fillText(f.result, 960, 332);
+    ctx.textAlign = 'left'; ctx.fillStyle = neutral;
+    ctx.font = "23px 'Google Sans Flex', sans-serif";
+    ctx.fillText(`Winning bet · ${f.bet}`, 112, 391);
+
+    canvasRoundRect(ctx, 80, 452, 920, 290, 20);
+    ctx.fillStyle = info.noWinner ? `rgba(${redRgb},.14)` : `rgba(${greenRgb},.12)`; ctx.fill();
+    ctx.strokeStyle = info.noWinner ? `rgba(${redRgb},.56)` : `rgba(${greenRgb},.56)`;
+    ctx.lineWidth = 3; ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillStyle = neutral;
+    ctx.font = "bold 26px 'Google Sans Flex', sans-serif";
+    ctx.fillText('WRAP OF THE DAY', 540, 508);
+    ctx.fillStyle = info.noWinner ? red : (darkShare ? textColor : themeVar('--green','#2E7D32'));
+    drawShareText(ctx, info.name, 540, 603, 800, 96, 44);
+    const times = [{label:'BET',value:info.bet},{label:'OFFICIAL WRAP',value:info.wrap}];
+    times.forEach((item,idx)=>{
+      const x=80+idx*468;
+      canvasRoundRect(ctx,x,760,452,122,18);
+      ctx.fillStyle=surface;ctx.fill();
+      ctx.textAlign='center';ctx.fillStyle=neutral;
+      ctx.font="bold 20px 'Google Sans Flex', sans-serif";ctx.fillText(item.label,x+226,792);
+      ctx.fillStyle=textColor;ctx.font="bold 48px 'Google Sans Flex', sans-serif";ctx.fillText(item.value,x+226,850);
+    });
+    ctx.strokeStyle=`rgba(${neutralRgb},.25)`;ctx.beginPath();ctx.moveTo(80,920);ctx.lineTo(1000,920);ctx.stroke();
+    ctx.textBaseline='alphabetic';ctx.textAlign='left';ctx.fillStyle=yellow;
+    ctx.font="bold 50px 'Google Sans Flex', sans-serif";ctx.fillText(info.pointsText,80,1004);
+    ctx.textAlign='right';ctx.fillStyle=neutral;
+    ctx.font="bold 25px 'Google Sans Flex', sans-serif";ctx.fillText(info.detail.toUpperCase(),1000,1004,510);
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+    if(!blob) throw new Error('Could not create image');
+    return {blob,info};
+  }
 
   const shareMainY = 22;
   canvasRoundRect(ctx, 80, 238 + shareMainY, 920, 300, 20);

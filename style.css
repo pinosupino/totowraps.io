@@ -1897,3 +1897,10 @@ html.dark-mode .hdr-wrap-time.off {
 
 .hist-row .hist-main-info>.hist-day-tag{min-width:5.6ch}
 .hist-row-fto .hist-main-info>.hist-day-tag{min-width:5.6ch}
+
+/* Share recap: compact FTO above the principal WRAP result */
+.result-share-fto{border:1px solid var(--border,#555);border-radius:16px;padding:14px 18px;margin:14px 0;background:var(--bg3,#333)}
+.result-share-fto-line{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:8px 0;font-size:1.25rem}
+.result-share-fto-line strong{min-width:0;overflow-wrap:anywhere}
+.result-share-fto-line span{color:var(--green,#8fdf6a);font-weight:800;white-space:nowrap}
+.result-share-fto-bet{font-size:.8rem;color:var(--muted,#aaa)}
