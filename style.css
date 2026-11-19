@@ -2042,3 +2042,48 @@ html.dark-mode .hdr-wrap-time.off {
 .hist-row.hist-row-fto .fto-history-tag{display:block!important;position:absolute!important;left:0!important;top:calc(100% + 5px)!important;font-size:.55rem!important;font-weight:750!important;line-height:1!important;white-space:nowrap!important}
 .hist-row.hist-row-fto .hist-points{font-size:.58rem!important;line-height:1!important;font-weight:inherit!important}
 @media(max-width:480px){.hist-row.hist-row-fto .hist-points{font-size:.53rem!important}}
+
+
+/* FTO history final alignment: preserve WRAP row dimensions and point styling. */
+.hist-row.hist-row-fto .hist-main-info {
+  overflow:visible!important; /* the small FTO sublabel extends below the day baseline */
+}
+.hist-row.hist-row-fto .hist-day-tag {
+  position:relative!important;
+  display:block!important;
+  flex:0 0 45px!important;
+  width:45px!important;
+  min-width:45px!important;
+  font-size:.7rem!important;
+  line-height:1!important;
+  overflow:visible!important;
+}
+.hist-row.hist-row-fto .fto-history-tag {
+  display:block!important;
+  position:absolute!important;
+  left:0!important;
+  top:calc(100% + 4px)!important;
+  font-size:.52rem!important;
+  font-weight:750!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+.hist-row.hist-row-fto .hist-meta {
+  grid-template-columns:58px 32px 8px!important;
+  gap:5px!important;
+  font-size:.8rem!important;
+  align-items:baseline!important;
+}
+.hist-row.hist-row-fto .hist-wrap-time {
+  font-size:inherit!important;
+  line-height:inherit!important;
+}
+.hist-row.hist-row-fto .hist-points {
+  font-size:.58rem!important;
+  font-weight:inherit!important;
+  line-height:inherit!important;
+  white-space:nowrap!important;
+}
+@media(max-width:480px){
+ .hist-row.hist-row-fto .hist-points{font-size:.58rem!important}
+}
