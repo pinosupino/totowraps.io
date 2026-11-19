@@ -5415,7 +5415,7 @@ function renderFTOCard(date=ftoDate(), admin=false) {
   return `<div class="card fto-card">
     <div class="fto-heading"><div class="card-lbl">FIRST TAKE OF THE DAY</div><span class="fto-status">${status}</span></div>
     ${g?`<p class="mono dim">Betting closes at ${esc(ftoFormatTime(g.closeAt||'--:--'))} · ${g.bets?.length||0} predictions</p>`:'<p class="mono dim">Morning prediction game</p>'}
-    ${isAdmin && !g?.result?`<div class="fto-controls"><label class="mono dim" for="fto-close">Betting closes</label><input id="fto-close" class="fto-close-input" type="text" inputmode="numeric" maxlength="8" aria-label="FTO betting closing time" placeholder="HH:MM:SS" value="${esc(g?.closeAt||'')}"><button class="btn btn-p" data-fto-action="close" data-fto-date="${esc(date)}">${g?'Update closing time':'Activate First Take of the Day'}</button></div>`:''}
+    ${isAdmin && !g?.result?`<div class="fto-controls"><label class="mono dim" for="fto-close">Betting closes</label><input id="fto-close" class="fto-close-input" type="text" inputmode="numeric" maxlength="8" aria-label="FTO betting closing time" placeholder="HH:MM" value="${esc(g?.closeAt||'')}"><button class="btn btn-p" data-fto-action="close" data-fto-date="${esc(date)}">${g?'Update closing time':'Activate First Take of the Day'}</button></div>`:''}
     ${g?`<div class="fto-clock-wrap"><button type="button" class="big-clock fto-time-pill ${isAdmin&&!g.result?'admin-clock-trigger':''}" ${isAdmin&&!g.result?'data-fto-action="pill" data-fto-date="'+esc(date)+'"':''} title="${isAdmin&&!g.result?'Tap to set first take':''}">${esc(g.result?ftoFormatTime(g.result):'--:--:--')}</button></div>`:''}
     ${g?rows:''}
     ${isAdmin && g && !g.result?`<div class="fto-import-panel"><label class="mono dim" for="fto-import">Predictions · Name HH:MM or HH:MM:SS (one per line)</label><textarea id="fto-import" rows="4" placeholder="Greta 08:42:15&#10;Giulia 08:47"></textarea><button class="btn" data-fto-action="import" data-fto-date="${esc(date)}">Import / Replace Predictions</button></div>`:''}
@@ -5636,7 +5636,8 @@ document.addEventListener('click',async event=>{
     return;
   } else if (action==='close') {
     if (game?.result) return;
-    const value=ftoFormatTime(document.getElementById('fto-close')?.value);
+    const entered=ftoNormalizeTime(document.getElementById('fto-close')?.value);
+    const value=entered && normalizeHMSValue(entered) ? entered.slice(0,5) : '';
     if (!isValidHM(value)) return toast('Enter a valid HH:MM closing time','err');
     if (date===localDateISO() && toSec(value)<=nowSec() && !game) return toast('Closing time must be in the future','err');
     store[date]={...(game||{}),closeAt:value,bets:game?.bets||[]};
