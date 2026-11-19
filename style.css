@@ -1875,3 +1875,9 @@ html.dark-mode .hdr-wrap-time.off {
  .hist-row-fto .hist-details .row-time{font-size:.67rem}
  .hist-row-fto .hist-details .badge:not(.b-prob){flex-basis:25px;min-width:25px;max-width:25px;font-size:.6rem}
 }
+
+/* Separate the inactive FTO admin card from the WRAP import buttons.
+   Active WRAP/FTO tab layout is intentionally unaffected. */
+.sec[data-view="today"]:not(.today-native-tabs-layout) > .fto-section-host {
+  margin-top: 20px;
+}
