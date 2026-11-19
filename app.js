@@ -3037,6 +3037,13 @@ function updateBetCloseCountdown() {
     }
     el.textContent = diff <= 0 ? 'Betting closed' : formatBetCloseCountdown(diff);
   });
+  document.querySelectorAll('[data-fto-bet-close-countdown]').forEach(el => {
+    const date=el.dataset.ftoBetCloseCountdown;
+    const game=ftoGame(date);
+    if (!game || !isValidHM(game.closeAt)) { el.textContent='--'; return; }
+    const diff=(date===localDateISO()) ? toSec(game.closeAt)-nowSec() : (date>localDateISO()?86400:0);
+    el.textContent=diff<=0?'Betting closed':formatBetCloseCountdown(diff);
+  });
   document.querySelectorAll('[data-boss-time-value]').forEach(el => {
     const day=S.today;
     el.textContent = bossBetClosed(day) && isValidHM(bossConfig(day)?.time) ? bossConfig(day).time : '--:--';
@@ -3056,6 +3063,10 @@ function tickClock() {
   
   // Update all clocks on the page
   document.querySelectorAll('.js-clock').forEach(el => el.textContent = t);
+  document.querySelectorAll('.js-fto-clock').forEach(el => {
+    const game=ftoGame(ftoDate());
+    if(game && !game.result) el.textContent=t;
+  });
   updateBetCloseCountdown();
   
   const countdownEl = document.getElementById('next-out-countdown');
@@ -5416,7 +5427,14 @@ function renderFTOCard(date=ftoDate(), admin=false) {
     <div class="fto-heading"><div class="card-lbl">FIRST TAKE OF THE DAY</div><span class="fto-status">${status}</span></div>
     ${g?`<p class="mono dim">Betting closes at ${esc(ftoFormatTime(g.closeAt||'--:--'))} · ${g.bets?.length||0} predictions</p>`:'<p class="mono dim">Morning prediction game</p>'}
     ${isAdmin && !g?.result?`<div class="fto-controls"><label class="mono dim" for="fto-close">Betting closes</label><input id="fto-close" class="fto-close-input" type="text" inputmode="numeric" maxlength="8" aria-label="FTO betting closing time" placeholder="HH:MM" value="${esc(g?.closeAt||'')}"><button class="btn btn-p" data-fto-action="close" data-fto-date="${esc(date)}">${g?'Update closing time':'Activate First Take of the Day'}</button></div>`:''}
-    ${g?`<div class="fto-clock-wrap"><button type="button" class="big-clock fto-time-pill ${isAdmin&&!g.result?'admin-clock-trigger':''}" ${isAdmin&&!g.result?'data-fto-action="pill" data-fto-date="'+esc(date)+'"':''} title="${isAdmin&&!g.result?'Tap to set first take':''}">${esc(g.result?ftoFormatTime(g.result):'--:--:--')}</button></div>`:''}
+    ${g?`<div class="fto-clock-wrap">
+      <div class="card bet-close-card fto-live-banner ${closed?'is-closed':'is-open'}">
+        <div class="card-lbl">${g.result?'FIRST TAKE OF THE DAY':closed?'Bets Are Closed':'Bets Close At'}</div>
+        ${!closed?`<div class="bet-close-time">${esc(ftoFormatTime(g.closeAt).slice(0,5))}</div>`:''}
+        <button type="button" class="big-clock js-fto-clock fto-time-pill ${isAdmin&&!g.result?'admin-clock-trigger':''}" ${isAdmin&&!g.result?'data-fto-action="pill" data-fto-date="'+esc(date)+'"':''} title="${isAdmin&&!g.result?'Tap to set first take':''}">${esc(g.result?ftoFormatTime(g.result):nowHMS())}</button>
+        ${!closed?`<p class="mono dim center">Time left to bet</p><div class="bet-close-countdown" data-fto-bet-close-countdown="${esc(date)}">--</div>`:''}
+      </div>
+    </div>`:''}
     ${g?rows:''}
     ${isAdmin && g && !g.result?`<div class="fto-import-panel"><label class="mono dim" for="fto-import">Predictions · Name HH:MM or HH:MM:SS (one per line)</label><textarea id="fto-import" rows="4" placeholder="Greta 08:42:15&#10;Giulia 08:47"></textarea><button class="btn" data-fto-action="import" data-fto-date="${esc(date)}">Import / Replace Predictions</button></div>`:''}
   </div>`;
@@ -5517,6 +5535,19 @@ function renderFTOStats() {
 .today-native-tabs-layout > .fto-section-host .fto-card{overflow:visible!important}
 `; 
   style.textContent += '\n/* Neutral TODAY mode pills, consistent with the current theme. */\n.today-mode-tabs{gap:12px!important}\n.today-mode-pill,\n[data-theme="light"] .today-mode-pill,\n[data-theme="dark"] .today-mode-pill,\nbody.light .today-mode-pill,body.dark .today-mode-pill{\n background:var(--bg3,var(--bg4,transparent))!important;\n color:var(--text,inherit)!important;\n border:1px solid var(--border,rgba(128,128,128,.45))!important;\n opacity:1!important;\n}\n.today-mode-pill.is-active,\n[data-theme="light"] .today-mode-pill.is-active,\n[data-theme="dark"] .today-mode-pill.is-active,\nbody.light .today-mode-pill.is-active,body.dark .today-mode-pill.is-active{\n background:var(--text,#eee)!important;\n color:var(--bg,#171717)!important;\n border-color:var(--text,#eee)!important;\n}\n.fto-card .fto-controls{\n display:grid!important;grid-template-columns:minmax(0,1fr) minmax(132px,auto);\n column-gap:12px!important;row-gap:14px!important;align-items:center!important;\n}\n.fto-card .fto-controls label{white-space:nowrap;min-width:0}\n.fto-card .fto-close-input{\n box-sizing:border-box!important;display:block!important;width:100%!important;\n min-width:132px!important;max-width:none!important;height:42px!important;\n padding:8px 12px!important;border:1px solid var(--border,rgba(128,128,128,.45))!important;\n border-radius:8px!important;background:transparent!important;box-shadow:none!important;\n color:var(--text,inherit)!important;font:inherit!important;font-size:1rem!important;\n letter-spacing:0!important;text-align:center!important;font-variant-numeric:tabular-nums;\n}\n.fto-card .fto-controls [data-fto-action="close"]{grid-column:1/-1;width:100%;margin:0}\n@media(max-width:370px){\n .fto-card .fto-controls{grid-template-columns:1fr!important}\n .fto-card .fto-close-input{min-width:0!important}\n}\n/* WRAP / FTO: standalone pills, without a shared rectangular backdrop. */\n.today-mode-tabs{\n background:transparent!important; background-color:transparent!important;\n box-shadow:none!important; border:0!important; border-radius:0!important;\n padding:0!important; margin:0!important; outline:0!important;\n}\n.today-mode-tabs::before,.today-mode-tabs::after{content:none!important;display:none!important}\n.today-mode-tabs .today-mode-pill{\n border-radius:999px!important; background-clip:padding-box!important;\n box-shadow:none!important; overflow:hidden!important;\n}\n\n';
+  style.textContent += `
+/* Match the vertical rhythm of WRAP and FTO tabs without changing scroll behavior. */
+.today-native-tabs-layout > .today-native-tabs{padding-bottom:16px!important;margin-bottom:14px!important}
+.today-native-tabs-layout > .fto-section-host{padding-top:0!important}
+.today-native-tabs-layout > .fto-section-host .fto-card{margin-top:0!important}
+/* FTO clock uses the same closing-time banner components as WRAP. */
+.fto-card .fto-clock-wrap{position:sticky!important;top:72px!important;background:transparent!important;padding:0!important;margin:14px 0!important;z-index:12}
+.fto-card .fto-live-banner{width:100%;box-sizing:border-box;text-align:center}
+.fto-card .fto-live-banner .fto-time-pill{display:block!important;width:100%!important;margin:10px auto!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;color:var(--text,inherit)!important;font-size:clamp(2.3rem,8vw,5.5rem)!important;line-height:1.12!important}
+.fto-card .fto-live-banner .fto-time-pill.admin-clock-trigger{cursor:pointer!important}
+.fto-card .fto-live-banner .bet-close-countdown{color:#f0143b}
+.fto-card .fto-live-banner .bet-close-time{font-variant-numeric:tabular-nums}
+`;
   document.head.appendChild(style);
 })();
 // Keep the selected TODAY mode when navigating away and back.
