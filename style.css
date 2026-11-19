@@ -1881,3 +1881,19 @@ html.dark-mode .hdr-wrap-time.off {
 .sec[data-view="today"]:not(.today-native-tabs-layout) > .fto-section-host {
   margin-top: 20px;
 }
+
+/* HISTORY: shared alignment and sizing for WRAP / FTO pills */
+.hist-row-fto .hist-summary{padding:inherit;gap:inherit}
+.hist-row-fto .hist-main-info{gap:inherit;min-width:0}
+.hist-row-fto .hist-day-tag{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;flex:0 0 auto;line-height:1.1;white-space:nowrap}
+.hist-row-fto .fto-history-tag{display:block;font-size:.63em;line-height:1.15;font-weight:800;letter-spacing:.045em}
+.hist-row-fto .hist-title{font-size:inherit;overflow:visible;text-overflow:clip;flex:initial}
+.hist-row-fto .hist-bet{font-size:inherit;flex:initial}
+@media(max-width:480px){
+ .hist-row-fto .hist-summary{padding:11px 10px;gap:5px}
+ .hist-row-fto .hist-day-tag{font-size:inherit}
+ .hist-row-fto .hist-title{font-size:inherit}
+}
+
+.hist-row .hist-main-info>.hist-day-tag{min-width:5.6ch}
+.hist-row-fto .hist-main-info>.hist-day-tag{min-width:5.6ch}
