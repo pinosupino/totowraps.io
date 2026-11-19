@@ -2638,16 +2638,11 @@ function isCrownDay(day=S.today) {
   return day?.crownDay?.enabled === true;
 }
 function previousCrownWinner(day=S.today) {
-  // The round's `date` may still point to the day it was created.
-  // Use the scheduled shoot date, which is advanced when a new round opens.
-  const date = displayToISO(day?.estWrapDate || day?.betCloseDate || day?.date);
+  const date = displayToISO(day?.date);
   const entries = getHistoryEntries().filter(entry =>
     entry?.wrapTime && (entry.unit || 'main') === 'main' &&
     displayToISO(entry.date) < date
   );
-  // Prefer the most recent eligible completed Main Unit day by its shoot date.
-  // getHistoryEntries() can contain archived and live days with different wrap timestamps.
-  entries.sort((a,b) => displayToISO(a.date).localeCompare(displayToISO(b.date)));
   const previous = entries[entries.length - 1];
   if (!previous || previous.noWinner) return null;
   const names = Array.isArray(previous.winners) && previous.winners.length
@@ -2657,7 +2652,7 @@ function previousCrownWinner(day=S.today) {
 }
 function crownDayBonus(guesses, winnerName, day, wrapTime) {
   if (!isCrownDay(day) || !winnerName) return [];
-  const holder = day.wrapTime ? day.crownDay.holder : (previousCrownWinner(day) || day.crownDay.holder);
+  const holder = day.crownDay.holder;
   if (!holder || nameKey(holder) === nameKey(winnerName)) return [];
   const reference = wrapTimelineSec(wrapTime, day);
   const bets = (guesses || []).filter(g => g?.name && g?.time)
@@ -3037,15 +3032,6 @@ function updateBetCloseCountdown() {
     }
     el.textContent = diff <= 0 ? 'Betting closed' : formatBetCloseCountdown(diff);
   });
-  document.querySelectorAll('[data-fto-bet-close-countdown]').forEach(el => {
-    const date=el.dataset.ftoBetCloseCountdown;
-    const game=ftoGame(date);
-    if (!game || !isValidHM(game.closeAt)) { el.textContent='--'; return; }
-    const scheduled=(S.today && date===ftoDate(S.today))
-      ? displayToISO(S.today.estWrapDate || S.today.betCloseDate || date) : date;
-    const diff=(scheduled===localDateISO()) ? toSec(game.closeAt)-nowSec() : (scheduled>localDateISO()?86400:0);
-    el.textContent=diff<=0?'Betting closed':formatBetCloseCountdown(diff);
-  });
   document.querySelectorAll('[data-boss-time-value]').forEach(el => {
     const day=S.today;
     el.textContent = bossBetClosed(day) && isValidHM(bossConfig(day)?.time) ? bossConfig(day).time : '--:--';
@@ -3065,10 +3051,6 @@ function tickClock() {
   
   // Update all clocks on the page
   document.querySelectorAll('.js-clock').forEach(el => el.textContent = t);
-  document.querySelectorAll('.js-fto-clock').forEach(el => {
-    const game=ftoGame(ftoDate());
-    if(game && !game.result) el.textContent=t;
-  });
   updateBetCloseCountdown();
   
   const countdownEl = document.getElementById('next-out-countdown');
@@ -3783,7 +3765,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
       ${bossTodayCard(t)}
       ${renderCrazyDayIndicator(t)}
       ${isStealTheDay(t) ? '<div class="steal-day-indicator">STEAL THE DAY · Shared bets allowed · Winner steals 2 points</div>' : ''}
-      ${isCrownDay(t) ? `<div class="crown-day-indicator">👑 CROWN DAY · Crown Holder: ${esc(t.wrapTime ? t.crownDay.holder : (previousCrownWinner(t) || t.crownDay.holder))} · Neighbor win bonus +1</div>` : ''}
+      ${isCrownDay(t) ? `<div class="crown-day-indicator">👑 CROWN DAY · Crown Holder: ${esc(t.crownDay.holder)} · Neighbor win bonus +1</div>` : ''}
       
       ${fridayBanner}
       <div class="card today-scroll-card"><div class="card-lbl">Results</div>
@@ -3821,7 +3803,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
 	    <span class="winner-pts">+${t.points} ${countWord(t.points, 'pt', 'pts')} · Wrap at ${esc(t.wrapTime)}</span>
   </${winnerCloseTag}>
   ${renderCrazyDayIndicator(t)}
-  ${isCrownDay(t) ? `<div class="crown-day-indicator">👑 CROWN DAY · Crown Holder: ${esc(t.wrapTime ? t.crownDay.holder : (previousCrownWinner(t) || t.crownDay.holder))} · Neighbor win bonus +1</div>` : ''}
+  ${isCrownDay(t) ? `<div class="crown-day-indicator">👑 CROWN DAY · Crown Holder: ${esc(t.crownDay.holder)} · Neighbor win bonus +1</div>` : ''}
   ${fridayBanner}
   <div class="card today-scroll-card"><div class="card-lbl">Results</div>
     <div class="today-scroll-list">
@@ -3858,27 +3840,6 @@ function renderCompletedToday(t, canStartNextDay=false) {
   </div>`;
 }
 
-function getShareFTOInfo(day) {
-  const date = day?.wrapDate || day?.date;
-  const entry = date && S.ftoDays?.[date];
-  if (!entry?.result || !Array.isArray(entry.bets)) return null;
-  const toSeconds = value => {
-    const m = String(value || '').match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
-    return m ? Number(m[1])*3600 + Number(m[2])*60 + Number(m[3] || 0) : null;
-  };
-  const actual = toSeconds(entry.result);
-  if (actual === null) return null;
-  const valid = entry.bets.filter(b => b?.name && toSeconds(b.time) !== null);
-  const ranked = valid.map(b => ({...b, gap: Math.abs(toSeconds(b.time) - actual)})).sort((a,b)=>a.gap-b.gap);
-  const best = ranked[0]?.gap;
-  const earliest = Math.min(...valid.map(b => toSeconds(b.time)));
-  const latest = Math.max(...valid.map(b => toSeconds(b.time)));
-  const noWinner = !valid.length || actual < earliest-1800 || actual > latest+1800;
-  const winners = noWinner ? [] : ranked.filter(b => b.gap === best);
-  return { result: entry.result, name: winners.length ? formatNames(winners.map(b=>b.name)) : 'No Winner',
-    bet: winners.length ? winners[0].time : '--:--', noWinner: !winners.length };
-}
-
 function getShareResultInfo(day, dayNumber=null) {
   const winnerNames = day?.winners ? day.winners.map(w => w.name).filter(Boolean) : (day?.winner ? [day.winner] : []);
   const noWinner = Boolean(day?.noWinner || !winnerNames.length);
@@ -3895,7 +3856,6 @@ function getShareResultInfo(day, dayNumber=null) {
     getInternalProjectDayNumber();
 
   return {
-    fto: getShareFTOInfo(day),
     noWinner,
     estWrap: day?.estWrap || '--:--',
     dayLabel: dayNum ? displayDayLabel(dayNum) : 'Day —',
@@ -3916,7 +3876,6 @@ function renderShareResultCard(info) {
       <div class="result-share-brand"><img src="${CUSTOM_UI_ASSETS.logoSecondary}" alt="TotoWrap Upgraded"></div>
       <div class="result-share-meta"><span>${esc(info.dayLabel)}</span><span>-</span><span>Estimated Wrap ${esc(info.estWrap)}</span></div>
     </div>
-    ${info.fto ? `<div class="result-share-fto"><div class="result-share-kicker">FIRST TAKE OF THE DAY</div><div class="result-share-fto-line"><strong>${esc(info.fto.name)}</strong><span>${esc(info.fto.result)}</span></div><div class="result-share-fto-bet">Winning bet · ${esc(info.fto.bet)}</div></div>` : ''}
     <div class="result-share-main">
       <div class="result-share-winner">
         <div class="result-share-kicker">${esc(info.kicker)}</div>
@@ -4055,52 +4014,6 @@ async function renderShareResultBlob() {
   ctx.moveTo(80, 168);
   ctx.lineTo(1000, 168);
   ctx.stroke();
-
-  if (info.fto) {
-    // Compact first take card, followed by the larger original WRAP card.
-    const f = info.fto;
-    canvasRoundRect(ctx, 80, 208, 920, 220, 20);
-    ctx.fillStyle = surface; ctx.fill();
-    ctx.strokeStyle = `rgba(${neutralRgb},.35)`; ctx.lineWidth = 2; ctx.stroke();
-    ctx.textAlign = 'left'; ctx.fillStyle = neutral;
-    ctx.font = "bold 24px 'Google Sans Flex', sans-serif";
-    ctx.fillText('FIRST TAKE OF THE DAY', 112, 253);
-    ctx.fillStyle = f.noWinner ? red : textColor;
-    drawShareText(ctx, f.name, 112, 332, 580, 62, 30);
-    ctx.textAlign = 'right'; ctx.fillStyle = darkShare ? textColor : themeVar('--green','#2E7D32');
-    ctx.font = "bold 56px 'Google Sans Flex', sans-serif";
-    ctx.fillText(f.result, 960, 332);
-    ctx.textAlign = 'left'; ctx.fillStyle = neutral;
-    ctx.font = "23px 'Google Sans Flex', sans-serif";
-    ctx.fillText(`Winning bet · ${f.bet}`, 112, 391);
-
-    canvasRoundRect(ctx, 80, 452, 920, 290, 20);
-    ctx.fillStyle = info.noWinner ? `rgba(${redRgb},.14)` : `rgba(${greenRgb},.12)`; ctx.fill();
-    ctx.strokeStyle = info.noWinner ? `rgba(${redRgb},.56)` : `rgba(${greenRgb},.56)`;
-    ctx.lineWidth = 3; ctx.stroke();
-    ctx.textAlign = 'center'; ctx.fillStyle = neutral;
-    ctx.font = "bold 26px 'Google Sans Flex', sans-serif";
-    ctx.fillText('WRAP OF THE DAY', 540, 508);
-    ctx.fillStyle = info.noWinner ? red : (darkShare ? textColor : themeVar('--green','#2E7D32'));
-    drawShareText(ctx, info.name, 540, 603, 800, 96, 44);
-    const times = [{label:'BET',value:info.bet},{label:'OFFICIAL WRAP',value:info.wrap}];
-    times.forEach((item,idx)=>{
-      const x=80+idx*468;
-      canvasRoundRect(ctx,x,760,452,122,18);
-      ctx.fillStyle=surface;ctx.fill();
-      ctx.textAlign='center';ctx.fillStyle=neutral;
-      ctx.font="bold 20px 'Google Sans Flex', sans-serif";ctx.fillText(item.label,x+226,792);
-      ctx.fillStyle=textColor;ctx.font="bold 48px 'Google Sans Flex', sans-serif";ctx.fillText(item.value,x+226,850);
-    });
-    ctx.strokeStyle=`rgba(${neutralRgb},.25)`;ctx.beginPath();ctx.moveTo(80,920);ctx.lineTo(1000,920);ctx.stroke();
-    ctx.textBaseline='alphabetic';ctx.textAlign='left';ctx.fillStyle=yellow;
-    ctx.font="bold 50px 'Google Sans Flex', sans-serif";ctx.fillText(info.pointsText,80,1004);
-    ctx.textAlign='right';ctx.fillStyle=neutral;
-    ctx.font="bold 25px 'Google Sans Flex', sans-serif";ctx.fillText(info.detail.toUpperCase(),1000,1004,510);
-    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
-    if(!blob) throw new Error('Could not create image');
-    return {blob,info};
-  }
 
   const shareMainY = 22;
   canvasRoundRect(ctx, 80, 238 + shareMainY, 920, 300, 20);
@@ -5397,7 +5310,7 @@ function ftoNormalizeTime(value) {
 }
 function ftoFormatTime(value) {
   const normalized=ftoNormalizeTime(value);
-  if(!isValidHM(normalized)) return value;
+  if(!normalizeHMSValue(normalized)) return value;
   return normalized.length===5?normalized+':00':normalized;
 }
 function ftoPointsFor(name) {
@@ -5406,16 +5319,9 @@ function ftoPointsFor(name) {
 function ftoClosed(game, date) {
   if (!game) return false;
   if (game.result) return true;
-  if (!isValidHM(game.closeAt)) return false;
+  if (!isValidHMS(game.closeAt)) return false;
   const today=localDateISO();
-  // A newly opened shooting day may retain yesterday's internal `day.date`.
-  // FTO is attached to that storage key, but its closing time belongs to
-  // the scheduled shoot date (estWrapDate/betCloseDate).
-  const scheduled = (S.today && date===ftoDate(S.today))
-    ? (S.today.estWrapDate || S.today.betCloseDate || date)
-    : date;
-  const effectiveDate=displayToISO(scheduled);
-  return effectiveDate<today || (effectiveDate===today && nowSec()>=toSec(game.closeAt));
+  return date<today || (date===today && nowSec()>=toSec(game.closeAt));
 }
 function ftoRows(game) {
   const winners=new Set(ftoWinners(game).map(nameKey));
@@ -5435,21 +5341,14 @@ function renderFTOCard(date=ftoDate(), admin=false) {
   return `<div class="card fto-card">
     <div class="fto-heading"><div class="card-lbl">FIRST TAKE OF THE DAY</div><span class="fto-status">${status}</span></div>
     ${g?`<p class="mono dim">Betting closes at ${esc(ftoFormatTime(g.closeAt||'--:--'))} · ${g.bets?.length||0} predictions</p>`:'<p class="mono dim">Morning prediction game</p>'}
-    ${isAdmin && !g?.result?`<div class="fto-controls"><label class="mono dim" for="fto-close">Betting closes</label><input id="fto-close" class="fto-close-input" type="text" inputmode="numeric" maxlength="8" aria-label="FTO betting closing time" placeholder="HH:MM" value="${esc(g?.closeAt||'')}"><button class="btn btn-p" data-fto-action="close" data-fto-date="${esc(date)}">${g?'Update closing time':'Activate First Take of the Day'}</button></div>`:''}
-    ${g?`<div class="fto-clock-wrap">
-      <div class="card bet-close-card fto-live-banner ${closed?'is-closed':'is-open'}">
-        <div class="card-lbl">${g.result?'FIRST TAKE OF THE DAY':closed?'Bets Are Closed':'Bets Close At'}</div>
-        ${!closed?`<div class="bet-close-time">${esc(ftoFormatTime(g.closeAt).slice(0,5))}</div>`:''}
-        <button type="button" class="big-clock js-fto-clock fto-time-pill ${isAdmin&&!g.result?'admin-clock-trigger':''}" ${isAdmin&&!g.result?'data-fto-action="pill" data-fto-date="'+esc(date)+'"':''} title="${isAdmin&&!g.result?'Tap to set first take':''}">${esc(g.result?ftoFormatTime(g.result):nowHMS())}</button>
-        ${!closed?`<p class="mono dim center">Time left to bet</p><div class="bet-close-countdown" data-fto-bet-close-countdown="${esc(date)}">--</div>`:''}
-      </div>
-    </div>`:''}
+    ${isAdmin && !g?.result?`<div class="fto-controls"><label class="mono dim" for="fto-close">Betting closes</label><input id="fto-close" class="fto-close-input" type="text" inputmode="numeric" maxlength="8" aria-label="FTO betting closing time" placeholder="HH:MM:SS" value="${esc(g?.closeAt||'')}"><button class="btn btn-p" data-fto-action="close" data-fto-date="${esc(date)}">${g?'Update closing time':'Activate First Take of the Day'}</button></div>`:''}
+    ${g?`<div class="fto-clock-wrap"><button type="button" class="big-clock fto-time-pill ${isAdmin&&!g.result?'admin-clock-trigger':''}" ${isAdmin&&!g.result?'data-fto-action="pill" data-fto-date="'+esc(date)+'"':''} title="${isAdmin&&!g.result?'Tap to set first take':''}">${esc(g.result?ftoFormatTime(g.result):'--:--:--')}</button></div>`:''}
     ${g?rows:''}
     ${isAdmin && g && !g.result?`<div class="fto-import-panel"><label class="mono dim" for="fto-import">Predictions · Name HH:MM or HH:MM:SS (one per line)</label><textarea id="fto-import" rows="4" placeholder="Greta 08:42:15&#10;Giulia 08:47"></textarea><button class="btn" data-fto-action="import" data-fto-date="${esc(date)}">Import / Replace Predictions</button></div>`:''}
   </div>`;
 }
 function renderFTOStats() {
-  const games=Object.values(ftoStore()).filter(g=>g?.result && isValidHM(g.result));
+  const games=Object.values(ftoStore()).filter(g=>g?.result && isValidHMS(g.result));
   const rows=getSortedPlayerRoster().filter(p=>p.active!==false).map(p=>{
     const played=games.map(g=>({g,bet:(g.bets||[]).find(b=>nameKey(b.name)===nameKey(p.name))})).filter(x=>x.bet);
     const errors=played.map(({g,bet})=>Math.abs(toSec(bet.time)-toSec(g.result)));
@@ -5543,20 +5442,7 @@ function renderFTOStats() {
 /* Allow sticky elements to anchor to TODAY's scroll viewport. */
 .today-native-tabs-layout > .fto-section-host .fto-card{overflow:visible!important}
 `; 
-  style.textContent += '\n/* Neutral TODAY mode pills, consistent with the current theme. */\n.today-mode-tabs{gap:12px!important}\n.today-mode-pill,\n[data-theme="light"] .today-mode-pill,\n[data-theme="dark"] .today-mode-pill,\nbody.light .today-mode-pill,body.dark .today-mode-pill{\n background:var(--bg3,var(--bg4,transparent))!important;\n color:var(--text,inherit)!important;\n border:1px solid var(--border,rgba(128,128,128,.45))!important;\n opacity:1!important;\n}\n.today-mode-pill.is-active,\n[data-theme="light"] .today-mode-pill.is-active,\n[data-theme="dark"] .today-mode-pill.is-active,\nbody.light .today-mode-pill.is-active,body.dark .today-mode-pill.is-active{\n background:var(--text,#eee)!important;\n color:var(--bg,#171717)!important;\n border-color:var(--text,#eee)!important;\n}\n.fto-card .fto-controls{\n display:grid!important;grid-template-columns:minmax(0,1fr) minmax(132px,auto);\n column-gap:12px!important;row-gap:14px!important;align-items:center!important;\n}\n.fto-card .fto-controls label{white-space:nowrap;min-width:0}\n.fto-card .fto-close-input{\n box-sizing:border-box!important;display:block!important;width:100%!important;\n min-width:132px!important;max-width:none!important;height:42px!important;\n padding:8px 12px!important;border:1px solid var(--border,rgba(128,128,128,.45))!important;\n border-radius:8px!important;background:transparent!important;box-shadow:none!important;\n color:var(--text,inherit)!important;font:inherit!important;font-size:1rem!important;\n letter-spacing:0!important;text-align:center!important;font-variant-numeric:tabular-nums;\n}\n.fto-card .fto-controls [data-fto-action="close"]{grid-column:1/-1;width:100%;margin:0}\n@media(max-width:370px){\n .fto-card .fto-controls{grid-template-columns:1fr!important}\n .fto-card .fto-close-input{min-width:0!important}\n}\n/* WRAP / FTO: standalone pills, without a shared rectangular backdrop. */\n.today-mode-tabs{\n background:transparent!important; background-color:transparent!important;\n box-shadow:none!important; border:0!important; border-radius:0!important;\n padding:0!important; margin:0!important; outline:0!important;\n}\n.today-mode-tabs::before,.today-mode-tabs::after{content:none!important;display:none!important}\n.today-mode-tabs .today-mode-pill{\n border-radius:999px!important; background-clip:padding-box!important;\n box-shadow:none!important; overflow:hidden!important;\n}\n\n';
-  style.textContent += `
-/* Match the vertical rhythm of WRAP and FTO tabs without changing scroll behavior. */
-.today-native-tabs-layout > .today-native-tabs{padding-bottom:16px!important;margin-bottom:14px!important}
-.today-native-tabs-layout > .fto-section-host{padding-top:0!important}
-.today-native-tabs-layout > .fto-section-host .fto-card{margin-top:0!important}
-/* FTO clock uses the same closing-time banner components as WRAP. */
-.fto-card .fto-clock-wrap{position:sticky!important;top:72px!important;background:transparent!important;padding:0!important;margin:14px 0!important;z-index:12}
-.fto-card .fto-live-banner{width:100%;box-sizing:border-box;text-align:center}
-.fto-card .fto-live-banner .fto-time-pill{display:block!important;width:100%!important;margin:10px auto!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;color:var(--text,inherit)!important;font-size:clamp(2.3rem,8vw,5.5rem)!important;line-height:1.12!important}
-.fto-card .fto-live-banner .fto-time-pill.admin-clock-trigger{cursor:pointer!important}
-.fto-card .fto-live-banner .bet-close-countdown{color:#f0143b}
-.fto-card .fto-live-banner .bet-close-time{font-variant-numeric:tabular-nums}
-`;
+  style.textContent += '\n/* Neutral TODAY mode pills, consistent with the current theme. */\n.today-mode-tabs{gap:12px!important}\n.today-mode-pill,\n[data-theme="light"] .today-mode-pill,\n[data-theme="dark"] .today-mode-pill,\nbody.light .today-mode-pill,body.dark .today-mode-pill{\n background:var(--bg3,var(--bg4,transparent))!important;\n color:var(--text,inherit)!important;\n border:1px solid var(--border,rgba(128,128,128,.45))!important;\n opacity:1!important;\n}\n.today-mode-pill.is-active,\n[data-theme="light"] .today-mode-pill.is-active,\n[data-theme="dark"] .today-mode-pill.is-active,\nbody.light .today-mode-pill.is-active,body.dark .today-mode-pill.is-active{\n background:var(--text,#eee)!important;\n color:var(--bg,#171717)!important;\n border-color:var(--text,#eee)!important;\n}\n.fto-card .fto-controls{\n display:grid!important;grid-template-columns:minmax(0,1fr) minmax(132px,auto);\n column-gap:12px!important;row-gap:14px!important;align-items:center!important;\n}\n.fto-card .fto-controls label{white-space:nowrap;min-width:0}\n.fto-card .fto-close-input{\n box-sizing:border-box!important;display:block!important;width:100%!important;\n min-width:132px!important;max-width:none!important;height:42px!important;\n padding:8px 12px!important;border:1px solid var(--border,rgba(128,128,128,.45))!important;\n border-radius:8px!important;background:transparent!important;box-shadow:none!important;\n color:var(--text,inherit)!important;font:inherit!important;font-size:1rem!important;\n letter-spacing:0!important;text-align:center!important;font-variant-numeric:tabular-nums;\n}\n.fto-card .fto-controls [data-fto-action="close"]{grid-column:1/-1;width:100%;margin:0}\n@media(max-width:370px){\n .fto-card .fto-controls{grid-template-columns:1fr!important}\n .fto-card .fto-close-input{min-width:0!important}\n}\n';
   document.head.appendChild(style);
 })();
 // Keep the selected TODAY mode when navigating away and back.
@@ -5645,7 +5531,7 @@ document.addEventListener('click',async event=>{
   if(!game || game.result || !ftoClosed(game,date) || !game.bets?.length) return;
   const value=nowButton?.dataset.ftoValue||document.getElementById('admin-fto-result-input')?.value;
   const normalized=ftoFormatTime(value);
-  if(!isValidHM(normalized)) return toast('Enter a valid HH:MM:SS time','err');
+  if(!isValidHMS(normalized)) return toast('Enter a valid HH:MM:SS time','err');
   if(!confirm(`Confirm first take at ${normalized}? This awards 1 point to the winner(s).`)) return;
   store[date]={...game,result:normalized};
   closeAdminDialog();
@@ -5676,9 +5562,8 @@ document.addEventListener('click',async event=>{
     return;
   } else if (action==='close') {
     if (game?.result) return;
-    const entered=ftoNormalizeTime(document.getElementById('fto-close')?.value);
-    const value=entered && normalizeHMSValue(entered) ? entered.slice(0,5) : '';
-    if (!isValidHM(value)) return toast('Enter a valid HH:MM closing time','err');
+    const value=ftoFormatTime(document.getElementById('fto-close')?.value);
+    if (!isValidHMS(value)) return toast('Enter a valid HH:MM closing time','err');
     if (date===localDateISO() && toSec(value)<=nowSec() && !game) return toast('Closing time must be in the future','err');
     store[date]={...(game||{}),closeAt:value,bets:game?.bets||[]};
   } else if (action==='import') {
@@ -5689,7 +5574,7 @@ document.addEventListener('click',async event=>{
       const match=line.match(/^(.+?)\s+(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?$/);
       if(!match) return toast(`Invalid prediction: ${line}`,'err');
       const name=match[1].trim(),time=ftoFormatTime(match[2].padStart(2,'0')+':'+match[3]+(match[4]?':'+match[4]:''));
-      if(!isValidHM(time)) return toast(`Invalid time: ${line}`,'err');
+      if(!isValidHMS(time)) return toast(`Invalid time: ${line}`,'err');
       if(!S.playerRoster.some(p=>nameKey(p.name)===nameKey(name))) return toast(`Unknown player: ${name}`,'err');
       if(parsed.some(p=>nameKey(p.name)===nameKey(name))) return toast(`Duplicate player: ${name}`,'err');
       parsed.push({name,time});
@@ -5699,7 +5584,7 @@ document.addEventListener('click',async event=>{
   } else if(action==='result') {
     if (!game) return;
     const value=ftoFormatTime(document.getElementById('fto-result')?.value);
-    if(!isValidHM(value)) return toast('Enter a valid first take time','err');
+    if(!isValidHMS(value)) return toast('Enter a valid first take time','err');
     if(!ftoClosed(game,date)) return toast('Wait until betting closes','err');
     if(!game.bets?.length) return toast('Import predictions first','err');
     if(!confirm(`Confirm first take at ${value}? This awards 1 point to each closest prediction.`)) return;
@@ -9145,16 +9030,16 @@ function renderHistory() {
             <div class="row-name-main"><span>${esc(bet.name)}</span></div>
             ${rangeText ? `<div class="row-boundary">${esc(rangeText)}</div>` : ''}
           </div>
-          <div class="row-time">${esc(ftoFormatTime(bet.time).slice(0,5))}</div>
+          <div class="row-time">${esc(ftoFormatTime(bet.time))}</div>
           <div class="badge ${winner ? 'b-win' : 'b-out'}">${winner ? '+1' : '—'}</div>
         </div>`;
       }).join('');
       const html = `<div class="card hist-row hist-row-fto" data-history-row data-history-date="${esc(date)}" data-history-fto="true">
         <div class="hist-summary">
           <div class="hist-main-info">
-            <span class="hist-day-tag">${esc(dayLabel)}<span class="fto-history-tag">FTO</span></span>
+            <span class="hist-day-tag">${esc(dayLabel)} <span class="fto-history-tag">FTO</span></span>
             <span class="${winners.length ? 'hist-title accent' : 'hist-title red'}">${winnerMarkup}</span>
-            ${winnerBet ? `<span class="hist-bet mono dim" style="font-size:0.75rem">(${esc(ftoFormatTime(winnerBet).slice(0,5))})</span>` : ''}
+            ${winnerBet ? `<span class="hist-bet mono dim" style="font-size:0.75rem">(${esc(ftoFormatTime(winnerBet))})</span>` : ''}
           </div>
           <div class="hist-meta">
             <span class="accent mono hist-wrap-time">${esc(ftoFormatTime(game.result))}</span>
@@ -9329,9 +9214,7 @@ let _crownDayPanelOpen = false;
 function renderCrownDaySetupCard(day=S.today) {
   const enabled = isCrownDay(day);
   const editable = !!(day && (day.unit || 'main') === 'main' && !day.wrapTime && !(day.guesses||[]).some(g => g.time));
-  const holder = enabled && day.wrapTime
-    ? day.crownDay.holder
-    : (previousCrownWinner(day) || (enabled ? day.crownDay.holder : null));
+  const holder = enabled ? day.crownDay.holder : previousCrownWinner(day);
   return `<div class="card crown-day-card${_crownDayPanelOpen?' expanded':''}">
     <div class="crazy-day-top"><div class="crazy-day-title">
       <strong>Crown Day · ${enabled?'ON':'OFF'}</strong>
