@@ -996,6 +996,17 @@ document.addEventListener('click', e => {
     return;
   }
 
+  const deleteFTOButton = e.target.closest?.('[data-history-delete-fto]');
+  if (deleteFTOButton) {
+    deleteFTOHistoryDay(deleteFTOButton.dataset.historyDeleteFto);
+    return;
+  }
+  const deleteWrapButton = e.target.closest?.('[data-history-delete-wrap]');
+  if (deleteWrapButton) {
+    deleteWrapHistoryDay(deleteWrapButton.dataset.historyDeleteWrap, deleteWrapButton.dataset.historyDeleteUnit);
+    return;
+  }
+
   const historyRow = e.target.closest?.('[data-history-row]');
   if (historyRow && !e.target.closest?.('[data-history-details]')) {
     const wasOpen = historyRow.classList.contains('open');
@@ -5286,10 +5297,10 @@ function ftoStore() {
 function ftoDate(day=S.today) { return displayToISO(day?.date) || localDateISO(); }
 function ftoGame(date=ftoDate()) { return ftoStore()[date] || null; }
 function ftoTerritories(game) {
-  const bets=[...(game?.bets||[])].filter(b=>isValidHMS(b.time)).sort((a,b)=>toSec(a.time)-toSec(b.time));
+  const bets=[...(game?.bets||[])].filter(b=>isValidHMS(b.time)).sort((a,b)=>toSec(ftoBetTime(a.time))-toSec(ftoBetTime(b.time)));
   const groups=[];
   for(const bet of bets) {
-    const sec=toSec(bet.time);
+    const sec=toSec(ftoBetTime(bet.time));
     if(groups.length && groups[groups.length-1].sec===sec) groups[groups.length-1].names.push(bet.name);
     else groups.push({sec,names:[bet.name]});
   }
@@ -5313,6 +5324,11 @@ function ftoFormatTime(value) {
   if(!normalizeHMSValue(normalized)) return value;
   return normalized.length===5?normalized+':00':normalized;
 }
+function ftoBetTime(value) {
+  const normalized=ftoFormatTime(value);
+  if (!isValidHMS(normalized)) return normalized;
+  return normalized.slice(0,5)+':00';
+}
 function ftoPointsFor(name) {
   return Object.values(ftoStore()).reduce((n,g)=>n+(ftoWinners(g).some(w=>nameKey(w)===nameKey(name))?1:0),0);
 }
@@ -5330,7 +5346,7 @@ function ftoRows(game) {
     const territory=territories.find(t=>t.names.some(n=>nameKey(n)===nameKey(b.name)));
     const range=territory?`${ftoRangeLabel(territory.start)} – ${ftoRangeLabel(territory.end)}`:'';
     const won=game.result && winners.has(nameKey(b.name));
-    return `<div class="fto-bet-row${won?' fto-winning-row':''}"><div class="fto-bet-name"><strong>${esc(b.name)}</strong>${range?`<span class="fto-bet-range">${esc(range)}</span>`:''}</div><span class="fto-bet-time">${esc(ftoFormatTime(b.time))}</span>${game.result?`<span class="fto-result">${won?'+1 PT':''}</span>`:''}</div>`;
+    return `<div class="fto-bet-row${won?' fto-winning-row':''}"><div class="fto-bet-name"><strong>${esc(b.name)}</strong>${range?`<span class="fto-bet-range">${esc(range)}</span>`:''}</div><span class="fto-bet-time">${esc(ftoBetTime(b.time))}</span>${game.result?`<span class="fto-result">${won?'+1 PT':''}</span>`:''}</div>`;
   }).join('');
 }
 function renderFTOCard(date=ftoDate(), admin=false) {
@@ -5603,7 +5619,7 @@ document.addEventListener('click',async event=>{
     for(const line of lines) {
       const match=line.match(/^(.+?)\s+(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?$/);
       if(!match) return toast(`Invalid prediction: ${line}`,'err');
-      const name=match[1].trim(),time=ftoFormatTime(match[2].padStart(2,'0')+':'+match[3]+(match[4]?':'+match[4]:''));
+      const name=match[1].trim(),time=ftoBetTime(match[2].padStart(2,'0')+':'+match[3]+(match[4]?':'+match[4]:''));
       if(!isValidHMS(time)) return toast(`Invalid time: ${line}`,'err');
       if(!S.playerRoster.some(p=>nameKey(p.name)===nameKey(name))) return toast(`Unknown player: ${name}`,'err');
       if(parsed.some(p=>nameKey(p.name)===nameKey(name))) return toast(`Duplicate player: ${name}`,'err');
@@ -8888,7 +8904,39 @@ function formatHistoryMobileUnitLabel(unit) {
   return formatUnitLabel(unitKey);
 }
 
+async function deleteFTOHistoryDay(date) {
+  if (!IS_ADMIN || !currentUser || !Object.prototype.hasOwnProperty.call(ftoStore(),date)) return;
+  if (!confirm(`Delete FTO ${date} and its bets, result and awarded points? This cannot be undone.`)) return;
+  const previous=cloneState();
+  delete ftoStore()[date];
+  if (!await saveS()) { restoreAfterFailedSave(previous); return; }
+  toast('FTO day deleted','ok');
+  render();
+}
+async function deleteWrapHistoryDay(date,unit) {
+  if (!IS_ADMIN || !currentUser) return;
+  const matches=(S.days||[]).filter(d=>displayToISO(d.date)===date && (d.unit||'main')===(unit||'main'));
+  if (!matches.length) return toast('WRAP history entry not found','err');
+  if (!confirm(`Delete WRAP ${date} · ${formatUnitLabel(unit)} and its awarded points? This cannot be undone.`)) return;
+  const previous=cloneState();
+  const previousBonus=getMultiUnitBonusRecord(date);
+  matches.forEach(d=>adjustCompletedDayScores(d,-1));
+  S.days=S.days.filter(d=>!(displayToISO(d.date)===date && (d.unit||'main')===(unit||'main')));
+  await reconcileMultiUnitBonusesAfterEdit(date,previousBonus);
+  if (!await saveS()) { restoreAfterFailedSave(previous); return; }
+  toast('WRAP history entry deleted','ok');
+  render();
+}
+
+function installHistoryDeleteStyles() {
+  if (document.getElementById('history-delete-styles')) return;
+  const style=document.createElement('style');
+  style.id='history-delete-styles';
+  style.textContent='.history-delete-footer{display:flex;justify-content:flex-end;padding:16px 8px 8px;margin-top:12px;border-top:1px solid var(--border,rgba(128,128,128,.2))}.history-delete-footer .btn{font-size:.78rem;min-height:36px}';
+  document.head.appendChild(style);
+}
 function renderHistory() {
+  installHistoryDeleteStyles();
   const all = getHistoryEntries();
   if (!all.length && !Object.values(ftoStore()).some(g => g?.result)) return '<div class="tab-page-frame"><div class="empty">No completed days yet</div></div>';
 
@@ -8973,6 +9021,7 @@ function renderHistory() {
                 ` : `<div class="badge b-missing">${CUSTOM_UI_TEXT.forgotBet}</div>`}
               </div>`;
             }).join('')}
+          ${canManage ? `<div class="history-delete-footer"><button type="button" class="btn btn-d" data-history-delete-wrap="${historyDate}" data-history-delete-unit="${historyUnit}">Delete WRAP</button></div>` : ''}
           </div>
         </div>`;
       }
@@ -9031,6 +9080,7 @@ function renderHistory() {
             ` : `<div class="badge b-missing">${CUSTOM_UI_TEXT.forgotBet}</div>`}
           </div>`;
         }).join('')}
+          ${canManage ? `<div class="history-delete-footer"><button type="button" class="btn btn-d" data-history-delete-wrap="${historyDate}" data-history-delete-unit="${historyUnit}">Delete WRAP</button></div>` : ''}
       </div>
     </div>`;
   }).map((html, i) => ({
@@ -9060,7 +9110,7 @@ function renderHistory() {
             <div class="row-name-main"><span>${esc(bet.name)}</span></div>
             ${rangeText ? `<div class="row-boundary">${esc(rangeText)}</div>` : ''}
           </div>
-          <div class="row-time">${esc(ftoFormatTime(bet.time))}</div>
+          <div class="row-time">${esc(ftoBetTime(bet.time))}</div>
           <div class="badge ${winner ? 'b-win' : 'b-out'}">${winner ? '+1' : '—'}</div>
         </div>`;
       }).join('');
@@ -9069,7 +9119,7 @@ function renderHistory() {
           <div class="hist-main-info">
             <span class="hist-day-tag">${esc(dayLabel)} <span class="fto-history-tag">FTO</span></span>
             <span class="${winners.length ? 'hist-title accent' : 'hist-title red'}">${winnerMarkup}</span>
-            ${winnerBet ? `<span class="hist-bet mono dim" style="font-size:0.75rem">(${esc(ftoFormatTime(winnerBet))})</span>` : ''}
+            ${winnerBet ? `<span class="hist-bet mono dim" style="font-size:0.75rem">(${esc(ftoBetTime(winnerBet))})</span>` : ''}
           </div>
           <div class="hist-meta">
             <span class="accent mono hist-wrap-time">${esc(ftoFormatTime(game.result))}</span>
@@ -9080,6 +9130,7 @@ function renderHistory() {
         <div class="hist-details" data-history-details>
           <div class="hist-details-head"><div class="card-lbl">${esc(dayLabel)} · FIRST TAKE OF THE DAY · LEADERBOARD</div></div>
           ${rows}
+          ${IS_ADMIN ? `<div class="history-delete-footer"><button type="button" class="btn btn-d" data-history-delete-fto="${esc(date)}">Delete FTO</button></div>` : ''}
         </div>
       </div>`;
       return {date, kind:'fto', html};
