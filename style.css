@@ -2036,3 +2036,9 @@ html.dark-mode .hdr-wrap-time.off {
  .hist-row.hist-row-fto .hist-wrap-time {font-size:inherit}
  .hist-row.hist-row-fto .hist-points {font-size:inherit}
 }
+
+/* HISTORY FTO: keep native WRAP text sizes and position the small sublabel. */
+.hist-row.hist-row-fto .hist-day-tag{position:relative;font-size:.7rem!important;line-height:1!important;overflow:visible!important}
+.hist-row.hist-row-fto .fto-history-tag{display:block!important;position:absolute!important;left:0!important;top:calc(100% + 5px)!important;font-size:.55rem!important;font-weight:750!important;line-height:1!important;white-space:nowrap!important}
+.hist-row.hist-row-fto .hist-points{font-size:.58rem!important;line-height:1!important;font-weight:inherit!important}
+@media(max-width:480px){.hist-row.hist-row-fto .hist-points{font-size:.53rem!important}}

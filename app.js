@@ -3041,7 +3041,9 @@ function updateBetCloseCountdown() {
     const date=el.dataset.ftoBetCloseCountdown;
     const game=ftoGame(date);
     if (!game || !isValidHM(game.closeAt)) { el.textContent='--'; return; }
-    const diff=(date===localDateISO()) ? toSec(game.closeAt)-nowSec() : (date>localDateISO()?86400:0);
+    const scheduled=(S.today && date===ftoDate(S.today))
+      ? displayToISO(S.today.estWrapDate || S.today.betCloseDate || date) : date;
+    const diff=(scheduled===localDateISO()) ? toSec(game.closeAt)-nowSec() : (scheduled>localDateISO()?86400:0);
     el.textContent=diff<=0?'Betting closed':formatBetCloseCountdown(diff);
   });
   document.querySelectorAll('[data-boss-time-value]').forEach(el => {
@@ -5406,7 +5408,14 @@ function ftoClosed(game, date) {
   if (game.result) return true;
   if (!isValidHM(game.closeAt)) return false;
   const today=localDateISO();
-  return date<today || (date===today && nowSec()>=toSec(game.closeAt));
+  // A newly opened shooting day may retain yesterday's internal `day.date`.
+  // FTO is attached to that storage key, but its closing time belongs to
+  // the scheduled shoot date (estWrapDate/betCloseDate).
+  const scheduled = (S.today && date===ftoDate(S.today))
+    ? (S.today.estWrapDate || S.today.betCloseDate || date)
+    : date;
+  const effectiveDate=displayToISO(scheduled);
+  return effectiveDate<today || (effectiveDate===today && nowSec()>=toSec(game.closeAt));
 }
 function ftoRows(game) {
   const winners=new Set(ftoWinners(game).map(nameKey));
