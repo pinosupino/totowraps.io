@@ -9117,7 +9117,7 @@ function renderHistory() {
             ${winnerBet ? `<span class="hist-bet mono dim" style="font-size:0.75rem">(${esc(ftoFormatTime(winnerBet).slice(0,5))})</span>` : ''}
           </div>
           <div class="hist-meta">
-            <span class="accent mono hist-wrap-time">${esc(ftoFormatTime(game.result).slice(0,5))}</span>
+            <span class="accent mono hist-wrap-time">${esc(ftoFormatTime(game.result))}</span>
             <span class="dim mono hist-points">+${winners.length ? 1 : 0}pt</span>
             <span class="hist-arrow">▶</span>
           </div>

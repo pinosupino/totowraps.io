@@ -1972,3 +1972,67 @@ html.dark-mode .hdr-wrap-time.off {
  .hist-row.hist-row-fto .hist-main-info{grid-template-columns:45px minmax(0,max-content) minmax(0,1fr);gap:6px}
  .hist-row.hist-row-fto .hist-meta{grid-template-columns:58px 32px 8px;gap:5px}
 }
+
+/* Match FTO's text start positions to standard WRAP history pills. */
+.hist-row.hist-row-fto .hist-summary { padding-left:30px; }
+@media (max-width:480px) {
+  .hist-row.hist-row-fto .hist-summary { padding-left:24px; }
+}
+
+
+/* HISTORY FTO: EXACTLY the same geometry as native WRAP rows.
+   FTO is an absolutely positioned sublabel and does not alter text columns. */
+.hist-row.hist-row-fto .hist-summary {
+  display:grid;grid-template-columns:minmax(0,1fr) auto;
+  align-items:baseline;gap:10px;padding:11px 16px;
+  min-width:0;box-sizing:border-box;
+}
+.hist-row.hist-row-fto .hist-main-info {
+  display:flex;align-items:baseline;gap:6px;
+  min-width:0;overflow:hidden;white-space:nowrap;line-height:1;
+}
+.hist-row.hist-row-fto .hist-day-tag {
+  display:block;position:relative;align-self:baseline;
+  flex:0 0 45px;width:45px;min-width:45px;
+  font-size:.7rem;line-height:1;font-weight:700;
+  white-space:nowrap;
+}
+.hist-row.hist-row-fto .fto-history-tag {
+  position:absolute;top:calc(100% + 3px);left:0;
+  display:block;margin:0;font-size:.65em;line-height:1;
+  letter-spacing:0;font-weight:800;
+}
+.hist-row.hist-row-fto .hist-title {
+  display:block;min-width:0;max-width:none;
+  overflow:hidden;text-overflow:ellipsis;
+  flex:0 1 auto;font-size:inherit;
+}
+.hist-row.hist-row-fto .hist-bet {
+  display:inline;flex:0 1 auto;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;font-size:.75rem!important;
+}
+.hist-row.hist-row-fto .hist-meta {
+  display:grid;grid-template-columns:58px 32px 8px;
+  align-items:baseline;gap:5px;min-width:0;
+  font-size:.8rem;white-space:nowrap;
+}
+.hist-row.hist-row-fto .hist-wrap-time {
+  grid-column:1;font-size:inherit;white-space:nowrap;
+}
+.hist-row.hist-row-fto .hist-points {
+  grid-column:2;font-size:inherit;white-space:nowrap;
+}
+.hist-row.hist-row-fto .hist-arrow {grid-column:3}
+/* Keep a little space for the FTO sublabel inside the pill. */
+.hist-row.hist-row-fto .hist-summary {padding-bottom:20px}
+@media(max-width:480px) {
+ .hist-row.hist-row-fto .hist-summary {padding:11px 16px 20px;gap:10px}
+ .hist-row.hist-row-fto .hist-main-info {gap:6px}
+ .hist-row.hist-row-fto .hist-meta {grid-template-columns:58px 32px 8px;gap:5px}
+ .hist-row.hist-row-fto .hist-day-tag {font-size:.7rem}
+ .hist-row.hist-row-fto .hist-title {font-size:inherit}
+ .hist-row.hist-row-fto .hist-bet {font-size:.75rem!important}
+ .hist-row.hist-row-fto .hist-wrap-time {font-size:inherit}
+ .hist-row.hist-row-fto .hist-points {font-size:inherit}
+}
