@@ -5443,6 +5443,29 @@ function renderFTOStats() {
 .today-native-tabs-layout > .fto-section-host .fto-card{overflow:visible!important}
 `; 
   style.textContent += '\n/* Neutral TODAY mode pills, consistent with the current theme. */\n.today-mode-tabs{gap:12px!important}\n.today-mode-pill,\n[data-theme="light"] .today-mode-pill,\n[data-theme="dark"] .today-mode-pill,\nbody.light .today-mode-pill,body.dark .today-mode-pill{\n background:var(--bg3,var(--bg4,transparent))!important;\n color:var(--text,inherit)!important;\n border:1px solid var(--border,rgba(128,128,128,.45))!important;\n opacity:1!important;\n}\n.today-mode-pill.is-active,\n[data-theme="light"] .today-mode-pill.is-active,\n[data-theme="dark"] .today-mode-pill.is-active,\nbody.light .today-mode-pill.is-active,body.dark .today-mode-pill.is-active{\n background:var(--text,#eee)!important;\n color:var(--bg,#171717)!important;\n border-color:var(--text,#eee)!important;\n}\n.fto-card .fto-controls{\n display:grid!important;grid-template-columns:minmax(0,1fr) minmax(132px,auto);\n column-gap:12px!important;row-gap:14px!important;align-items:center!important;\n}\n.fto-card .fto-controls label{white-space:nowrap;min-width:0}\n.fto-card .fto-close-input{\n box-sizing:border-box!important;display:block!important;width:100%!important;\n min-width:132px!important;max-width:none!important;height:42px!important;\n padding:8px 12px!important;border:1px solid var(--border,rgba(128,128,128,.45))!important;\n border-radius:8px!important;background:transparent!important;box-shadow:none!important;\n color:var(--text,inherit)!important;font:inherit!important;font-size:1rem!important;\n letter-spacing:0!important;text-align:center!important;font-variant-numeric:tabular-nums;\n}\n.fto-card .fto-controls [data-fto-action="close"]{grid-column:1/-1;width:100%;margin:0}\n@media(max-width:370px){\n .fto-card .fto-controls{grid-template-columns:1fr!important}\n .fto-card .fto-close-input{min-width:0!important}\n}\n';
+  style.textContent += `
+/* FTO: standalone, always-visible clock and no reverted dark card container. */
+.today-native-tabs-layout > .fto-section-host{display:flex!important;flex-direction:column!important;gap:12px!important}
+.today-native-tabs-layout > .fto-section-host > .fto-clock-wrap{
+ position:sticky!important;top:64px!important;z-index:13!important;
+ display:flex!important;justify-content:center!important;align-items:center!important;
+ width:100%!important;min-height:76px!important;margin:0!important;
+ padding:8px 0 12px!important;background:var(--bg)!important;
+ border:0!important;box-shadow:none!important;
+}
+.today-native-tabs-layout > .fto-section-host > .fto-clock-wrap .fto-time-pill{
+ appearance:none!important;display:block!important;border:0!important;
+ background:transparent!important;box-shadow:none!important;padding:0!important;
+ margin:0 auto!important;min-width:0!important;max-width:100%!important;
+ font-size:clamp(1.65rem,8.5vw,4.4rem)!important;line-height:1.05!important;
+ color:var(--accent)!important;white-space:nowrap!important;
+}
+.today-native-tabs-layout > .fto-section-host > .fto-card{
+ background:transparent!important;background-color:transparent!important;
+ box-shadow:none!important;border:0!important;padding:0!important;
+ border-radius:0!important;min-height:0!important;
+}
+`;
   document.head.appendChild(style);
 })();
 // Keep the selected TODAY mode when navigating away and back.
@@ -5456,6 +5479,13 @@ function mountFTOSections() {
     const host=document.createElement('div');
     host.className='fto-section-host';
     host.innerHTML=renderFTOCard(ftoDate(),IS_ADMIN);
+    // Keep the FTO clock at the top of its panel, outside the old dark card.
+    // Moving the existing button preserves its delegated admin click action.
+    if(game){
+      const clock=host.querySelector('.fto-clock-wrap');
+      if(clock) host.prepend(clock);
+    }
+
     if(game) {
       const layout=document.createElement('div');
       layout.className='today-mode-layout';
