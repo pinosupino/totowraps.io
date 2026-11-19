@@ -1904,3 +1904,25 @@ html.dark-mode .hdr-wrap-time.off {
 .result-share-fto-line strong{min-width:0;overflow-wrap:anywhere}
 .result-share-fto-line span{color:var(--green,#8fdf6a);font-weight:800;white-space:nowrap}
 .result-share-fto-bet{font-size:.8rem;color:var(--muted,#aaa)}
+
+
+/* HISTORY FTO: use WRAP's native geometry and typography, not the earlier
+   compact FTO overrides. The day label keeps FTO on its second line. */
+.hist-row-fto .hist-summary{padding:unset;gap:unset}
+.hist-row-fto .hist-main-info{gap:unset}
+.hist-row-fto .hist-day-tag{font-size:inherit;line-height:1.1;min-width:5.6ch}
+.hist-row-fto .fto-history-tag{font-size:.58em;line-height:1.1;margin-top:3px}
+.hist-row-fto .hist-title{font-size:inherit;flex:initial;overflow:visible}
+.hist-row-fto .hist-bet{font-size:.75rem!important;flex:initial;white-space:nowrap}
+.hist-row-fto .hist-meta{grid-template-columns:unset;gap:unset}
+.hist-row-fto .hist-wrap-time{font-size:inherit;white-space:nowrap}
+.hist-row-fto .hist-points{font-size:inherit}
+@media(max-width:480px){
+ .hist-row-fto .hist-summary{padding:unset;gap:unset}
+ .hist-row-fto .hist-day-tag{font-size:inherit}
+ .hist-row-fto .hist-title{font-size:inherit}
+ .hist-row-fto .hist-bet{font-size:.75rem!important}
+ .hist-row-fto .hist-meta{grid-template-columns:unset;gap:unset}
+ .hist-row-fto .hist-wrap-time{font-size:inherit}
+ .hist-row-fto .hist-points{font-size:inherit}
+}
