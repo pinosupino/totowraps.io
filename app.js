@@ -3792,7 +3792,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
               ${g.time ? st.pill : ''}
             </div>
             ${g.time ? `
-	              <div class="row-time">${esc(g.time)}</div>
+	              <div class="row-time${isCrownDay(t) && nameKey(g.name) === nameKey(t.crownDay.holder) ? ' crown-holder-gold-glow' : ''}">${esc(g.time)}</div>
 	              <div class="badge ${penaltyStatus ? penaltyStatus.cls : 'b-out'}">${penaltyStatus ? penaltyStatus.text : 'OUT'}</div>
             ` : `<div class="badge b-missing${penalty?.reason === 'missed-bet' ? ' b-missing-penalty' : ''}">${CUSTOM_UI_TEXT.forgotBet}</div>`}
           </div>`;
@@ -3837,7 +3837,7 @@ function renderCompletedToday(t, canStartNextDay=false) {
             ${prob.text}
           </div>
           
-          <div class="row-time">${esc(g.time)}</div>
+          <div class="row-time${isCrownDay(t) && nameKey(g.name) === nameKey(t.crownDay.holder) ? ' crown-holder-gold-glow' : ''}">${esc(g.time)}</div>
           
           <div class="badge ${isWinner ? 'b-win' : (penaltyStatus ? penaltyStatus.cls : 'b-out')}">
             ${isWinner ? 'WIN' : (penaltyStatus ? penaltyStatus.text : 'OUT')}
@@ -4176,7 +4176,7 @@ function renderActiveTodayRows(t, sg, out, slices) {
           ${prob.text}
         </div>
 
-	        <div class="row-time">${esc(g.time)}</div>
+	        <div class="row-time${isCrownDay(t) && nameKey(g.name) === nameKey(t.crownDay.holder) ? ' crown-holder-gold-glow' : ''}">${esc(g.time)}</div>
 
 	        ${!isOut && IS_ADMIN && S.today && !S.today.wrapTime
           ? `<button class="badge b-in current-bet-edit-action" id="st-${playerId}" type="button" data-current-bet-player="${esc(g.name)}" aria-label="Edit ${esc(g.name)} bet">IN</button>`
@@ -5483,6 +5483,21 @@ function renderFTOStats() {
 }
 `;
   style.textContent += '\n/* FTO visual parity with WRAP: use the same flat surface and row geometry. */\n.today-native-tabs-layout .fto-section-host .fto-card{\n background:transparent!important;border:0!important;box-shadow:none!important;\n border-radius:0!important;padding:0!important;margin:0!important;\n color:inherit!important;min-width:0!important;\n}\n.today-native-tabs-layout .fto-section-host .fto-heading,\n.today-native-tabs-layout .fto-section-host .fto-card > p,\n.today-native-tabs-layout .fto-section-host .fto-controls,\n.today-native-tabs-layout .fto-section-host .fto-import-panel{padding-left:12px!important;padding-right:12px!important}\n.today-native-tabs-layout .fto-section-host .fto-bets{display:flex!important;flex-direction:column!important;width:100%!important;gap:0!important;background:transparent!important;border:0!important;box-shadow:none!important}\n.today-native-tabs-layout .fto-section-host .fto-bet-row{\n box-sizing:border-box!important;width:100%!important;min-height:56px!important;\n display:flex!important;align-items:center!important;gap:10px!important;\n padding:10px 12px!important;margin:0!important;border-radius:0!important;\n border:0!important;border-bottom:1px solid var(--border,rgba(127,127,127,.2))!important;\n background:transparent!important;box-shadow:none!important;\n}\n.today-native-tabs-layout .fto-section-host .fto-bet-name{\n flex:1 1 auto!important;display:flex!important;flex-direction:column!important;\n justify-content:center!important;min-width:0!important;gap:3px!important;\n font-size:inherit!important;\n}\n.today-native-tabs-layout .fto-section-host .fto-bet-name strong{font-size:inherit!important;font-weight:600!important;overflow-wrap:anywhere}\n.today-native-tabs-layout .fto-section-host .fto-bet-range{font-size:.75rem!important;opacity:.7!important;font-variant-numeric:tabular-nums}\n.today-native-tabs-layout .fto-section-host .fto-bet-time{\n flex:0 0 auto!important;white-space:nowrap!important;text-align:right!important;\n font-variant-numeric:tabular-nums!important;font-size:inherit!important;\n}\n.today-native-tabs-layout .fto-section-host .fto-result{flex:0 0 auto!important;white-space:nowrap!important}\n.today-native-tabs-layout .fto-section-host .fto-winning-row{\n background:var(--bg3,rgba(70,160,100,.08))!important;\n}\n.today-native-tabs-layout .fto-section-host > .fto-clock-wrap{\n position:sticky!important;top:64px!important;z-index:13!important;\n background:var(--bg)!important;border:0!important;box-shadow:none!important;\n display:flex!important;justify-content:center!important;align-items:center!important;\n width:100%!important;min-height:76px!important;padding:8px 0 12px!important;margin:0!important;\n}\n.today-native-tabs-layout .fto-section-host > .fto-clock-wrap .fto-time-pill{\n appearance:none!important;background:transparent!important;border:0!important;\n box-shadow:none!important;margin:0 auto!important;padding:0!important;\n font-size:clamp(1.65rem,8.5vw,4.4rem)!important;\n font-variant-numeric:tabular-nums!important;line-height:1.1!important;\n}\n';
+  style.textContent += `
+/* Crown Day: gold halo on the holder's WRAP bet time pill only. */
+.row-time.crown-holder-gold-glow{
+ color:#f7d36c!important;
+ background:linear-gradient(135deg,rgba(175,117,14,.23),rgba(255,210,82,.13))!important;
+ border:1px solid rgba(245,191,62,.88)!important;
+ border-radius:999px!important;
+ padding:5px 11px!important;
+ box-shadow:0 0 0 1px rgba(255,204,83,.16),0 0 12px 2px rgba(242,178,35,.42),0 0 25px rgba(239,169,25,.2)!important;
+ text-shadow:0 0 8px rgba(255,211,100,.45)!important;
+ font-weight:800!important;
+ white-space:nowrap!important;
+}
+[data-theme="light"] .row-time.crown-holder-gold-glow,body.light .row-time.crown-holder-gold-glow{color:#815000!important;background:linear-gradient(135deg,#fff2c6,#ffedaf)!important;text-shadow:none!important;box-shadow:0 0 0 1px rgba(198,137,12,.14),0 0 12px 2px rgba(224,168,32,.36),0 0 23px rgba(239,180,31,.18)!important}
+`;
   document.head.appendChild(style);
 })();
 // Keep the selected TODAY mode when navigating away and back.
