@@ -2638,7 +2638,9 @@ function isCrownDay(day=S.today) {
   return day?.crownDay?.enabled === true;
 }
 function previousCrownWinner(day=S.today) {
-  const date = displayToISO(day?.date);
+  // The round's `date` may still point to the day it was created.
+  // Use the scheduled shoot date, which is advanced when a new round opens.
+  const date = displayToISO(day?.estWrapDate || day?.betCloseDate || day?.date);
   const entries = getHistoryEntries().filter(entry =>
     entry?.wrapTime && (entry.unit || 'main') === 'main' &&
     displayToISO(entry.date) < date
