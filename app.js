@@ -5346,7 +5346,7 @@ function ftoRows(game) {
     const territory=territories.find(t=>t.names.some(n=>nameKey(n)===nameKey(b.name)));
     const range=territory?`${ftoRangeLabel(territory.start)} – ${ftoRangeLabel(territory.end)}`:'';
     const won=game.result && winners.has(nameKey(b.name));
-    return `<div class="fto-bet-row${won?' fto-winning-row':''}"><div class="fto-bet-name"><strong>${esc(b.name)}</strong>${range?`<span class="fto-bet-range">${esc(range)}</span>`:''}</div><span class="fto-bet-time">${esc(ftoBetTime(b.time))}</span>${game.result?`<span class="fto-result">${won?'+1 PT':''}</span>`:''}</div>`;
+    return `<div class="row today-live-bet-row fto-bet-row${won?' fto-winning-row':''}"><div class="row-name row-name-stack fto-bet-name"><strong>${esc(b.name)}</strong>${range?`<span class="fto-bet-range">${esc(range)}</span>`:''}</div><span class="row-time fto-bet-time">${esc(ftoBetTime(b.time))}</span>${game.result?`<span class="fto-result">${won?'+1 PT':''}</span>`:''}</div>`;
   }).join('');
 }
 function renderFTOCard(date=ftoDate(), admin=false) {
@@ -5482,6 +5482,7 @@ function renderFTOStats() {
  border-radius:0!important;min-height:0!important;
 }
 `;
+  style.textContent += '\n/* FTO visual parity with WRAP: use the same flat surface and row geometry. */\n.today-native-tabs-layout .fto-section-host .fto-card{\n background:transparent!important;border:0!important;box-shadow:none!important;\n border-radius:0!important;padding:0!important;margin:0!important;\n color:inherit!important;min-width:0!important;\n}\n.today-native-tabs-layout .fto-section-host .fto-heading,\n.today-native-tabs-layout .fto-section-host .fto-card > p,\n.today-native-tabs-layout .fto-section-host .fto-controls,\n.today-native-tabs-layout .fto-section-host .fto-import-panel{padding-left:12px!important;padding-right:12px!important}\n.today-native-tabs-layout .fto-section-host .fto-bets{display:flex!important;flex-direction:column!important;width:100%!important;gap:0!important;background:transparent!important;border:0!important;box-shadow:none!important}\n.today-native-tabs-layout .fto-section-host .fto-bet-row{\n box-sizing:border-box!important;width:100%!important;min-height:56px!important;\n display:flex!important;align-items:center!important;gap:10px!important;\n padding:10px 12px!important;margin:0!important;border-radius:0!important;\n border:0!important;border-bottom:1px solid var(--border,rgba(127,127,127,.2))!important;\n background:transparent!important;box-shadow:none!important;\n}\n.today-native-tabs-layout .fto-section-host .fto-bet-name{\n flex:1 1 auto!important;display:flex!important;flex-direction:column!important;\n justify-content:center!important;min-width:0!important;gap:3px!important;\n font-size:inherit!important;\n}\n.today-native-tabs-layout .fto-section-host .fto-bet-name strong{font-size:inherit!important;font-weight:600!important;overflow-wrap:anywhere}\n.today-native-tabs-layout .fto-section-host .fto-bet-range{font-size:.75rem!important;opacity:.7!important;font-variant-numeric:tabular-nums}\n.today-native-tabs-layout .fto-section-host .fto-bet-time{\n flex:0 0 auto!important;white-space:nowrap!important;text-align:right!important;\n font-variant-numeric:tabular-nums!important;font-size:inherit!important;\n}\n.today-native-tabs-layout .fto-section-host .fto-result{flex:0 0 auto!important;white-space:nowrap!important}\n.today-native-tabs-layout .fto-section-host .fto-winning-row{\n background:var(--bg3,rgba(70,160,100,.08))!important;\n}\n.today-native-tabs-layout .fto-section-host > .fto-clock-wrap{\n position:sticky!important;top:64px!important;z-index:13!important;\n background:var(--bg)!important;border:0!important;box-shadow:none!important;\n display:flex!important;justify-content:center!important;align-items:center!important;\n width:100%!important;min-height:76px!important;padding:8px 0 12px!important;margin:0!important;\n}\n.today-native-tabs-layout .fto-section-host > .fto-clock-wrap .fto-time-pill{\n appearance:none!important;background:transparent!important;border:0!important;\n box-shadow:none!important;margin:0 auto!important;padding:0!important;\n font-size:clamp(1.65rem,8.5vw,4.4rem)!important;\n font-variant-numeric:tabular-nums!important;line-height:1.1!important;\n}\n';
   document.head.appendChild(style);
 })();
 // Keep the selected TODAY mode when navigating away and back.
@@ -5610,7 +5611,7 @@ document.addEventListener('click',async event=>{
     if (game?.result) return;
     const value=ftoFormatTime(document.getElementById('fto-close')?.value);
     if (!isValidHMS(value)) return toast('Enter a valid HH:MM closing time','err');
-    if (date===localDateISO() && toSec(value)<=nowSec() && !game) return toast('Closing time must be in the future','err');
+    // Admins may activate an FTO round with a closing time that has already passed.
     store[date]={...(game||{}),closeAt:value,bets:game?.bets||[]};
   } else if (action==='import') {
     if (!game || game.result) return toast('First Take of the Day result is already confirmed','err');
